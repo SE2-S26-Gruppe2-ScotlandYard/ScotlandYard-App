@@ -1,9 +1,13 @@
 package at.aau.serg.websocketbrokerdemo
 
 import MyStomp
+import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import com.example.myapplication.R
@@ -12,22 +16,49 @@ class MainActivity : ComponentActivity(), Callbacks {
     lateinit var myStomp: MyStomp
     lateinit var response: TextView
     override fun onCreate(savedInstanceState: Bundle?) {
-        myStomp = MyStomp(this)
-
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.fragment_fullscreen)
+        setContentView(R.layout.activity_main)
 
-        findViewById<Button>(R.id.connectbtn).setOnClickListener { myStomp.connect() }
-        findViewById<Button>(R.id.hellobtn).setOnClickListener { myStomp.sendHello() }
-        findViewById<Button>(R.id.jsonbtn).setOnClickListener { myStomp.sendJson() }
-        response = findViewById(R.id.response_view)
+        //Initialize Stomp cleint
+        myStomp = MyStomp(this)
+
+        findViewById<Button>(R.id.playbtn).setOnClickListener {
+            // Start Connection
+            myStomp.connect()
+        }
+
+        findViewById<Button>(R.id.rulesbtn).setOnClickListener {
+            showRules()
+        }
+    }
+
+    private fun showRules() {
+        // Simple toast for now
+        Toast.makeText(this,"Spielregeln.",Toast.LENGTH_LONG).show()
+        // TODO open a browser or other ruleset/activity
     }
 
     override fun onResponse(res: String) {
-        response.text = res
-    }
+        Handler(Looper.getMainLooper()).post {  // Not required due to existence in Stomp callback, but safer
+            when (res) {
+                "Connected" -> {
+                    // Start LobbyActivity after successful connection
+                    val intent = Intent(this, LobbyActivity::class.java)
+                    startActivity(intent)
+                    finish() // Close MainActivity
+                }
 
+                "Connection error" -> {
+                    Toast.makeText(this, "Failed to connect to server.", Toast.LENGTH_LONG).show()
+                }
+
+                else -> {
+                    response.text = res
+                }
+            }
+        }
+    }
 
 }
 

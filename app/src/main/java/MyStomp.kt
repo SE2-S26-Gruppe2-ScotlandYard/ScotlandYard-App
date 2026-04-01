@@ -51,7 +51,7 @@ class MyStomp(val callbacks: Callbacks) {
                         callback(o.get("text").toString())
                     }
                 }
-                callback("connected")
+                callback("Connected")
 
             } catch (e: Exception) {
                 Log.e("MyStomp", "Connection failed", e)
@@ -66,6 +66,7 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
+    /*
     fun sendHello() {
         scope.launch {
             try {
@@ -95,5 +96,18 @@ class MyStomp(val callbacks: Callbacks) {
                 Log.e("MyStomp", "Send JSON failed", e)
             }
         }
+    } */
+
+    fun sendCreateLobby() {
+        // TODO logic
     }
+
+    fun sendJoinLobby() {
+        // TODO logic
+    }
+
+    fun sendRejoinLobby() {
+        // TODO logic
+    }
+
 }

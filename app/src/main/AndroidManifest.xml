@@ -26,6 +26,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name="at.aau.serg.websocketbrokerdemo.LobbyActivity"
+            android:label="Lobby"
+            android:theme="@style/Theme.ScotlandYard" />
     </application>
 
 </manifest>
