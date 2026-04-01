@@ -1,33 +1,35 @@
 package at.aau.serg.websocketbrokerdemo
 
-import MyStomp
 import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.myapplication.R
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import at.aau.serg.websocketbrokerdemo.ui.screens.StartScreen
+import at.aau.serg.websocketbrokerdemo.ui.theme.MyApplicationTheme
 
-class MainActivity : ComponentActivity(), Callbacks {
-    lateinit var myStomp: MyStomp
-    lateinit var response: TextView
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        myStomp = MyStomp(this)
-
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.fragment_fullscreen)
-
-        findViewById<Button>(R.id.connectbtn).setOnClickListener { myStomp.connect() }
-        findViewById<Button>(R.id.hellobtn).setOnClickListener { myStomp.sendHello() }
-        findViewById<Button>(R.id.jsonbtn).setOnClickListener { myStomp.sendJson() }
-        response = findViewById(R.id.response_view)
+        // setContent { } startet die Compose-UI — kein XML mehr
+        setContent {
+            MyApplicationTheme {
+                // navController merkt sich welcher Screen gerade angezeigt wird
+                val navController = rememberNavController()
+                // NavHost definiert alle Screens und ihre Namen ("Routes")
+                NavHost(navController = navController, startDestination = "start") {
+                    composable("start") {
+                        StartScreen(
+                            onStartGame = { navController.navigate("lobby") },
+                            onRules = { navController.navigate("rules") }
+                        )
+                    }
+                    // Weitere Screens (lobby, rules, ...) kommen hier rein
+                }
+            }
+        }
     }
-
-    override fun onResponse(res: String) {
-        response.text = res
-    }
-
-
 }
-
