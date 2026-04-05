@@ -1,4 +1,4 @@
-package at.aau.serg.websocketbrokerdemo.ui.theme
+package at.aau.serg.scotlandyard.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme

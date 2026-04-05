@@ -1,4 +1,4 @@
-package at.aau.serg.websocketbrokerdemo
+package at.aau.serg.scotlandyard
 
 import MyStomp
 import android.os.Bundle

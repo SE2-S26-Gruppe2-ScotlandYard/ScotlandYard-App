@@ -1,4 +1,4 @@
-package at.aau.serg.websocketbrokerdemo
+package at.aau.serg.scotlandyard
 
 import org.junit.jupiter.api.Test
 
