@@ -1,3 +1,5 @@
+package at.aau.serg.scotlandyard.network
+
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -27,6 +29,10 @@ class MyStomp(val callbacks: Callbacks) {
 
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
+    private var currentGameId: String? = null
+    private var movementFlow: Flow<String>? = null
+    private var movementCollector: Job? = null
+
     fun connect() {
         client = StompClient(OkHttpWebSocketClient()) // other config can be passed in here
         scope.launch {
@@ -51,7 +57,7 @@ class MyStomp(val callbacks: Callbacks) {
                         callback(o.get("text").toString())
                     }
                 }
-                callback("connected")
+                callback("connected to server")
 
             } catch (e: Exception) {
                 Log.e("MyStomp", "Connection failed", e)
@@ -93,6 +99,49 @@ class MyStomp(val callbacks: Callbacks) {
                 session?.sendText("/app/object", o) ?: callback("Error: Not connected")
             } catch (e: Exception) {
                 Log.e("MyStomp", "Send JSON failed", e)
+            }
+        }
+    }
+
+    fun connectToGame(gameId: String) {
+        currentGameId = gameId
+        scope.launch {
+            try {
+                if (session == null) {
+                    val activeSession = client.connect(WEBSOCKET_URI)
+                    session = activeSession
+                }
+
+                // subscribe movement topic
+                movementFlow = session?.subscribeText("/topic/game/$gameId/movements")
+                movementCollector = scope.launch {
+                    movementFlow?.collect { msg -> callback("movement:$msg") }
+                }
+
+                callback("connected to:$gameId")
+
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Failed to connect to game", e)
+                callback("Connection error")
+            }
+        }
+    }
+
+    fun sendMove(gameId: String, playerId: String, ticket: String, targetPosition: Int) {
+        val json = JSONObject().apply {                                 // use json to transmit the data
+            put("gameId", gameId)
+            put("playerId", playerId)
+            put("ticket", ticket)
+            put("targetPosition", targetPosition)
+            put("timestamp", System.currentTimeMillis())
+        }
+
+        scope.launch {
+            try {
+                session?.sendText("/app/game/$gameId/move", json.toString())
+                    ?: callback("Error: Not connected")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Send move failed", e)
             }
         }
     }
