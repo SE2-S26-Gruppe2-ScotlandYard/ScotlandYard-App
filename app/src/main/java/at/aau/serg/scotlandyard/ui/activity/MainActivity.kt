@@ -8,7 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import at.aau.serg.scotlandyard.Callbacks
 import at.aau.serg.scotlandyard.network.MyStomp
-import com.example.myapplication.R
+import com.example.scotlandyard.R
 import org.json.JSONObject
 
 class MainActivity : ComponentActivity(), Callbacks {
