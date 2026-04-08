@@ -32,6 +32,7 @@ class MyStomp(val callbacks: Callbacks) {
     private var currentGameId: String? = null
     private var movementFlow: Flow<String>? = null
     private var movementCollector: Job? = null
+    private val errorMsg : String = "Error: Not connected"
 
     fun connect() {
         client = StompClient(OkHttpWebSocketClient()) // other config can be passed in here
@@ -80,7 +81,7 @@ class MyStomp(val callbacks: Callbacks) {
                     it.sendText("/app/hello", "message from client")
                 } ?: run {
                     Log.e("MyStomp", "Cannot send: Session is null")
-                    callback("Error: Not connected")
+                    callback(errorMsg)
                 }
             } catch (e: Exception) {
                 Log.e("MyStomp", "Send failed", e)
@@ -96,7 +97,7 @@ class MyStomp(val callbacks: Callbacks) {
 
         scope.launch {
             try {
-                session?.sendText("/app/object", o) ?: callback("Error: Not connected")
+                session?.sendText("/app/object", o) ?: callback(errorMsg)
             } catch (e: Exception) {
                 Log.e("MyStomp", "Send JSON failed", e)
             }
@@ -139,7 +140,7 @@ class MyStomp(val callbacks: Callbacks) {
         scope.launch {
             try {
                 session?.sendText("/app/game/$gameId/move", json.toString())
-                    ?: callback("Error: Not connected")
+                    ?: callback(errorMsg)
             } catch (e: Exception) {
                 Log.e("MyStomp", "Send move failed", e)
             }
