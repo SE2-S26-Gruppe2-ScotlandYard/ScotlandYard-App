@@ -7,6 +7,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import at.aau.serg.scotlandyard.ui.activity.StartScreen
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 
 class MainActivity : ComponentActivity() {

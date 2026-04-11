@@ -19,7 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -90,7 +90,7 @@ fun StartScreen(
                 modifier = Modifier.weight(1f) // nimmt die linke Hälfte ein
             ) {
                 // Linie über dem Titel
-                Divider(
+                HorizontalDivider(
                     color = Color(0xAAFFFFFF), // halbtransparentes Weiß
                     thickness = 1.dp,
                     modifier = Modifier.fillMaxWidth(0.7f)
@@ -111,7 +111,7 @@ fun StartScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Linie unter dem Titel
-                Divider(
+                HorizontalDivider(
                     color = Color(0xAAFFFFFF),
                     thickness = 1.dp,
                     modifier = Modifier.fillMaxWidth(0.7f)
