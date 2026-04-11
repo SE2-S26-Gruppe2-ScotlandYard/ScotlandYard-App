@@ -1,4 +1,4 @@
-package at.aau.serg.websocketbrokerdemo.ui.screens
+package at.aau.serg.scotlandyard.ui.activity
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -35,8 +35,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import at.aau.serg.websocketbrokerdemo.ui.theme.MyApplicationTheme
-import com.example.myapplication.R
+import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
+import com.example.scotlandyard.R
 
 @Composable
 fun StartScreen(
@@ -191,7 +191,7 @@ fun StartScreen(
 @Preview(showBackground = true, widthDp = 800, heightDp = 400)
 @Composable
 fun StartScreenPreview() {
-    MyApplicationTheme {
+    ScotlandYardTheme {
         StartScreen(onStartGame = {}, onRules = {})
     }
 }
