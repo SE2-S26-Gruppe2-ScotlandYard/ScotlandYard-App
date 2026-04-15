@@ -8,6 +8,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import at.aau.serg.scotlandyard.ui.activity.StartScreen
+import at.aau.serg.scotlandyard.ui.activity.RulesScreen
+import at.aau.serg.scotlandyard.ui.activity.LobbyScreen
+import at.aau.serg.scotlandyard.ui.activity.SettingsScreen
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 
 class MainActivity : ComponentActivity() {
@@ -24,10 +27,19 @@ class MainActivity : ComponentActivity() {
                     composable("start") {
                         StartScreen(
                             onStartGame = { navController.navigate("lobby") },
-                            onRules = { navController.navigate("rules") }
+                            onRules = { navController.navigate("rules") },
+                            onSettings = { navController.navigate("settings") }
                         )
                     }
-                    // Weitere Screens (lobby, rules, ...) kommen hier rein
+                    composable("rules") {
+                        RulesScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    composable("lobby") {
+                        LobbyScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    composable("settings") {
+                        SettingsScreen(onBackClick = { navController.popBackStack() })
+                    }
                 }
             }
         }
