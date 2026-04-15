@@ -55,55 +55,121 @@ fun RulesScreen(onBackClick: () -> Unit) {
 
             // Titel
             Text(
-                text = "Spielregeln",
-                fontSize = 48.sp,
+                text = "Scotland Yard – Spielregeln",
+                fontSize = 36.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
                 modifier = Modifier.padding(bottom = 24.dp)
             )
 
-            // Regeln
+            // 🎯 Ziel des Spiels
             Text(
-                text = "Ziel des Spiels",
-                fontSize = 24.sp,
+                text = "🎯 Ziel des Spiels",
+                fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF1A4A3A),
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             )
 
             Text(
-                text = "Scotland Yard ist ein Verfolgungsspiel für 2-6 Spieler. Ein Spieler verkörpert den flüchtigen Mr. X, während die anderen Detektive sind, die versuchen, ihn zu fangen.",
-                fontSize = 16.sp,
+                text = "• Mr. X versucht, unerkannt zu entkommen\n• Die Detektive versuchen, Mr. X zu finden und zu fangen\n👉 Die Detektive gewinnen, wenn sie auf demselben Feld wie Mr. X landen\n👉 Mr. X gewinnt, wenn er bis zum Ende nicht gefangen wird",
+                fontSize = 14.sp,
                 color = Color(0xFFCCCCCC),
-                modifier = Modifier.padding(bottom = 20.dp)
+                modifier = Modifier.padding(bottom = 16.dp)
             )
 
+            // 👥 Rollen
             Text(
-                text = "Rollen",
-                fontSize = 24.sp,
+                text = "👥 Rollen",
+                fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF1A4A3A),
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             )
 
             Text(
-                text = "Mr. X: Versucht zu entkommen und bleibt den Detektiven verborgen.\n\nDetektive: Arbeiten zusammen, um Mr. X zu finden und zu fangen.",
-                fontSize = 16.sp,
+                text = "🕵️ Detektive\n• Spielen im Team\n• Bewegen sich sichtbar auf der Karte\n• Versuchen, Mr. X einzukreisen\n\n🎩 Mr. X\n• Spielt alleine\n• Seine Position ist meist unsichtbar\n• Nutzt Täuschung und Strategie",
+                fontSize = 14.sp,
                 color = Color(0xFFCCCCCC),
-                modifier = Modifier.padding(bottom = 20.dp)
+                modifier = Modifier.padding(bottom = 16.dp)
             )
 
+            // 🗺️ Fortbewegung
             Text(
-                text = "Bewegung",
-                fontSize = 24.sp,
+                text = "🗺️ Fortbewegung",
+                fontSize = 20.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color(0xFF1A4A3A),
-                modifier = Modifier.padding(bottom = 12.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             )
 
             Text(
-                text = "Spieler bewegen sich auf einem Netzwerk von Positionen. Verschiedene Verkehrsmittel (Bus, Taxi, U-Bahn) ermöglichen verschiedene Verbindungen.",
-                fontSize = 16.sp,
+                text = "Spieler bewegen sich über die Karte mit:\n🚶 Walking → kurze Strecken, flexibel\n🛴 E-Scooter → mittlere Reichweite\n🚗 Car-Sharing → lange Strecken, schnell\n👉 Jede Verbindung auf der Karte ist einem dieser Transportmittel zugeordnet",
+                fontSize = 14.sp,
+                color = Color(0xFFCCCCCC),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // 🎮 Spielablauf
+            Text(
+                text = "🎮 Spielablauf",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF1A4A3A),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Text(
+                text = "1. Mr. X zieht\n• Wählt ein Ziel\n• Verwendet ein Transportmittel\n• Seine Position bleibt geheim\n• Nur das verwendete Ticket wird angezeigt\n👉 In bestimmten Runden muss Mr. X seine Position offenlegen\n\n2. Detektive ziehen\n• Ziehen nacheinander\n• Nutzen ihre Tickets (Walking, E-Scooter, Car-Sharing)\n• Versuchen, Mr. X strategisch einzukreisen",
+                fontSize = 14.sp,
+                color = Color(0xFFCCCCCC),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // 🎫 Tickets
+            Text(
+                text = "🎫 Tickets & Spezialfähigkeiten",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF1A4A3A),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Text(
+                text = "Jeder Spieler hat begrenzte Tickets:\n• Walking\n• E-Scooter\n• Car-Sharing\n\n🎩 Spezialfähigkeiten von Mr. X:\n• 🎭 Black Ticket → Transportmittel bleibt geheim\n• 🔄 Double Move → zwei Züge in einer Runde",
+                fontSize = 14.sp,
+                color = Color(0xFFCCCCCC),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // 🚫 Wichtige Regeln
+            Text(
+                text = "🚫 Wichtige Regeln",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF1A4A3A),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Text(
+                text = "• Zwei Detektive dürfen nicht auf demselben Feld stehen\n• Detektive haben keine Spezialfähigkeiten\n• Ein Zug ist nur möglich, wenn ein passendes Ticket vorhanden ist\n• Spieler dürfen nicht stehen bleiben (außer sie können sich nicht bewegen)",
+                fontSize = 14.sp,
+                color = Color(0xFFCCCCCC),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            // 🏁 Spielende
+            Text(
+                text = "🏁 Spielende",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFF1A4A3A),
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            Text(
+                text = "Das Spiel endet, wenn:\n🕵️ Ein Detektiv Mr. X fängt → Detektive gewinnen\n🎩 Mr. X überlebt alle Runden → Mr. X gewinnt\n❌ Kein Detektiv kann sich mehr bewegen → Mr. X gewinnt",
+                fontSize = 14.sp,
                 color = Color(0xFFCCCCCC),
                 modifier = Modifier.padding(bottom = 32.dp)
             )
