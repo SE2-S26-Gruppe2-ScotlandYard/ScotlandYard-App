@@ -41,7 +41,8 @@ import com.example.scotlandyard.R
 @Composable
 fun StartScreen(
     onStartGame: () -> Unit,
-    onRules: () -> Unit
+    onRules: () -> Unit,
+    onSettings: () -> Unit
 ) {
     // Box stapelt alles übereinander: Hintergrundbild → Inhalt
     Box(modifier = Modifier.fillMaxSize()) {
@@ -63,7 +64,7 @@ fun StartScreen(
 
         // 3) Zahnrad-Icon oben rechts
         IconButton(
-            onClick = { /* TODO: Settings öffnen */ },
+            onClick = { onSettings() },
             modifier = Modifier
                 .align(Alignment.TopEnd)     // oben rechts positionieren
                 .padding(16.dp)
@@ -129,7 +130,10 @@ fun StartScreen(
 
             // === RECHTE SEITE: Buttons ===
             Column(
-                modifier = Modifier.width(240.dp).padding(top = 150.dp), // feste Breite für die Buttons
+                modifier = Modifier
+                    .width(240.dp)
+                    .fillMaxSize(), // Buttons verteilung über ganze Höhe
+                verticalArrangement = Arrangement.Center, // Zentriert die Buttons vertikal
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // "Start Game" Button — teal/dunkelgrün mit hellem Rand
@@ -192,6 +196,6 @@ fun StartScreen(
 @Composable
 fun StartScreenPreview() {
     ScotlandYardTheme {
-        StartScreen(onStartGame = {}, onRules = {})
+        StartScreen(onStartGame = {}, onRules = {}, onSettings = {})
     }
 }
