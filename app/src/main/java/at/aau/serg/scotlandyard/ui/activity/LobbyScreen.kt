@@ -1,15 +1,9 @@
 package at.aau.serg.scotlandyard.ui.activity
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -23,30 +17,13 @@ import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 
 @Composable
 fun LobbyScreen(onBackClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF0D1B2A)) // dunkler Hintergrund
-    ) {
+    BaseScreen(onBackClick = onBackClick) { modifier ->
         Column(
-            modifier = Modifier
+            modifier = modifier
                 .fillMaxSize()
                 .padding(24.dp),
             verticalArrangement = Arrangement.Top
         ) {
-            // Zurück-Button
-            IconButton(
-                onClick = onBackClick,
-                modifier = Modifier
-                    .align(Alignment.Start)
-                    .padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Zurück",
-                    tint = Color.White
-                )
-            }
 
             // Titel
             Text(
