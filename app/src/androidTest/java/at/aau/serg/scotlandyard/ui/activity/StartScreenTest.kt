@@ -67,4 +67,3 @@ class StartScreenTest {
         composeTestRule.onNodeWithText("Hunt Mr. X ecofriendly").assertExists()
     }
 }
-

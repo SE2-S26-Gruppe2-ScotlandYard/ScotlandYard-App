@@ -1,7 +1,6 @@
 package at.aau.serg.scotlandyard.ui.activity
 
 import androidx.compose.material3.Text
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.sp
@@ -13,8 +12,7 @@ import org.junit.runner.RunWith
 
 /**
  * Simple UI test for BaseScreen composable.
- * Verifies that the BaseScreen reusable component renders correctly
- * and properly calls the back button callback.
+ * Verifies that the BaseScreen reusable component renders correctly.
  */
 @RunWith(AndroidJUnit4::class)
 class BaseScreenTest {
@@ -24,12 +22,10 @@ class BaseScreenTest {
 
     @Test
     fun baseScreen_renders_successfully() {
-        var backClicked = false
-
         composeTestRule.setContent {
             ScotlandYardTheme {
                 BaseScreen(
-                    onBackClick = { backClicked = true },
+                    onBackClick = {},
                     content = { modifier ->
                         Text(
                             text = "Test Content",

@@ -43,4 +43,3 @@ class RulesScreenTest {
         composeTestRule.onNodeWithText("👥 Rollen").assertExists()
     }
 }
-
