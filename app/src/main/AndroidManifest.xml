@@ -18,6 +18,7 @@
         <activity
             android:name="at.aau.serg.scotlandyard.ui.activity.MainActivity"
             android:exported="true"
+            android:screenOrientation="landscape"
             android:theme="@style/Theme.ScotlandYard">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
