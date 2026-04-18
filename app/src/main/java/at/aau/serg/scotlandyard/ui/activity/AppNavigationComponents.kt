@@ -374,7 +374,7 @@ private fun ticketStyle(type: AppTicketType): TicketVisualStyle {
     }
 }
 
-@Preview(showBackground = true, widthDp = 320, heightDp = 420)
+@Preview(showBackground = true, widthDp = 320, heightDp = 800)
 @Composable
 fun TicketButtonsPreview() {
     ScotlandYardTheme {
