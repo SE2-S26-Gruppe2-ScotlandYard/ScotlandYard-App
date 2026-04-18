@@ -5,10 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,23 +32,15 @@ fun BaseScreen(
                 .fillMaxSize()
                 .padding(24.dp)
         ) {
-            // Zurück-Button
-            IconButton(
+            AppBackButton(
                 onClick = onBackClick,
                 modifier = Modifier
                     .align(Alignment.Start)
                     .padding(bottom = 16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Zurück",
-                    tint = Color.White
-                )
-            }
+            )
 
             // Screen-specific content
             content(Modifier)
         }
     }
 }
-
