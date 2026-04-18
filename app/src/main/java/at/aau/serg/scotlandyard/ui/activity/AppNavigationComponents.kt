@@ -46,7 +46,13 @@ private val NavigationIconTint = Color(0xFFE0E0E0)
 private val ActionButtonColor = Color(0xFF1A4A3A)
 private val DarkActionButtonColor = Color(0xFF102920)
 private val ActionButtonShape = RoundedCornerShape(6.dp)
-private val TicketButtonShape = RoundedCornerShape(12.dp)
+private val TicketButtonShape = RoundedCornerShape(16.dp)
+
+private val TicketCardHeight = 120.dp
+private val TicketBandHeight = 25.dp
+private val TicketOuterDiscSize = 64.dp
+private val TicketInnerDiscSize = 56.dp
+private val TicketLabelSize = 20.sp
 
 private val WalkingTicketColor = Color(0xFFD4B963)
 private val EScooterTicketColor = Color(0xFF3D8E79)
@@ -169,7 +175,8 @@ private data class TicketCardStyle(
     val id: String,
     val label: String,
     val backgroundColor: Color,
-    val centerStyle: TicketCenterStyle
+    val centerStyle: TicketCenterStyle,
+    val centerText: String = ""
 )
 
 private val ticketPreviewData = listOf(
@@ -177,7 +184,7 @@ private val ticketPreviewData = listOf(
     TicketCardStyle("e_scooter", "E-SCOOTER", EScooterTicketColor, TicketCenterStyle.EScooterIcon),
     TicketCardStyle("car_sharing", "CAR SHARING", CarSharingTicketColor, TicketCenterStyle.CarIcon),
     TicketCardStyle("black_ticket", "BLACK TICKET", BlackTicketColor, TicketCenterStyle.EmptyCircle),
-    TicketCardStyle("multiplier", "2x", DoubleTicketColor, TicketCenterStyle.Text2x)
+    TicketCardStyle("multiplier", "2X", DoubleTicketColor, TicketCenterStyle.Text2x, centerText = "2x")
 )
 
 @Composable
@@ -228,7 +235,7 @@ private fun TicketCard(
 ) {
     Card(
         modifier = modifier
-            .height(100.dp)
+            .height(TicketCardHeight)
             .border(
                 width = 1.dp,
                 color = Color(0xFFFFFFFF),
@@ -241,7 +248,7 @@ private fun TicketCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 10.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
@@ -251,13 +258,13 @@ private fun TicketCard(
                 centerText = centerText,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(44.dp)
+                    .height(68.dp)
             )
 
             Text(
                 text = label,
                 color = Color.White,
-                fontSize = 18.sp,
+                fontSize = TicketLabelSize,
                 fontFamily = FontFamily.SansSerif,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
@@ -275,66 +282,61 @@ private fun TicketGraphic(
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier) {
-        Row(
+        Spacer(
             modifier = Modifier
                 .fillMaxWidth()
-                .align(Alignment.Center),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(10.dp)
-                    .background(Color.White)
-            )
-            Spacer(modifier = Modifier.size(48.dp))
-            Spacer(
-                modifier = Modifier
-                    .weight(1f)
-                    .height(10.dp)
-                    .background(Color.White)
-            )
-        }
+                .height(TicketBandHeight)
+                .align(Alignment.Center)
+                .background(Color.White)
+        )
 
+        // Outer disc in ticket color cuts through the white band and sits on top.
         Box(
             modifier = Modifier
-                .size(48.dp)
+                .size(TicketOuterDiscSize)
                 .align(Alignment.Center)
-                .background(Color.White, CircleShape),
+                .background(ticketColor, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            when (centerStyle) {
-                TicketCenterStyle.WalkingIcon -> Icon(
-                    imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
-                    contentDescription = "Walking",
-                    tint = ticketColor,
-                    modifier = Modifier.size(24.dp)
-                )
+            Box(
+                modifier = Modifier
+                    .size(TicketInnerDiscSize)
+                    .background(Color.White, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                when (centerStyle) {
+                    TicketCenterStyle.WalkingIcon -> Icon(
+                        imageVector = Icons.AutoMirrored.Filled.DirectionsWalk,
+                        contentDescription = "Walking",
+                        tint = ticketColor,
+                        modifier = Modifier.size(28.dp)
+                    )
 
-                TicketCenterStyle.EScooterIcon -> Icon(
-                    imageVector = Icons.Default.ElectricScooter,
-                    contentDescription = "E-Scooter",
-                    tint = ticketColor,
-                    modifier = Modifier.size(24.dp)
-                )
+                    TicketCenterStyle.EScooterIcon -> Icon(
+                        imageVector = Icons.Default.ElectricScooter,
+                        contentDescription = "E-Scooter",
+                        tint = ticketColor,
+                        modifier = Modifier.size(28.dp)
+                    )
 
-                TicketCenterStyle.CarIcon -> Icon(
-                    imageVector = Icons.Default.DirectionsCar,
-                    contentDescription = "Car Sharing",
-                    tint = ticketColor,
-                    modifier = Modifier.size(24.dp)
-                )
+                    TicketCenterStyle.CarIcon -> Icon(
+                        imageVector = Icons.Default.DirectionsCar,
+                        contentDescription = "Car Sharing",
+                        tint = ticketColor,
+                        modifier = Modifier.size(28.dp)
+                    )
 
-                TicketCenterStyle.Text2x,
-                TicketCenterStyle.TextValue -> Text(
-                    text = centerText,
-                    color = ticketColor,
-                    fontSize = 18.sp,
-                    fontFamily = FontFamily.SansSerif,
-                    fontWeight = FontWeight.Bold
-                )
+                    TicketCenterStyle.Text2x,
+                    TicketCenterStyle.TextValue -> Text(
+                        text = centerText,
+                        color = ticketColor,
+                        fontSize = 22.sp,
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Bold
+                    )
 
-                TicketCenterStyle.EmptyCircle -> Unit
+                    TicketCenterStyle.EmptyCircle -> Unit
+                }
             }
         }
     }
@@ -352,7 +354,9 @@ fun AppTicketButton(
         label = style.label,
         ticketColor = style.backgroundColor,
         centerStyle = style.centerStyle,
-        centerText = if (style.centerStyle == TicketCenterStyle.TextValue) count.toString() else "2x",
+        centerText = style.centerText.ifBlank {
+            if (style.centerStyle == TicketCenterStyle.TextValue) count.toString() else ""
+        },
         onClick = onClick,
         modifier = modifier
     )
@@ -361,7 +365,8 @@ fun AppTicketButton(
 private data class TicketVisualStyle(
     val label: String,
     val backgroundColor: Color,
-    val centerStyle: TicketCenterStyle
+    val centerStyle: TicketCenterStyle,
+    val centerText: String = ""
 )
 
 private fun ticketStyle(type: AppTicketType): TicketVisualStyle {
@@ -370,7 +375,7 @@ private fun ticketStyle(type: AppTicketType): TicketVisualStyle {
         AppTicketType.EScooter -> TicketVisualStyle("E-SCOOTER", EScooterTicketColor, TicketCenterStyle.EScooterIcon)
         AppTicketType.CarSharing -> TicketVisualStyle("CAR SHARING", CarSharingTicketColor, TicketCenterStyle.CarIcon)
         AppTicketType.Black -> TicketVisualStyle("BLACK TICKET", BlackTicketColor, TicketCenterStyle.EmptyCircle)
-        AppTicketType.Double -> TicketVisualStyle("2x", DoubleTicketColor, TicketCenterStyle.Text2x)
+        AppTicketType.Double -> TicketVisualStyle("2X", DoubleTicketColor, TicketCenterStyle.Text2x, centerText = "2x")
     }
 }
 
@@ -389,7 +394,7 @@ fun TicketButtonsPreview() {
                     label = ticket.label,
                     ticketColor = ticket.backgroundColor,
                     centerStyle = ticket.centerStyle,
-                    centerText = if (ticket.centerStyle == TicketCenterStyle.Text2x) "2x" else "",
+                    centerText = ticket.centerText,
                     onClick = {},
                     modifier = Modifier.fillMaxWidth()
                 )
