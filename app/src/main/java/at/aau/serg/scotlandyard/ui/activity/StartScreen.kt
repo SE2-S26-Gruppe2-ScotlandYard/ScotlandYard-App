@@ -25,6 +25,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import at.aau.serg.scotlandyard.ui.components.AppActionButton
+import at.aau.serg.scotlandyard.ui.components.AppDarkActionButton
+import at.aau.serg.scotlandyard.ui.components.AppSettingsButton
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import com.example.scotlandyard.R
 

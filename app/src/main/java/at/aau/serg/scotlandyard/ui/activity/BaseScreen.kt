@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import at.aau.serg.scotlandyard.ui.components.AppBackButton
 
 /**
  * Reusable base screen composable with common layout (back button + title area + content).
