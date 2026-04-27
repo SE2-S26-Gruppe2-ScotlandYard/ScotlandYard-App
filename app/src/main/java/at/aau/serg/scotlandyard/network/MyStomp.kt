@@ -8,6 +8,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.hildan.krossbow.stomp.StompClient
 import org.hildan.krossbow.stomp.StompSession
@@ -34,34 +37,47 @@ class MyStomp(val callbacks: Callbacks) {
     private var movementCollector: Job? = null
     private val errorMsg : String = "Error: Not connected"
 
+    private val _isConnected = MutableStateFlow(false)
+    val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
+
     fun connect() {
         client = StompClient(OkHttpWebSocketClient()) // other config can be passed in here
         scope.launch {
             try {
                 val activeSession = client.connect(WEBSOCKET_URI)
                 session = activeSession
+                _isConnected.value = true
 
                 // connect to topic
                 topicFlow = activeSession.subscribeText("/topic/hello-response")
                 collector = scope.launch {
-                    topicFlow?.collect { msg ->
-                        // TODO logic
-                        callback(msg)
+                    try {
+                        topicFlow?.collect { msg ->
+                            // TODO logic
+                            callback(msg)
+                        }
+                    } catch (e: Exception) {
+                        _isConnected.value = false
                     }
                 }
 
                 // connect to JSON topic
                 jsonFlow = activeSession.subscribeText("/topic/rcv-object")
                 jsonCollector = scope.launch {
-                    jsonFlow?.collect { msg ->
-                        val o = JSONObject(msg)
-                        callback(o.get("text").toString())
+                    try {
+                        jsonFlow?.collect { msg ->
+                            val o = JSONObject(msg)
+                            callback(o.get("text").toString())
+                        }
+                    } catch (e: Exception) {
+                        _isConnected.value = false
                     }
                 }
                 callback("connected to server")
 
             } catch (e: Exception) {
                 Log.e("MyStomp", "Connection failed", e)
+                _isConnected.value = false
                 callback("Connection error")
             }
         }
