@@ -58,6 +58,18 @@ class MainActivity : ComponentActivity() {
                     composable("settings") {
                         SettingsScreen(onBackClick = { navController.popBackStack() })
                     }
+                    composable("mrxwin") {
+                        MrXWinScreen(
+                            onBackClick = { navController.navigate("start") },
+                            onQuit = { (navController.context as? android.app.Activity)?.finish() }
+                        )
+                    }
+                    composable("detectiveswin") {
+                        DetectivesWinScreen(
+                            onBackClick = { navController.navigate("start") },
+                            onQuit = { (navController.context as? android.app.Activity)?.finish() }
+                        )
+                    }
                 }
             }
         }
