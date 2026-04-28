@@ -44,6 +44,7 @@ class MainActivity : ComponentActivity() {
                     composable("login") {
                         LoginScreen(
                             onLoginSuccess = { navController.navigate("lobby") },
+                            //onLoginSuccess = { navController.navigate("assign_start_position") },
                             onBackClick = { navController.popBackStack() },
                             onRefreshClick = { authViewModel.reconnect() },
                             isConnectedToServer = isConnected
@@ -57,6 +58,12 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("settings") {
                         SettingsScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    composable("assign_start_position") {
+                        AssignStartPositionScreen(
+                            onBackClick = { navController.popBackStack() },
+                            onPositionConfirmed = { navController.navigate("game") }
+                        )
                     }
                 }
             }
