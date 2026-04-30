@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.aau.serg.scotlandyard.ui.components.AppActionButton
 import at.aau.serg.scotlandyard.ui.components.AppDarkActionButton
-import com.example.scotlandyard.R
 
 /**
  * Generic win screen composable used for both Detectives and Mr. X win scenarios.
