@@ -43,7 +43,10 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("login") {
                         LoginScreen(
-                            onLoginSuccess = { navController.navigate("lobby") },
+                            onConnectClick = { nickname ->
+                                // TODO: Später hier den Nickname ans ViewModel übergeben (z.B. authViewModel.connectUser(nickname))
+                                navController.navigate("lobby")
+                            },
                             onBackClick = { navController.popBackStack() },
                             onRefreshClick = { authViewModel.reconnect() },
                             isConnectedToServer = isConnected
