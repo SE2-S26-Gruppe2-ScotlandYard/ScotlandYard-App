@@ -27,6 +27,9 @@ class MyStomp(val callbacks: Callbacks) {
     private var jsonFlow: Flow<String>? = null
     private var jsonCollector: Job? = null
 
+    private var userFlow: Flow<String>? = null
+    private var userCollector: Job? = null
+
     private lateinit var client: StompClient
     private var session: StompSession? = null
 
@@ -41,51 +44,88 @@ class MyStomp(val callbacks: Callbacks) {
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
 
     fun connect() {
-        client = StompClient(OkHttpWebSocketClient()) // other config can be passed in here
+        client = StompClient(OkHttpWebSocketClient())
         scope.launch {
-            try {
-                val activeSession = client.connect(WEBSOCKET_URI)
-                session = activeSession
-                _isConnected.value = true
+            var isSuccessfullyConnected = false
 
-                // connect to topic
-                topicFlow = activeSession.subscribeText("/topic/hello-response")
-                collector = scope.launch {
-                    try {
-                        topicFlow?.collect { msg ->
-                            // TODO logic
-                            callback(msg)
+            while (!isSuccessfullyConnected) {
+                try {
+                    Log.d("MyStomp", "Versuche Verbindung zum Server...")
+                    val activeSession = client.connect(WEBSOCKET_URI)
+                    session = activeSession
+                    _isConnected.value = true
+                    isSuccessfullyConnected = true // Schleife beenden
+
+                    // Subscriptions (Hello)
+                    topicFlow = activeSession.subscribeText("/topic/hello-response")
+                    collector = scope.launch {
+                        try {
+                            topicFlow?.collect { msg -> callback(msg) }
+                        } catch (e: Exception) {
+                            handleDisconnect()
                         }
-                    } catch (e: Exception) {
-                        _isConnected.value = false
                     }
-                }
 
-                // connect to JSON topic
-                jsonFlow = activeSession.subscribeText("/topic/rcv-object")
-                jsonCollector = scope.launch {
-                    try {
-                        jsonFlow?.collect { msg ->
-                            val o = JSONObject(msg)
-                            callback(o.get("text").toString())
+                    // Subscriptions (JSON)
+                    jsonFlow = activeSession.subscribeText("/topic/rcv-object")
+                    jsonCollector = scope.launch {
+                        try {
+                            jsonFlow?.collect { msg ->
+                                val o = JSONObject(msg)
+                                callback(o.get("text").toString())
+                            }
+                        } catch (e: Exception) {
+                            handleDisconnect()
                         }
-                    } catch (e: Exception) {
-                        _isConnected.value = false
                     }
-                }
-                callback("connected to server")
 
-            } catch (e: Exception) {
-                Log.e("MyStomp", "Connection failed", e)
-                _isConnected.value = false
-                callback("Connection error")
+                    // Subscriptions (User)
+                    userFlow = activeSession.subscribeText("/topic/user-response")
+                    userCollector = scope.launch {
+                        try {
+                            userFlow?.collect { msg -> callback(msg) }
+                        } catch (e: Exception) {
+                            handleDisconnect()
+                        }
+                    }
+
+                    callback("connected to server")
+                    Log.d("MyStomp", "Verbindung erfolgreich hergestellt.")
+
+                } catch (e: Exception) {
+                    Log.e("MyStomp", "Verbindung fehlgeschlagen. Erneuter Versuch in 5 Sekunden...", e)
+                    _isConnected.value = false
+                    // Warte 5 Sekunden, bevor der nächste Versuch startet
+                    kotlinx.coroutines.delay(5000)
+                }
             }
+        }
+    }
+    private fun handleDisconnect() {
+        if (_isConnected.value) {
+            _isConnected.value = false
+            callback("Connection lost. Reconnecting...")
+            connect() // Startet den Loop von vorne
         }
     }
 
     private fun callback(msg: String) {
         Handler(Looper.getMainLooper()).post {
             callbacks.onResponse(msg)
+        }
+    }
+
+    // Methode um Nickname an Server zu senden
+    fun sendUserConnect(nickname: String) {
+        val json = JSONObject()
+        json.put("nickName", nickname)
+
+        scope.launch {
+            try {
+                session?.sendText("/app/user/connect", json.toString()) ?: callback(errorMsg)
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Send UserConnect failed", e)
+            }
         }
     }
 
@@ -129,7 +169,6 @@ class MyStomp(val callbacks: Callbacks) {
                     session = activeSession
                 }
 
-                // subscribe movement topic
                 movementFlow = session?.subscribeText("/topic/game/$gameId/movements")
                 movementCollector = scope.launch {
                     movementFlow?.collect { msg -> callback("movement:$msg") }
@@ -145,7 +184,7 @@ class MyStomp(val callbacks: Callbacks) {
     }
 
     fun sendMove(gameId: String, playerId: String, ticket: String, targetPosition: Int) {
-        val json = JSONObject().apply {                                 // use json to transmit the data
+        val json = JSONObject().apply {
             put("gameId", gameId)
             put("playerId", playerId)
             put("ticket", ticket)

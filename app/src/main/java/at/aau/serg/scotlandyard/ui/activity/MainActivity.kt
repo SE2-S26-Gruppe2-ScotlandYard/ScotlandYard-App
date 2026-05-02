@@ -1,20 +1,18 @@
 package at.aau.serg.scotlandyard.ui.activity
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import at.aau.serg.scotlandyard.ui.activity.StartScreen
-import at.aau.serg.scotlandyard.ui.activity.RulesScreen
-import at.aau.serg.scotlandyard.ui.activity.LobbyScreen
-import at.aau.serg.scotlandyard.ui.activity.SettingsScreen
-import at.aau.serg.scotlandyard.ui.activity.LoginScreen
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
 
@@ -22,17 +20,23 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        // setContent { } startet die Compose-UI — kein XML mehr
         setContent {
             ScotlandYardTheme {
-                // Initialize the ViewModel which automatically attempts to connect
                 val authViewModel: AuthViewModel = viewModel()
-                // Observe the connection state from the ViewModel
                 val isConnected by authViewModel.isConnected.collectAsState()
 
-                // navController remembers the screen
+                val currentUser by authViewModel.currentUser.collectAsState()
+                val errorMessage by authViewModel.errorMessage.collectAsState()
+
                 val navController = rememberNavController()
-                // NavHost defines all Screens and Names
+                val context = LocalContext.current
+
+                LaunchedEffect(errorMessage) {
+                    errorMessage?.let {
+                        Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                    }
+                }
+
                 NavHost(navController = navController, startDestination = "start") {
                     composable("start") {
                         StartScreen(
@@ -42,10 +46,17 @@ class MainActivity : ComponentActivity() {
                         )
                     }
                     composable("login") {
+                        LaunchedEffect(currentUser) {
+                            if (currentUser != null) {
+                                navController.navigate("lobby") {
+                                    popUpTo("login") { inclusive = true }
+                                }
+                            }
+                        }
+
                         LoginScreen(
                             onConnectClick = { nickname ->
-                                // TODO: Später hier den Nickname ans ViewModel übergeben (z.B. authViewModel.connectUser(nickname))
-                                navController.navigate("lobby")
+                                authViewModel.connectUser(nickname)
                             },
                             onBackClick = { navController.popBackStack() },
                             onRefreshClick = { authViewModel.reconnect() },
