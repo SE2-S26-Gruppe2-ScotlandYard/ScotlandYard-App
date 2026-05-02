@@ -2,12 +2,15 @@ package at.aau.serg.scotlandyard.viewmodel
 
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import at.aau.serg.scotlandyard.Callbacks
 import at.aau.serg.scotlandyard.network.MyStomp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import com.google.gson.Gson
+
 import at.aau.serg.scotlandyard.dtos.UserConnectResponse
 import at.aau.serg.scotlandyard.dtos.User
 
@@ -26,6 +29,14 @@ class AuthViewModel : ViewModel(), Callbacks {
 
     init {
         myStomp.connect()
+
+        viewModelScope.launch {
+            myStomp.isConnected.collect { connected ->
+                if (!connected) {
+                    _currentUser.value = null
+                }
+            }
+        }
     }
 
     fun reconnect() {
