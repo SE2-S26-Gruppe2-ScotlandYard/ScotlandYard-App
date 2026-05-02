@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
@@ -24,12 +25,28 @@ class MainActivity : ComponentActivity() {
             ScotlandYardTheme {
                 val authViewModel: AuthViewModel = viewModel()
                 val isConnected by authViewModel.isConnected.collectAsState()
-
                 val currentUser by authViewModel.currentUser.collectAsState()
                 val errorMessage by authViewModel.errorMessage.collectAsState()
 
                 val navController = rememberNavController()
                 val context = LocalContext.current
+
+                // Erfasst, auf welchem Screen sich der User aktuell befindet
+                val currentBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = currentBackStackEntry?.destination?.route
+
+                // Auto-Kick bei Verbindungsverlust
+                LaunchedEffect(isConnected) {
+                    // Wenn die Verbindung weg ist UND der User nicht sowieso schon auf start/login ist
+                    if (!isConnected && currentRoute != null && currentRoute != "start" && currentRoute != "login") {
+                        Toast.makeText(context, "Verbindung zum Server verloren!", Toast.LENGTH_LONG).show()
+
+                        navController.navigate("start") {
+                            // löscht die gesamte Navigations-Historie.
+                            popUpTo(0)
+                        }
+                    }
+                }
 
                 LaunchedEffect(errorMessage) {
                     errorMessage?.let {
