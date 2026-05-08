@@ -53,7 +53,7 @@ class MyStomp(val callbacks: Callbacks) {
                 } catch (e: Exception) {
                     Log.e("MyStomp", "Verbindung fehlgeschlagen. Erneuter Versuch in 5 Sekunden...", e)
                     _isConnected.value = false
-                    // Warte 5 Sekunden, bevor der nächste Versuch startet
+                    // Warte 5 Sekunden bevor der nächste Versuch startet
                     kotlinx.coroutines.delay(5000)
                 }
             }
