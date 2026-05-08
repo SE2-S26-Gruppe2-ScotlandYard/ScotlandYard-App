@@ -56,7 +56,7 @@ class AuthViewModel : ViewModel(), Callbacks {
         try {
             val response = gson.fromJson(res, UserConnectResponse::class.java)
 
-            if (response != null && response.message != null) {
+            if (response != null) {
                 if (response.success) {
                     _currentUser.value = response.user
                 } else {

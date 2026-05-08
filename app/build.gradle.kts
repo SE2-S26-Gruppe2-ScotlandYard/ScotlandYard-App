@@ -127,6 +127,7 @@ dependencies {
     implementation(libs.androidx.material.icons)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.gson)
     testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
@@ -137,5 +138,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation("com.google.code.gson:gson:2.10.1")
 }
