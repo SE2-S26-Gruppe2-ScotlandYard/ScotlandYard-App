@@ -321,18 +321,32 @@ private fun SidePanelTicketButton(
     }
 }
 
-// TODO: Constrain board to limit panning
 @Composable
 private fun BoardArea(modifier: Modifier = Modifier) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
+    // Board canvas size in dp - must match GameBoardCanvas size below!
+    val boardWidthDp  = 600f
+    val boardHeightDp = 480f
+    val minVisibleDp  = 40f
+
     val transformState = rememberTransformableState { zoomChange, panChange, _ ->
         scale = (scale * zoomChange).coerceIn(0.8f, 5f)
-        offset = Offset(
-            x = offset.x + panChange.x,
-            y = offset.y + panChange.y
+
+        val halfW = (boardWidthDp  * scale) / 2f
+        val halfH = (boardHeightDp * scale) / 2f
+
+        // Board center may move until only minVisibleDp of the board sticks out on the side
+        val maxX = halfW - minVisibleDp
+        val maxY = halfH - minVisibleDp
+
+        val newOffset = Offset(
+            x = (offset.x + panChange.x).coerceIn(-maxX, maxX),
+            y = (offset.y + panChange.y).coerceIn(-maxY, maxY)
         )
+
+        offset = newOffset
     }
 
     Box(
