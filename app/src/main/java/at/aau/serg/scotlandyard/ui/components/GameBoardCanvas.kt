@@ -52,20 +52,18 @@ fun GameBoardCanvas(
     highlightedEdgeTargets: Set<Int> = emptySet(),
     playerPositions: Map<Color, Int> = emptyMap()
 ) {
-    val positions = remember {
-        BoardData.nodePositions.mapValues { (_, pos) ->
-            Offset(
-                x = pos.first  * BOARD_WIDTH_DP,
-                y = pos.second * BOARD_HEIGHT_DP
-            )
-        }
-    }
-
     Canvas(
         modifier = modifier
             .size(BOARD_WIDTH_DP.dp, BOARD_HEIGHT_DP.dp)
             .background(BgColor)
     ) {
+        val positions = BoardData.nodePositions.mapValues { (_, pos) ->
+            Offset(
+                x = pos.first * size.width,
+                y = pos.second * size.height
+            )
+        }
+
         // 1. Edges (drawn below nodes so nodes sit on top)
         drawEdges(positions, highlightedEdgeTargets)
 
