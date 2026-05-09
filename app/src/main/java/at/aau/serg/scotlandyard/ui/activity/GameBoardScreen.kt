@@ -1,5 +1,7 @@
 package at.aau.serg.scotlandyard.ui.activity
 
+import android.R.attr.viewportHeight
+import android.R.attr.viewportWidth
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -41,8 +43,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -51,6 +54,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.aau.serg.scotlandyard.model.TicketType
 import at.aau.serg.scotlandyard.model.TicketStyleProvider
+import at.aau.serg.scotlandyard.ui.components.BOARD_HEIGHT_DP
+import at.aau.serg.scotlandyard.ui.components.BOARD_WIDTH_DP
+import at.aau.serg.scotlandyard.ui.components.GameBoardCanvas
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 
 private val BackgroundDark = Color(0xFF0D1B2A)
@@ -62,9 +68,6 @@ private val AccentTeal = Color(0xFF1A4A3A)
 private val AccentGlow = Color(0xFF22AA80)
 private val TextPrimary = Color(0xFFE8EEF4)
 private val TextMuted = Color(0xFF7A96B0)
-
-private const val boardWidthDp  = 600f
-private const val boardHeightDp = 480f
 
 enum class PlayerRole { DETECTIVE, MR_X }
 
@@ -123,9 +126,9 @@ private fun SidePanel(
     onTicketSelect: (TicketType) -> Unit
 ) {
     val visibleTickets = if (isMrX)
-        listOf(TicketType.Walking, TicketType.EScooter, TicketType.CarSharing, TicketType.Black, TicketType.Double)
+        listOf(TicketType.WALKING, TicketType.ESCOOTER, TicketType.CARSHARING, TicketType.BLACK, TicketType.DOUBLE)
     else
-        listOf(TicketType.Walking, TicketType.EScooter, TicketType.CarSharing)
+        listOf(TicketType.WALKING, TicketType.ESCOOTER, TicketType.CARSHARING)
 
     Column(
         modifier = Modifier
@@ -329,23 +332,34 @@ private fun BoardArea(modifier: Modifier = Modifier) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
-    val minVisibleDp  = 40f
+    var viewportWidth  by remember { mutableFloatStateOf(0f) }
+    var viewportHeight by remember { mutableFloatStateOf(0f) }
+
+    val boardWidthDp  = BOARD_WIDTH_DP
+    val boardHeightDp = BOARD_HEIGHT_DP
+    val density = LocalDensity.current
 
     val transformState = rememberTransformableState { zoomChange, panChange, _ ->
-        scale = (scale * zoomChange).coerceIn(0.8f, 5f)
+        val newScale = (scale * zoomChange).coerceIn(0.8f, 5f)
 
-        val halfW = (boardWidthDp  * scale) / 2f
-        val halfH = (boardHeightDp * scale) / 2f
+        val boardWidthPx  = boardWidthDp  * density.density
+        val boardHeightPx = boardHeightDp * density.density
 
-        // Board center may move until only minVisibleDp of the board sticks out on the side
-        val maxX = halfW - minVisibleDp
-        val maxY = halfH - minVisibleDp
+        val scaledHalfW = (boardWidthPx  * newScale) / 2f
+        val scaledHalfH = (boardHeightPx * newScale) / 2f
+        val viewHalfW   = viewportWidth  / 2f
+        val viewHalfH   = viewportHeight / 2f
+
+        val xPaddingPx = 200f * density.density
+        val maxX = (scaledHalfW - viewHalfW + xPaddingPx).coerceAtLeast(0f)
+        val maxY = (scaledHalfH - viewHalfH).coerceAtLeast(0f)
 
         val newOffset = Offset(
             x = (offset.x + panChange.x).coerceIn(-maxX, maxX),
             y = (offset.y + panChange.y).coerceIn(-maxY, maxY)
         )
 
+        scale  = newScale
         offset = newOffset
     }
 
@@ -353,7 +367,11 @@ private fun BoardArea(modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF0A1520))
-            .transformable(state = transformState),
+            .transformable(state = transformState)
+            .onSizeChanged { size ->
+                viewportWidth  = size.width.toFloat()
+                viewportHeight = size.height.toFloat()
+            },
         contentAlignment = Alignment.Center
     ) {
         Box(
@@ -380,25 +398,14 @@ private fun BoardArea(modifier: Modifier = Modifier) {
     }
 }
 
-// Placeholder board canvas TODO: Replace with actual gameboard rendering
-@Composable
-private fun GameBoardCanvas() {
-    Canvas(
-        modifier = Modifier
-            .size(boardWidthDp.dp, boardHeightDp.dp)
-            .background(Color(0xFF0F2235), RoundedCornerShape(8.dp))
-            .border(1.dp, Color(0xFF1E3347), RoundedCornerShape(8.dp))
-    ) {}
-}
-
 // Ticket Count helper TODO: Replace hardcoded values with requests to server
 fun defaultTicketCounts(isMrX: Boolean): Map<TicketType, Int> = buildMap {
-    put(TicketType.Walking,    isMrX.not().let { if (it) 10 else 4 })
-    put(TicketType.EScooter,   isMrX.not().let { if (it) 8  else 3 })
-    put(TicketType.CarSharing, isMrX.not().let { if (it) 4  else 3 })
+    put(TicketType.WALKING,    isMrX.not().let { if (it) 10 else 4 })
+    put(TicketType.ESCOOTER,   isMrX.not().let { if (it) 8  else 3 })
+    put(TicketType.CARSHARING, isMrX.not().let { if (it) 4  else 3 })
     if (isMrX) {
-        put(TicketType.Black,  5)
-        put(TicketType.Double, 2)
+        put(TicketType.BLACK,  5)
+        put(TicketType.DOUBLE, 2)
     }
 }
 
