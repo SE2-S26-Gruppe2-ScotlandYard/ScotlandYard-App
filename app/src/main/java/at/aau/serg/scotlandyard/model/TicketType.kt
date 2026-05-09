@@ -3,11 +3,11 @@ package at.aau.serg.scotlandyard.model
 import androidx.compose.ui.graphics.Color
 
 enum class TicketType {
-    Walking,
-    EScooter,
-    CarSharing,
-    Black,
-    Double
+    WALKING,
+    ESCOOTER,
+    CARSHARING,
+    BLACK,
+    DOUBLE
 }
 
 data class TicketStyle(
@@ -36,32 +36,32 @@ object TicketStyleProvider {
 
     fun fromType(type: TicketType): TicketStyle {
         return when (type) {
-            TicketType.Walking -> TicketStyle(
-                type = TicketType.Walking,
+            TicketType.WALKING -> TicketStyle(
+                type = TicketType.WALKING,
                 label = "WALKING",
                 backgroundColor = WalkingTicketColor,
                 centerStyle = TicketCenterStyle.WalkingIcon
             )
-            TicketType.EScooter -> TicketStyle(
-                type = TicketType.EScooter,
+            TicketType.ESCOOTER -> TicketStyle(
+                type = TicketType.ESCOOTER,
                 label = "E-SCOOTER",
                 backgroundColor = EScooterTicketColor,
                 centerStyle = TicketCenterStyle.EScooterIcon
             )
-            TicketType.CarSharing -> TicketStyle(
-                type = TicketType.CarSharing,
+            TicketType.CARSHARING -> TicketStyle(
+                type = TicketType.CARSHARING,
                 label = "CAR SHARING",
                 backgroundColor = CarSharingTicketColor,
                 centerStyle = TicketCenterStyle.CarIcon
             )
-            TicketType.Black -> TicketStyle(
-                type = TicketType.Black,
+            TicketType.BLACK -> TicketStyle(
+                type = TicketType.BLACK,
                 label = "BLACK TICKET",
                 backgroundColor = BlackTicketColor,
                 centerStyle = TicketCenterStyle.EmptyCircle
             )
-            TicketType.Double -> TicketStyle(
-                type = TicketType.Double,
+            TicketType.DOUBLE -> TicketStyle(
+                type = TicketType.DOUBLE,
                 label = "2X",
                 backgroundColor = DoubleTicketColor,
                 centerStyle = TicketCenterStyle.Text2x,
