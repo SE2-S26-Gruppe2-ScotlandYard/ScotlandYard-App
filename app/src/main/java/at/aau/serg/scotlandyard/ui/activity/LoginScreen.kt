@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Refresh
@@ -40,8 +39,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -51,14 +48,12 @@ import com.example.scotlandyard.R
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit,
+    onConnectClick: (String) -> Unit,
     onBackClick: () -> Unit,
-    onRefreshClick: () -> Unit = {}, // parameter for refreshing connection
-    isConnectedToServer: Boolean = false // default parameter for connection status
+    onRefreshClick: () -> Unit = {},
+    isConnectedToServer: Boolean = false
 ) {
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var isRegisterMode by remember { mutableStateOf(false) }
+    var nickname by remember { mutableStateOf("") }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Background Image
@@ -140,7 +135,7 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = if (isRegisterMode) "REGISTER" else "LOGIN",
+                text = "NICKNAME",
                 fontSize = 40.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Serif,
@@ -150,33 +145,11 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Username Field
+            // Nickname Field
             OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                label = { Text("Username", color = Color.LightGray) },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.White,
-                    unfocusedBorderColor = Color.LightGray,
-                    focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
-                ),
-                modifier = Modifier.width(300.dp),
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Password Field
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Password", color = Color.LightGray) },
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    autoCorrectEnabled = false
-                ),
+                value = nickname,
+                onValueChange = { nickname = it },
+                label = { Text("Choose your Nickname", color = Color.LightGray) },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.White,
                     unfocusedBorderColor = Color.LightGray,
@@ -189,12 +162,12 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Main Action Button (Login or Register)
+            /// Main Action Button
             Button(
                 onClick = {
-                    // TODO: Implement actual network call for login/register here
-                    // For now just succeed and navigate to lobby
-                    onLoginSuccess()
+                    if (nickname.isNotBlank() && isConnectedToServer) {
+                        onConnectClick(nickname)
+                    }
                 },
                 modifier = Modifier
                     .width(260.dp)
@@ -206,41 +179,15 @@ fun LoginScreen(
                     ),
                 shape = RoundedCornerShape(6.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF1A4A3A) // teal/dark green
-                )
+                    containerColor = Color(0xFF1A4A3A)
+                ),
+                enabled = nickname.isNotBlank() && isConnectedToServer // <-- Fix here
             ) {
                 Text(
-                    text = if (isRegisterMode) "Create Account" else "Login",
+                    text = "Connect",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color.White
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Toggle Button
-            Button(
-                onClick = { isRegisterMode = !isRegisterMode },
-                modifier = Modifier
-                    .width(260.dp)
-                    .height(48.dp)
-                    .border(
-                        width = 1.dp,
-                        color = Color(0xAAFFFFFF),
-                        shape = RoundedCornerShape(6.dp)
-                    ),
-                shape = RoundedCornerShape(6.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.DarkGray
-                )
-            ) {
-                Text(
-                    text = if (isRegisterMode) "Already have an account? Login" else "Need an account? Register",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Normal,
-                    color = Color.White,
-                    textAlign = TextAlign.Center
+                    color = if (nickname.isNotBlank() && isConnectedToServer) Color.White else Color.LightGray // <-- Fix here
                 )
             }
         }
@@ -251,6 +198,6 @@ fun LoginScreen(
 @Composable
 fun LoginScreenPreview() {
     ScotlandYardTheme {
-        LoginScreen(onLoginSuccess = {}, onBackClick = {}, onRefreshClick = {}, isConnectedToServer = true)
+        LoginScreen(onConnectClick = {}, onBackClick = {}, onRefreshClick = {}, isConnectedToServer = true)
     }
 }
