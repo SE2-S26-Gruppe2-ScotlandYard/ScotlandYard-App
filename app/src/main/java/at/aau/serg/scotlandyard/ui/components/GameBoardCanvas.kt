@@ -6,7 +6,10 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -52,25 +55,35 @@ fun GameBoardCanvas(
     highlightedEdgeTargets: Set<Int> = emptySet(),
     playerPositions: Map<Color, Int> = emptyMap()
 ) {
+    var canvasWidth  by remember { mutableFloatStateOf(0f) }
+    var canvasHeight by remember { mutableFloatStateOf(0f) }
+
+    val positions = remember(canvasWidth, canvasHeight) {
+        if (canvasWidth == 0f || canvasHeight == 0f) emptyMap()
+        else BoardData.nodePositions.mapValues { (_, pos) ->
+            Offset(
+                x = pos.first  * canvasWidth,
+                y = pos.second * canvasHeight
+            )
+        }
+    }
+
     Canvas(
         modifier = modifier
             .size(BOARD_WIDTH_DP.dp, BOARD_HEIGHT_DP.dp)
             .background(BgColor)
     ) {
-        val positions = BoardData.nodePositions.mapValues { (_, pos) ->
-            Offset(
-                x = pos.first * size.width,
-                y = pos.second * size.height
-            )
+        if (size.width != canvasWidth || size.height != canvasHeight) {
+            canvasWidth  = size.width
+            canvasHeight = size.height
         }
 
-        // 1. Edges (drawn below nodes so nodes sit on top)
+        if (positions.isEmpty()) return@Canvas
+
         drawEdges(positions, highlightedEdgeTargets)
 
-        // 2. Station nodes + labels
         drawNodes(positions, highlightedNodes)
 
-        // 3. Player tokens
         drawPlayers(positions, playerPositions)
     }
 }
