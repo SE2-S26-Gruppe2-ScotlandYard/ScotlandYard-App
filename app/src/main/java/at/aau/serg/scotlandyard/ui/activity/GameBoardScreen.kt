@@ -63,6 +63,9 @@ private val AccentGlow = Color(0xFF22AA80)
 private val TextPrimary = Color(0xFFE8EEF4)
 private val TextMuted = Color(0xFF7A96B0)
 
+private const val boardWidthDp  = 600f
+private const val boardHeightDp = 480f
+
 enum class PlayerRole { DETECTIVE, MR_X }
 
 
@@ -326,9 +329,6 @@ private fun BoardArea(modifier: Modifier = Modifier) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
-    // Board canvas size in dp - must match GameBoardCanvas size below!
-    val boardWidthDp  = 600f
-    val boardHeightDp = 480f
     val minVisibleDp  = 40f
 
     val transformState = rememberTransformableState { zoomChange, panChange, _ ->
@@ -385,7 +385,7 @@ private fun BoardArea(modifier: Modifier = Modifier) {
 private fun GameBoardCanvas() {
     Canvas(
         modifier = Modifier
-            .size(600.dp, 480.dp)
+            .size(boardWidthDp.dp, boardHeightDp.dp)
             .background(Color(0xFF0F2235), RoundedCornerShape(8.dp))
             .border(1.dp, Color(0xFF1E3347), RoundedCornerShape(8.dp))
     ) {}
