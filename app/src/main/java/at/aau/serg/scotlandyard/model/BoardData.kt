@@ -6,11 +6,6 @@ data class BoardEdge(
     val transport: TicketType
 )
 
-// Node positions are normalised to [0..1] * [0..1] using a
-// Fruchterman-Reingold force-directed layout on the WALKING graph,
-// so neighbouring stations are spatially close.
-// Scale these to your Canvas size: x * canvasWidth, y * canvasHeight.
-
 object BoardData {
 
     val nodePositions: Map<Int, Pair<Float, Float>> = mapOf(
