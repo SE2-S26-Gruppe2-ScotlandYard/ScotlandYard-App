@@ -2,8 +2,6 @@ package at.aau.serg.scotlandyard.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -15,7 +13,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -27,17 +24,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.aau.serg.scotlandyard.model.BoardData
 import at.aau.serg.scotlandyard.model.TicketType
+import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
-
-
-private val BgColor = Color(0xFF0F2235)
-private val WalkingColor = Color(0xFFD4B963)
-private val EScooterColor = Color(0xFF3D8E79)
-private val CarSharingColor = Color(0xFFED2939) // Brown:0xFFA67C65
-private val BlackColor = Color(0xFFCC44CC)
-private val NodeFill = Color(0xFF1A3A55)
-private val NodeStroke = Color(0xFF1A4A3A)
-private val NodeTextColor = Color(0xFFE8EEF4)
 
 
 const val BOARD_WIDTH_DP = 900f
@@ -75,7 +63,7 @@ fun GameBoardCanvas(
     Canvas(
         modifier = modifier
             .size(BOARD_WIDTH_DP.dp, BOARD_HEIGHT_DP.dp)
-            .background(BgColor)
+            .background(CanvasBgColor)
     ) {
         if (size.width != canvasWidth || size.height != canvasHeight) {
             canvasWidth = size.width
@@ -144,7 +132,7 @@ private fun DrawScope.drawNodes(
 ) {
     drawIntoCanvas { canvas ->
         val textPaint = android.graphics.Paint().apply {
-            color = NodeTextColor.toArgb()
+            color = TextPrimary.toArgb()
             textSize = LABEL_SIZE
             textAlign = android.graphics.Paint.Align.CENTER
             typeface = android.graphics.Typeface.DEFAULT_BOLD
@@ -207,7 +195,7 @@ private fun DrawScope.drawNodes(
                 }
 
                 drawCircle(
-                    color = NodeStroke,
+                    color = AccentTeal,
                     radius = NODE_RADIUS,
                     center = pos,
                     style  = Stroke(width = 1.2f)

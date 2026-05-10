@@ -57,17 +57,8 @@ import at.aau.serg.scotlandyard.model.TicketStyleProvider
 import at.aau.serg.scotlandyard.ui.components.BOARD_HEIGHT_DP
 import at.aau.serg.scotlandyard.ui.components.BOARD_WIDTH_DP
 import at.aau.serg.scotlandyard.ui.components.GameBoardCanvas
+import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
-
-private val BackgroundDark = Color(0xFF0D1B2A)
-private val SidebarBg = Color(0xFF101E2D)
-private val SidebarBorder = Color(0xFF1E3347)
-private val RoundCounterBg = Color(0xFF1A2F44)
-private val RoundCounterBorder = Color(0xFF2A4A62)
-private val AccentTeal = Color(0xFF1A4A3A)
-private val AccentGlow = Color(0xFF22AA80)
-private val TextPrimary = Color(0xFFE8EEF4)
-private val TextMuted = Color(0xFF7A96B0)
 
 enum class PlayerRole { DETECTIVE, MR_X }
 
