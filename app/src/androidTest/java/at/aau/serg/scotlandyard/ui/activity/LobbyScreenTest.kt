@@ -22,7 +22,7 @@ class LobbyScreenTest {
     fun lobbyScreen_renders_successfully() {
         composeTestRule.setContent {
             ScotlandYardTheme {
-                LobbyScreen(onBackClick = {})
+                LobbyScreen(onBackClick = {}, onDebugGameBoard = {})    // REMOVE ', onDebugGameBoard = {}'
             }
         }
 

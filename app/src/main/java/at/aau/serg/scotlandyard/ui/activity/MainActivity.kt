@@ -8,12 +8,16 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import at.aau.serg.scotlandyard.data.getDisplayModePreference
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
 
@@ -30,6 +34,8 @@ class MainActivity : ComponentActivity() {
 
                 val navController = rememberNavController()
                 val context = LocalContext.current
+
+                var displayMode by remember { mutableStateOf(context.getDisplayModePreference()) }
 
                 // Erfasst, auf welchem Screen sich der User aktuell befindet
                 val currentBackStackEntry by navController.currentBackStackEntryAsState()
@@ -83,11 +89,32 @@ class MainActivity : ComponentActivity() {
                     composable("rules") {
                         RulesScreen(onBackClick = { navController.popBackStack() })
                     }
-                    composable("lobby") {
+                    /*  composable("lobby") {
                         LobbyScreen(onBackClick = { navController.popBackStack() })
+                    }*/
+                    //  REMOVE temporary Debug-Route
+                    composable("lobby") {
+                        LobbyScreen(
+                            onBackClick = { navController.popBackStack() },
+                            onDebugGameBoard = { navController.navigate("gameboard") }
+                        )
+                    }
+                    //  REMOVE temporary Debug-Route
+                    composable("gameboard") {
+                        GameBoardScreen(
+                            isMrX = false,
+                            currentRound = 1,
+                            displayMode = displayMode,
+                            onNavigateToSettings = { navController.navigate("settings") }
+                        )
                     }
                     composable("settings") {
-                        SettingsScreen(onBackClick = { navController.popBackStack() })
+                        SettingsScreen(
+                            onBackClick = { navController.popBackStack() },
+                            onDisplayModeChange = { newMode ->
+                                displayMode = newMode
+                            }
+                        )
                     }
                     composable("mrxwin") {
                         MrXWinScreen(

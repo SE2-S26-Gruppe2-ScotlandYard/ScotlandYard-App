@@ -17,7 +17,7 @@ import org.hildan.krossbow.stomp.subscribeText
 import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
 
-private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/scotlandyard"
+private const val WEBSOCKET_URI = "ws://10.233.0.89:8080/scotlandyard"
 
 class MyStomp(val callbacks: Callbacks) {
 
