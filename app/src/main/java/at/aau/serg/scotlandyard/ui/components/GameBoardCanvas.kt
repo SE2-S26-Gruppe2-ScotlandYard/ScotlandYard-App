@@ -119,7 +119,7 @@ private fun parallelOffset(a: Offset, b: Offset, type: TicketType): Offset {
     val shift = when (type) {
         TicketType.WALKING -> 0f
         TicketType.ESCOOTER -> 3.5f
-        TicketType.CARSHARING -> -3.5f
+        TicketType.CARSHARING -> -3.8f
         TicketType.BLACK -> 7f
         else -> 0f
     }
