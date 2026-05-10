@@ -12,10 +12,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
@@ -29,10 +33,10 @@ import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 private val BgColor = Color(0xFF0F2235)
 private val WalkingColor = Color(0xFFD4B963)
 private val EScooterColor = Color(0xFF3D8E79)
-private val CarSharingColor = Color(0xFFA67C65)
+private val CarSharingColor = Color(0xFFED2939) // Brown:0xFFA67C65
 private val BlackColor = Color(0xFFCC44CC)
 private val NodeFill = Color(0xFF1A3A55)
-private val NodeStroke = Color(0xFF4A9ECC)
+private val NodeStroke = Color(0xFF1A4A3A)
 private val NodeTextColor = Color(0xFFE8EEF4)
 
 
@@ -55,14 +59,14 @@ fun GameBoardCanvas(
     highlightedEdgeTargets: Set<Int> = emptySet(),
     playerPositions: Map<Color, Int> = emptyMap()
 ) {
-    var canvasWidth  by remember { mutableFloatStateOf(0f) }
+    var canvasWidth by remember { mutableFloatStateOf(0f) }
     var canvasHeight by remember { mutableFloatStateOf(0f) }
 
     val positions = remember(canvasWidth, canvasHeight) {
         if (canvasWidth == 0f || canvasHeight == 0f) emptyMap()
         else BoardData.nodePositions.mapValues { (_, pos) ->
             Offset(
-                x = pos.first  * canvasWidth,
+                x = pos.first * canvasWidth,
                 y = pos.second * canvasHeight
             )
         }
@@ -74,7 +78,7 @@ fun GameBoardCanvas(
             .background(BgColor)
     ) {
         if (size.width != canvasWidth || size.height != canvasHeight) {
-            canvasWidth  = size.width
+            canvasWidth = size.width
             canvasHeight = size.height
         }
 
@@ -127,8 +131,8 @@ private fun parallelOffset(a: Offset, b: Offset, type: TicketType): Offset {
     val shift = when (type) {
         TicketType.WALKING -> 0f
         TicketType.ESCOOTER -> 3.5f
-        TicketType.CARSHARING -> 7f
-        TicketType.BLACK -> -3.5f
+        TicketType.CARSHARING -> -3.5f
+        TicketType.BLACK -> 7f
         else -> 0f
     }
     return Offset(px * shift, py * shift)
@@ -149,8 +153,13 @@ private fun DrawScope.drawNodes(
 
         for ((id, pos) in positions) {
             val isHighlighted = id in highlighted
+            val transports = BoardData.nodeTransports[id] ?: emptySet()
 
-            // Shadow / glow for highlighted nodes
+            val hasWalking = TicketType.WALKING in transports
+            val hasEScooter = TicketType.ESCOOTER in transports
+            val hasCarSharing = TicketType.CARSHARING in transports
+            val hasBlack = TicketType.BLACK in transports
+
             if (isHighlighted) {
                 drawCircle(
                     color = Color(0xFF22AA80).copy(alpha = 0.4f),
@@ -159,25 +168,73 @@ private fun DrawScope.drawNodes(
                 )
             }
 
-            // Node fill
-            drawCircle(
-                color = if (isHighlighted) Color(0xFF22AA80) else NodeFill,
-                radius = NODE_RADIUS,
-                center = pos
-            )
+            val circlePath = Path().apply {
+                addOval(
+                    Rect(
+                        center = pos,
+                        radius = NODE_RADIUS
+                    )
+                )
+            }
 
-            // Node border
-            drawCircle(
-                color = if (isHighlighted) Color(0xFF88FFCC) else NodeStroke,
-                radius = NODE_RADIUS,
-                center = pos,
-            )
+            if (isHighlighted) {
+                // Highlighted: solid accent fill, skip transport colours
+                drawCircle(color = Color(0xFF22AA80), radius = NODE_RADIUS, center = pos)
+            } else {
+                clipPath(circlePath) {
+                    drawRect(
+                        color = if (hasWalking) WalkingColor else NodeFill,
+                        topLeft = Offset(pos.x - NODE_RADIUS, pos.y - NODE_RADIUS),
+                        size = Size(NODE_RADIUS * 2f, NODE_RADIUS)   // top half
+                    )
+                    drawRect(
+                        color = if (hasEScooter) EScooterColor else WalkingColor,
+                        topLeft = Offset(pos.x - NODE_RADIUS, pos.y),
+                        size = Size(NODE_RADIUS * 2f, NODE_RADIUS)   // bottom half
+                    )
+                }
 
-            // Station number label
+                if (hasCarSharing) {
+                    val bandH = NODE_RADIUS * 0.55f
+                    val bandW = NODE_RADIUS * 1.6f
+                    clipPath(circlePath) {
+                        drawRect(
+                            color = CarSharingColor,
+                            topLeft = Offset(pos.x - bandW / 2f, pos.y - bandH / 2f),
+                            size = Size(bandW, bandH)
+                        )
+                    }
+                }
+
+                drawCircle(
+                    color = NodeStroke,
+                    radius = NODE_RADIUS,
+                    center = pos,
+                    style  = Stroke(width = 1.2f)
+                )
+
+                if (hasBlack) {
+                    drawCircle(
+                        color = BlackColor,
+                        radius = NODE_RADIUS * 0.35f,
+                        center = Offset(pos.x + NODE_RADIUS * 0.6f, pos.y - NODE_RADIUS * 0.6f)
+                    )
+                }
+            }
+
+            if (isHighlighted) {
+                drawCircle(
+                    color = Color(0xFF88FFCC),
+                    radius = NODE_RADIUS,
+                    center = pos,
+                    style  = Stroke(width = 2f)
+                )
+            }
+
             canvas.nativeCanvas.drawText(
                 id.toString(),
                 pos.x,
-                pos.y + LABEL_SIZE * 0.38f,  // vertical center correction
+                pos.y + LABEL_SIZE * 0.38f,
                 textPaint
             )
         }
@@ -201,7 +258,6 @@ private fun DrawScope.drawPlayers(
 }
 
 // Preview
-
 @Preview(showBackground = true, widthDp = 900, heightDp = 720)
 @Composable
 private fun GameBoardCanvasPreview() {
