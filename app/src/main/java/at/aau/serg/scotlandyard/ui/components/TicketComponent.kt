@@ -200,11 +200,11 @@ fun TicketComponentPreview() {
                 AppTicketButton(
                     type = style.type,
                     count = when (style.type) {
-                        TicketType.Walking -> 10
-                        TicketType.EScooter -> 8
-                        TicketType.CarSharing -> 6
-                        TicketType.Black -> 2
-                        TicketType.Double -> 2
+                        TicketType.WALKING -> 10
+                        TicketType.ESCOOTER -> 8
+                        TicketType.CARSHARING -> 6
+                        TicketType.BLACK -> 2
+                        TicketType.DOUBLE -> 2
                     },
                     onClick = {},
                     modifier = Modifier.fillMaxWidth()
