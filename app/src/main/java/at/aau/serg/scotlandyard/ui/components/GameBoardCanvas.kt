@@ -27,18 +27,27 @@ import at.aau.serg.scotlandyard.model.TicketType
 import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 
-
+// Board width:size has been tested in 5:4 aspect ratio
 const val BOARD_WIDTH_DP = 900f
 const val BOARD_HEIGHT_DP = 720f
 
-private const val NODE_RADIUS = 11f
-private const val LABEL_SIZE = 14f
+// Relative size factors (based on min canvas dimension)
+private const val NODE_RADIUS_FACTOR = 0.015f
+private const val LABEL_SIZE_FACTOR = 0.019f
+private const val PLAYER_RADIUS_OUTER_FACTOR = 0.014f
+private const val PLAYER_RADIUS_INNER_FACTOR = 0.011f
 
-// Edge stroke widths per transport type
-private const val WALK_STROKE = 1.8f
-private const val SCOOT_STROKE = 2.8f
-private const val CAR_STROKE = 3.5f
-private const val BLACK_STROKE = 2.5f
+private const val WALK_STROKE_FACTOR = 0.0025f
+private const val SCOOT_STROKE_FACTOR = 0.0039f
+private const val CAR_STROKE_FACTOR = 0.0049f
+private const val BLACK_STROKE_FACTOR = 0.0035f
+
+private const val WALK_OFFSET_FACTOR = 0f
+private const val SCOOT_OFFSET_FACTOR = 0.0049f
+private const val CAR_OFFSET_FACTOR = -0.0053f
+private const val BLACK_OFFSET_FACTOR = 0.0097f
+
+private const val HIGHLIGHT_RADIUS_OFFSET_FACTOR = 0.0083f
 
 @Composable
 fun GameBoardCanvas(
@@ -49,6 +58,7 @@ fun GameBoardCanvas(
 ) {
     var canvasWidth by remember { mutableFloatStateOf(0f) }
     var canvasHeight by remember { mutableFloatStateOf(0f) }
+    var minDimension by remember { mutableFloatStateOf(0f) }
 
     val positions = remember(canvasWidth, canvasHeight) {
         if (canvasWidth == 0f || canvasHeight == 0f) emptyMap()
@@ -68,47 +78,61 @@ fun GameBoardCanvas(
         if (size.width != canvasWidth || size.height != canvasHeight) {
             canvasWidth = size.width
             canvasHeight = size.height
+            minDimension = minOf(size.width, size.height)
         }
 
         if (positions.isEmpty()) return@Canvas
 
-        drawEdges(positions, highlightedEdgeTargets)
+        drawEdges(positions, highlightedEdgeTargets, minDimension)
 
-        drawNodes(positions, highlightedNodes)
+        drawNodes(positions, highlightedNodes, minDimension)
 
-        drawPlayers(positions, playerPositions)
+        drawPlayers(positions, playerPositions, minDimension)
     }
 }
 
 private fun DrawScope.drawEdges(
     positions: Map<Int, Offset>,
-    highlightedTargets: Set<Int>
+    highlightedTargets: Set<Int>,
+    minDimension: Float
 ) {
+    // Calculate actual stroke widths
+    val walkStroke = WALK_STROKE_FACTOR * minDimension
+    val scootStroke = SCOOT_STROKE_FACTOR * minDimension
+    val carStroke = CAR_STROKE_FACTOR * minDimension
+    val blackStroke = BLACK_STROKE_FACTOR * minDimension
+
+    // Calculate offsets
+    val walkOffset = WALK_OFFSET_FACTOR * minDimension
+    val scootOffset = SCOOT_OFFSET_FACTOR * minDimension
+    val carOffset = CAR_OFFSET_FACTOR * minDimension
+    val blackOffset = BLACK_OFFSET_FACTOR * minDimension
+
     for (edge in BoardData.edges) {
         val a = positions[edge.from] ?: continue
         val b = positions[edge.to] ?: continue
 
         val isHighlighted = edge.to in highlightedTargets || edge.from in highlightedTargets
 
-        val (color, strokeWidth) = when (edge.transport) {
-            TicketType.WALKING -> Pair(WalkingColor, WALK_STROKE)
-            TicketType.ESCOOTER -> Pair(EScooterColor, SCOOT_STROKE)
-            TicketType.CARSHARING -> Pair(CarSharingColor, CAR_STROKE)
-            else -> Pair(BlackColor, BLACK_STROKE)
+        val (color, strokeWidth, offset) = when (edge.transport) {
+            TicketType.WALKING -> Triple(WalkingColor, walkStroke, walkOffset)
+            TicketType.ESCOOTER -> Triple(EScooterColor, scootStroke, scootOffset)
+            TicketType.CARSHARING -> Triple(CarSharingColor, carStroke, carOffset)
+            else -> Triple(BlackColor, blackStroke, blackOffset)
         }
 
-        val offset = parallelOffset(a, b, edge.transport)
+        val finalOffset = parallelOffset(a, b, offset)
 
         drawLine(
             color = if (isHighlighted) color.copy(alpha = 1f) else color.copy(alpha = 0.55f),
-            start = a + offset,
-            end = b + offset,
+            start = a + finalOffset,
+            end = b + finalOffset,
             strokeWidth = if (isHighlighted) strokeWidth * 1.6f else strokeWidth
         )
     }
 }
 
-private fun parallelOffset(a: Offset, b: Offset, type: TicketType): Offset {
+private fun parallelOffset(a: Offset, b: Offset, shiftAmount: Float): Offset {
     val dx = b.x - a.x
     val dy = b.y - a.y
     val len = kotlin.math.sqrt(dx * dx + dy * dy).coerceAtLeast(0.01f)
@@ -116,24 +140,22 @@ private fun parallelOffset(a: Offset, b: Offset, type: TicketType): Offset {
     val px = -dy / len
     val py = dx / len
 
-    val shift = when (type) {
-        TicketType.WALKING -> 0f
-        TicketType.ESCOOTER -> 3.5f
-        TicketType.CARSHARING -> -3.8f
-        TicketType.BLACK -> 7f
-        else -> 0f
-    }
-    return Offset(px * shift, py * shift)
+    return Offset(px * shiftAmount, py * shiftAmount)
 }
 
 private fun DrawScope.drawNodes(
     positions: Map<Int, Offset>,
-    highlighted: Set<Int>
+    highlighted: Set<Int>,
+    minDimension: Float
 ) {
+    val nodeRadius = NODE_RADIUS_FACTOR * minDimension
+    val labelSize = LABEL_SIZE_FACTOR * minDimension
+    val highlightOffset = HIGHLIGHT_RADIUS_OFFSET_FACTOR * minDimension
+
     drawIntoCanvas { canvas ->
         val textPaint = android.graphics.Paint().apply {
             color = TextPrimary.toArgb()
-            textSize = LABEL_SIZE
+            textSize = labelSize
             textAlign = android.graphics.Paint.Align.CENTER
             typeface = android.graphics.Typeface.DEFAULT_BOLD
             isAntiAlias = true
@@ -151,7 +173,7 @@ private fun DrawScope.drawNodes(
             if (isHighlighted) {
                 drawCircle(
                     color = Color(0xFF22AA80).copy(alpha = 0.4f),
-                    radius = NODE_RADIUS + 6f,
+                    radius = nodeRadius + highlightOffset,
                     center = pos
                 )
             }
@@ -160,31 +182,31 @@ private fun DrawScope.drawNodes(
                 addOval(
                     Rect(
                         center = pos,
-                        radius = NODE_RADIUS
+                        radius = nodeRadius
                     )
                 )
             }
 
             if (isHighlighted) {
                 // Highlighted: solid accent fill, skip transport colours
-                drawCircle(color = Color(0xFF22AA80), radius = NODE_RADIUS, center = pos)
+                drawCircle(color = Color(0xFF22AA80), radius = nodeRadius, center = pos)
             } else {
                 clipPath(circlePath) {
                     drawRect(
                         color = if (hasWalking) WalkingColor else NodeFill,
-                        topLeft = Offset(pos.x - NODE_RADIUS, pos.y - NODE_RADIUS),
-                        size = Size(NODE_RADIUS * 2f, NODE_RADIUS)   // top half
+                        topLeft = Offset(pos.x - nodeRadius, pos.y - nodeRadius),
+                        size = Size(nodeRadius * 2f, nodeRadius)   // top half
                     )
                     drawRect(
                         color = if (hasEScooter) EScooterColor else WalkingColor,
-                        topLeft = Offset(pos.x - NODE_RADIUS, pos.y),
-                        size = Size(NODE_RADIUS * 2f, NODE_RADIUS)   // bottom half
+                        topLeft = Offset(pos.x - nodeRadius, pos.y),
+                        size = Size(nodeRadius * 2f, nodeRadius)   // bottom half
                     )
                 }
 
                 if (hasCarSharing) {
-                    val bandH = NODE_RADIUS * 0.55f
-                    val bandW = NODE_RADIUS * 1.6f
+                    val bandH = nodeRadius * 0.55f
+                    val bandW = nodeRadius * 1.6f
                     clipPath(circlePath) {
                         drawRect(
                             color = CarSharingColor,
@@ -196,16 +218,16 @@ private fun DrawScope.drawNodes(
 
                 drawCircle(
                     color = AccentTeal,
-                    radius = NODE_RADIUS,
+                    radius = nodeRadius,
                     center = pos,
-                    style  = Stroke(width = 1.2f)
+                    style = Stroke(width = minDimension * 0.0017f)
                 )
 
                 if (hasBlack) {
                     drawCircle(
                         color = BlackColor,
-                        radius = NODE_RADIUS * 0.35f,
-                        center = Offset(pos.x + NODE_RADIUS * 0.6f, pos.y - NODE_RADIUS * 0.6f)
+                        radius = nodeRadius * 0.35f,
+                        center = Offset(pos.x + nodeRadius * 0.6f, pos.y - nodeRadius * 0.6f)
                     )
                 }
             }
@@ -213,16 +235,16 @@ private fun DrawScope.drawNodes(
             if (isHighlighted) {
                 drawCircle(
                     color = Color(0xFF88FFCC),
-                    radius = NODE_RADIUS,
+                    radius = nodeRadius,
                     center = pos,
-                    style  = Stroke(width = 2f)
+                    style = Stroke(width = minDimension * 0.0028f)
                 )
             }
 
             canvas.nativeCanvas.drawText(
                 id.toString(),
                 pos.x,
-                pos.y + LABEL_SIZE * 0.38f,
+                pos.y + labelSize * 0.38f,
                 textPaint
             )
         }
@@ -231,19 +253,27 @@ private fun DrawScope.drawNodes(
 
 private fun DrawScope.drawPlayers(
     positions: Map<Int, Offset>,
-    players: Map<Color, Int>
+    players: Map<Color, Int>,
+    minDimension: Float
 ) {
+    val outerRadius = PLAYER_RADIUS_OUTER_FACTOR * minDimension
+    val innerRadius = PLAYER_RADIUS_INNER_FACTOR * minDimension
+    val stackSpacing = minDimension * 0.007f
+
     players.entries.forEachIndexed { index, (color, stationId) ->
         val pos = positions[stationId] ?: return@forEachIndexed
         // Stack multiple player slightly offset if on same station
-        val stackOffset = Offset(x = index * 5f, y = -index * 5f)
-        val tokenPos = pos + stackOffset + Offset(0f, -(NODE_RADIUS + 8f))
+        val stackOffset = Offset(x = index * stackSpacing, y = -index * stackSpacing)
+        val tokenPos = pos + stackOffset + Offset(0f, -(nodeRadius + 8f))
 
         // Outer circle
-        drawCircle(color = Color.White, radius = 10f, center = tokenPos)
-        drawCircle(color = color, radius = 8f, center = tokenPos)
+        drawCircle(color = color, radius = outerRadius, center = tokenPos)
+        drawCircle(color = color, radius = innerRadius, center = tokenPos)
     }
 }
+
+private val DrawScope.nodeRadius: Float
+    get() = NODE_RADIUS_FACTOR * minOf(size.width, size.height)
 
 // Preview
 @Preview(showBackground = true, widthDp = 900, heightDp = 720)
