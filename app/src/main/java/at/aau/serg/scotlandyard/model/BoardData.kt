@@ -872,7 +872,7 @@ object BoardData {
         BoardEdge(187, 198, TicketType.WALKING),
         BoardEdge(188, 199, TicketType.WALKING),
         BoardEdge(189, 190, TicketType.WALKING),
-        BoardEdge(190, 191, TicketType.ESCOOTER),
+        BoardEdge(191, 190, TicketType.ESCOOTER), // 190 to 191
         BoardEdge(190, 191, TicketType.WALKING),
         BoardEdge(190, 192, TicketType.WALKING),
         BoardEdge(191, 192, TicketType.WALKING),
@@ -928,7 +928,7 @@ object BoardData {
         BoardEdge(108, 117, TicketType.ESCOOTER),   //108 to 116
         BoardEdge(117, 116, TicketType.ESCOOTER),
         BoardEdge(102, 103, TicketType.ESCOOTER),   // 86 to 102
-        BoardEdge(103, 186, TicketType.ESCOOTER),
+        BoardEdge(103, 86, TicketType.ESCOOTER),
         BoardEdge(86, 104, TicketType.ESCOOTER),   // 86 to 116
         BoardEdge(104, 116, TicketType.ESCOOTER),
         BoardEdge(102, 115, TicketType.ESCOOTER),   // 102 to 127
