@@ -60,6 +60,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import at.aau.serg.scotlandyard.model.BoardDisplayMode
 import at.aau.serg.scotlandyard.model.TicketType
 import at.aau.serg.scotlandyard.model.TicketStyleProvider
 import at.aau.serg.scotlandyard.ui.components.BOARD_HEIGHT_DP
@@ -85,6 +86,7 @@ enum class PlayerRole { DETECTIVE, MR_X }
 fun GameBoardScreen(
     isMrX: Boolean = false,
     currentRound: Int = 1,
+    displayMode: BoardDisplayMode,
     totalRounds: Int = 22,
     ticketCounts: Map<TicketType, Int> = defaultTicketCounts(isMrX),
     onTicketSelect: (TicketType) -> Unit = {},
@@ -98,7 +100,10 @@ fun GameBoardScreen(
             .fillMaxSize()
             .background(BackgroundDark)
     ) {
-        BoardArea(modifier = Modifier.fillMaxSize())
+        BoardArea(
+            modifier = Modifier.fillMaxSize(),
+            displayMode = displayMode
+        )
 
         SidePanel(
             isMrX = isMrX,
@@ -473,7 +478,10 @@ private fun SidePanelTicketButton(
 }
 
 @Composable
-private fun BoardArea(modifier: Modifier = Modifier) {
+private fun BoardArea(
+    modifier: Modifier = Modifier,
+    displayMode: BoardDisplayMode
+) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
 
@@ -528,7 +536,7 @@ private fun BoardArea(modifier: Modifier = Modifier) {
                     translationY = offset.y
                 )
         ) {
-            GameBoardCanvas()
+            GameBoardCanvas(displayMode = displayMode)
         }
 
         // Usability hint
@@ -563,6 +571,7 @@ fun GameBoardScreenDetectivePreview() {
         GameBoardScreen(
             isMrX = false,
             currentRound = 5,
+            displayMode = BoardDisplayMode.GRAPH,
             totalRounds = 22
         )
     }
@@ -575,6 +584,7 @@ fun GameBoardScreenMrXPreview() {
         GameBoardScreen(
             isMrX = true,
             currentRound = 8,
+            displayMode = BoardDisplayMode.GRAPH,
             totalRounds = 22
         )
     }
