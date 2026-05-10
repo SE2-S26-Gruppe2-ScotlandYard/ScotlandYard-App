@@ -21,7 +21,7 @@ object BoardData {
         10 to Pair(0.363f, 0.092f),
         11 to Pair(0.417f, 0.0976f),
         12 to Pair(0.461f, 0.092f),
-        13 to Pair(0.565f, 0.0853f),
+        13 to Pair(0.544f, 0.0853f),
         14 to Pair(0.628f, 0.0653f),
         15 to Pair(0.713f, 0.0546f),
         16 to Pair(0.793f, 0.096f),
