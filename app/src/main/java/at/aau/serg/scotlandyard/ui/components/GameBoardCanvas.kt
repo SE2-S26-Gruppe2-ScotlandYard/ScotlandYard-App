@@ -1,7 +1,10 @@
 package at.aau.serg.scotlandyard.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -9,6 +12,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -20,14 +24,18 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import at.aau.serg.scotlandyard.model.BoardData
+import at.aau.serg.scotlandyard.model.BoardDisplayMode
 import at.aau.serg.scotlandyard.model.TicketType
 import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
+import com.example.scotlandyard.R
 
-// Board width:size has been tested in 5:4 aspect ratio
+// Board width:height has been tested in 5:4 aspect ratio
 const val BOARD_WIDTH_DP = 900f
 const val BOARD_HEIGHT_DP = 720f
 
@@ -52,6 +60,7 @@ private const val HIGHLIGHT_RADIUS_OFFSET_FACTOR = 0.0083f
 @Composable
 fun GameBoardCanvas(
     modifier: Modifier = Modifier,
+    displayMode: BoardDisplayMode = BoardDisplayMode.GRAPH,
     highlightedNodes: Set<Int> = emptySet(),
     highlightedEdgeTargets: Set<Int> = emptySet(),
     playerPositions: Map<Color, Int> = emptyMap()
@@ -70,24 +79,56 @@ fun GameBoardCanvas(
         }
     }
 
-    Canvas(
+    // In MAP mode: stack a background image below the transparent Canvas.
+    Box(
         modifier = modifier
             .size(BOARD_WIDTH_DP.dp, BOARD_HEIGHT_DP.dp)
-            .background(CanvasBgColor)
     ) {
-        if (size.width != canvasWidth || size.height != canvasHeight) {
-            canvasWidth = size.width
-            canvasHeight = size.height
-            minDimension = minOf(size.width, size.height)
+        val backgroundImage = when (displayMode) {
+            BoardDisplayMode.MAP -> R.drawable.map
+            BoardDisplayMode.GRAPH -> R.drawable.background
+        }
+        val backgroundAlpha = when (displayMode) {
+            BoardDisplayMode.MAP -> 1f
+            BoardDisplayMode.GRAPH -> 0.3f
         }
 
-        if (positions.isEmpty()) return@Canvas
+        Image(
+            painter = painterResource(id = backgroundImage),
+            contentDescription = "Background",
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier
+                .fillMaxSize()
+                .alpha(backgroundAlpha)
+        )
 
-        drawEdges(positions, highlightedEdgeTargets, minDimension)
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                /*.then(
+                    if (displayMode == BoardDisplayMode.GRAPH)
+                        Modifier.background(CanvasBgColor)
+                    else
+                        Modifier
+                )*/
+        ) {
+            if (size.width != canvasWidth || size.height != canvasHeight) {
+                canvasWidth = size.width
+                canvasHeight = size.height
+                minDimension = minOf(size.width, size.height)
+            }
 
-        drawNodes(positions, highlightedNodes, minDimension)
+            if (positions.isEmpty()) return@Canvas
 
-        drawPlayers(positions, playerPositions, minDimension)
+            // Edges only in GRAPH mode
+            if (displayMode == BoardDisplayMode.GRAPH) {
+                drawEdges(positions, highlightedEdgeTargets, minDimension)
+            }
+
+            drawNodes(positions, highlightedNodes, minDimension)
+
+            drawPlayers(positions, playerPositions, minDimension)
+        }
     }
 }
 
@@ -96,13 +137,11 @@ private fun DrawScope.drawEdges(
     highlightedTargets: Set<Int>,
     minDimension: Float
 ) {
-    // Calculate actual stroke widths
     val walkStroke = WALK_STROKE_FACTOR * minDimension
     val scootStroke = SCOOT_STROKE_FACTOR * minDimension
     val carStroke = CAR_STROKE_FACTOR * minDimension
     val blackStroke = BLACK_STROKE_FACTOR * minDimension
 
-    // Calculate offsets
     val walkOffset = WALK_OFFSET_FACTOR * minDimension
     val scootOffset = SCOOT_OFFSET_FACTOR * minDimension
     val carOffset = CAR_OFFSET_FACTOR * minDimension
@@ -115,10 +154,10 @@ private fun DrawScope.drawEdges(
         val isHighlighted = edge.to in highlightedTargets || edge.from in highlightedTargets
 
         val (color, strokeWidth, offset) = when (edge.transport) {
-            TicketType.WALKING -> Triple(WalkingColor, walkStroke, walkOffset)
-            TicketType.ESCOOTER -> Triple(EScooterColor, scootStroke, scootOffset)
-            TicketType.CARSHARING -> Triple(CarSharingColor, carStroke, carOffset)
-            else -> Triple(BlackColor, blackStroke, blackOffset)
+            TicketType.WALKING   -> Triple(WalkingColor,    walkStroke,  walkOffset)
+            TicketType.ESCOOTER  -> Triple(EScooterColor,  scootStroke, scootOffset)
+            TicketType.CARSHARING -> Triple(CarSharingColor, carStroke,  carOffset)
+            else                 -> Triple(BlackColor,      blackStroke, blackOffset)
         }
 
         val finalOffset = parallelOffset(a, b, offset)

@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,20 +46,21 @@ import at.aau.serg.scotlandyard.ui.theme.SidebarBorder
 import at.aau.serg.scotlandyard.ui.theme.TextMuted
 import at.aau.serg.scotlandyard.ui.theme.TextPrimary
 import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.data.getDisplayModePreference
+import at.aau.serg.scotlandyard.data.saveDisplayModePreference
 
 private enum class SettingsCategory(val label: String, val icon: ImageVector) {
     GAMEBOARD("Gameboard", Icons.Default.Map)
-    // TODO: Add more categories here [NICKNAME("Change nickname", Icons.Default.Person)] // Shared Preferences needed
 }
 
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
-    initialDisplayMode: BoardDisplayMode = BoardDisplayMode.GRAPH,
     onDisplayModeChange: (BoardDisplayMode) -> Unit = {}
 ) {
+    val context = LocalContext.current
     var selectedCategory by remember { mutableStateOf(SettingsCategory.GAMEBOARD) }
-    var displayMode by remember { mutableStateOf(initialDisplayMode) }
+    var displayMode by remember { mutableStateOf(context.getDisplayModePreference()) }
 
     BaseScreen(onBackClick = onBackClick) { _ ->
         Row(
@@ -82,6 +84,7 @@ fun SettingsScreen(
                         displayMode = displayMode,
                         onModeChange = { mode ->
                             displayMode = mode
+                            context.saveDisplayModePreference(mode)
                             onDisplayModeChange(mode)
                         }
                     )
