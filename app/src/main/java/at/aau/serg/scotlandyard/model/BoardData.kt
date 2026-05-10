@@ -445,7 +445,7 @@ object BoardData {
         BoardEdge(12, 23, TicketType.WALKING),
         BoardEdge(13, 14, TicketType.ESCOOTER),
         BoardEdge(13, 23, TicketType.ESCOOTER),
-        BoardEdge(13, 23, TicketType.WALKING),
+        BoardEdge(23, 13, TicketType.WALKING), // 13 to 23
         BoardEdge(13, 24, TicketType.WALKING),
         //  BoardEdge(13, 46, TicketType.CARSHARING),
         //  BoardEdge(13, 52, TicketType.ESCOOTER),
@@ -710,7 +710,7 @@ object BoardData {
         BoardEdge(120, 144, TicketType.WALKING),
         BoardEdge(121, 122, TicketType.WALKING),
         BoardEdge(121, 145, TicketType.WALKING),
-        BoardEdge(122, 123, TicketType.ESCOOTER),
+        BoardEdge(123, 122, TicketType.ESCOOTER), // 122 to 123
         BoardEdge(122, 123, TicketType.WALKING),
         //  BoardEdge(122, 144, TicketType.ESCOOTER),
         BoardEdge(122, 146, TicketType.WALKING),
@@ -922,13 +922,13 @@ object BoardData {
         BoardEdge(90, 105, TicketType.ESCOOTER),
         BoardEdge(72, 91, TicketType.ESCOOTER),   // 72 to 107
         BoardEdge(91, 107, TicketType.ESCOOTER),
-        BoardEdge(107, 119, TicketType.ESCOOTER),   // 107 to 161
-        BoardEdge(119, 136, TicketType.ESCOOTER),
-        BoardEdge(136, 161, TicketType.ESCOOTER),
+        BoardEdge(161, 136, TicketType.ESCOOTER),   // 107 to 161
+        BoardEdge(136, 119, TicketType.ESCOOTER),
+        BoardEdge(119, 107, TicketType.ESCOOTER),
         BoardEdge(108, 117, TicketType.ESCOOTER),   //108 to 116
         BoardEdge(117, 116, TicketType.ESCOOTER),
-        BoardEdge(86, 103, TicketType.ESCOOTER),   // 86 to 102
-        BoardEdge(103, 102, TicketType.ESCOOTER),
+        BoardEdge(102, 103, TicketType.ESCOOTER),   // 86 to 102
+        BoardEdge(103, 186, TicketType.ESCOOTER),
         BoardEdge(86, 104, TicketType.ESCOOTER),   // 86 to 116
         BoardEdge(104, 116, TicketType.ESCOOTER),
         BoardEdge(102, 115, TicketType.ESCOOTER),   // 102 to 127
@@ -945,10 +945,10 @@ object BoardData {
         BoardEdge(171, 199, TicketType.ESCOOTER),
         BoardEdge(116, 118, TicketType.ESCOOTER),   //116 to 142
         BoardEdge(118, 142, TicketType.ESCOOTER),
-        BoardEdge(187, 198, TicketType.ESCOOTER),   // 187 to 185
-        BoardEdge(198, 185, TicketType.ESCOOTER),
-        BoardEdge(142, 158, TicketType.ESCOOTER),   // 142 to 157
-        BoardEdge(158, 157, TicketType.ESCOOTER),
+        BoardEdge(185, 198, TicketType.ESCOOTER),   // 185 to 187
+        BoardEdge(187, 198, TicketType.ESCOOTER),
+        BoardEdge(157, 158, TicketType.ESCOOTER),   // 142 to 157
+        BoardEdge(158, 142, TicketType.ESCOOTER),
         BoardEdge(157, 170, TicketType.ESCOOTER),   // 157 to 185
         BoardEdge(170, 185, TicketType.ESCOOTER),
         BoardEdge(22, 35, TicketType.ESCOOTER),   // 22 to 65
@@ -1021,8 +1021,8 @@ object BoardData {
         BoardEdge(194, 195, TicketType.ESCOOTER),
         BoardEdge(195, 196, TicketType.ESCOOTER),
         BoardEdge(196, 184, TicketType.ESCOOTER),
-        BoardEdge(180, 192, TicketType.ESCOOTER),   // 180 to 190
-        BoardEdge(192, 190, TicketType.ESCOOTER),
+        BoardEdge(190, 192, TicketType.ESCOOTER),   // 180 to 190
+        BoardEdge(192, 180, TicketType.ESCOOTER),
         // CarSharing Bridges
         BoardEdge(1, 9, TicketType.CARSHARING), // 1 to 46
         BoardEdge(9, 46, TicketType.CARSHARING),
@@ -1030,6 +1030,7 @@ object BoardData {
         BoardEdge(47, 34, TicketType.CARSHARING),
         BoardEdge(34, 22, TicketType.CARSHARING),
         BoardEdge(22, 23, TicketType.CARSHARING),
+        BoardEdge(23, 13, TicketType.CARSHARING),
         BoardEdge(13, 50, TicketType.CARSHARING), // 13 to 67
         BoardEdge(50, 67, TicketType.CARSHARING),
         BoardEdge(13, 14, TicketType.CARSHARING), // 13 to 89
@@ -1090,7 +1091,7 @@ object BoardData {
         BoardEdge(128, 172, TicketType.CARSHARING), // 128 to 185
         BoardEdge(172, 187, TicketType.CARSHARING),
         BoardEdge(187, 198, TicketType.CARSHARING),
-        BoardEdge(198, 185, TicketType.CARSHARING),
+        BoardEdge(185, 198, TicketType.CARSHARING),
         BoardEdge(153, 154, TicketType.CARSHARING), // 140 to 153
         BoardEdge(154, 140, TicketType.CARSHARING),
         BoardEdge(163, 164, TicketType.CARSHARING), // 153 to 163
