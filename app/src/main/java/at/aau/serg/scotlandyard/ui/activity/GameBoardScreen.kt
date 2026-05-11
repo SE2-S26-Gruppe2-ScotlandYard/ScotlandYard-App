@@ -118,8 +118,8 @@ fun GameBoardScreen(
             }
         )
 
-        // Pause menu overlay - rendered on top of everything else
-        PauseMenuOverlay(
+        // Menu overlay - rendered on top of everything else
+        MenuOverlay(
             isVisible = isMenuOpen,
             onClose = { isMenuOpen = false },
             onNavigateToSettings = {
@@ -131,7 +131,7 @@ fun GameBoardScreen(
 }
 
 @Composable
-private fun PauseMenuOverlay(
+private fun MenuOverlay(
     isVisible: Boolean,
     onClose: () -> Unit,
     onNavigateToSettings: () -> Unit
