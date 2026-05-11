@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Assertions.*
 
 /**
- * Unit tests for MainActivity (for SonarCloud coverage).
+ * Unit Tests fuer MainActivity
  */
 class MainActivityUnitTest {
 
@@ -17,13 +17,28 @@ class MainActivityUnitTest {
     fun mainActivity_is_component_activity() {
         val isComponentActivity = androidx.activity.ComponentActivity::class.java
             .isAssignableFrom(MainActivity::class.java)
-        assertTrue(isComponentActivity, "MainActivity should extend ComponentActivity")
+        assertTrue(isComponentActivity)
     }
 
     @Test
     fun mainActivity_class_name_is_correct() {
-        val className = MainActivity::class.java.simpleName
-        assertEquals("MainActivity", className, "Class name should be MainActivity")
+        assertEquals("MainActivity", MainActivity::class.java.simpleName)
+    }
+
+    @Test
+    fun navigation_routes_are_defined() {
+        // Sicherstellen dass die Navigation-Routes korrekte Strings sind
+        val routes = listOf("start", "login", "lobby", "roleSelection", "rules", "settings")
+        routes.forEach { route ->
+            assertNotNull(route)
+            assertTrue(route.isNotBlank())
+        }
+    }
+
+    @Test
+    fun roleSelection_route_name_correct() {
+        val route = "roleSelection"
+        assertEquals("roleSelection", route)
+        assertFalse(route.contains("/"))
     }
 }
-

@@ -24,6 +24,16 @@ class MyStomp(val callbacks: Callbacks) {
     private lateinit var client: StompClient
     private var session: StompSession? = null
 
+    fun getSession(): StompSession? = session
+
+    // ── NEU: Lobby-Callback ───────────────────────────────────────────────
+    private var lobbyCallback: ((String) -> Unit)? = null
+
+    fun setLobbyCallback(callback: ((String) -> Unit)?) {
+        lobbyCallback = callback
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
     private var currentGameId: String? = null
@@ -46,14 +56,13 @@ class MyStomp(val callbacks: Callbacks) {
 
                     subscribeToServer(activeSession)
 
-                    isSuccessfullyConnected = true // Schleife beenden
+                    isSuccessfullyConnected = true
                     callback("connected to server")
                     Log.d("MyStomp", "Verbindung erfolgreich hergestellt.")
 
                 } catch (e: Exception) {
                     Log.e("MyStomp", "Verbindung fehlgeschlagen. Erneuter Versuch in 5 Sekunden...", e)
                     _isConnected.value = false
-                    // Warte 5 Sekunden bevor der nächste Versuch startet
                     kotlinx.coroutines.delay(5000)
                 }
             }
@@ -61,7 +70,7 @@ class MyStomp(val callbacks: Callbacks) {
     }
 
     private fun subscribeToServer(activeSession: StompSession) {
-        // Subscriptions (Hello)
+        // Hello
         scope.launch {
             try {
                 activeSession.subscribeText("/topic/hello-response").collect { msg ->
@@ -70,7 +79,7 @@ class MyStomp(val callbacks: Callbacks) {
             } catch (e: Exception) { handleDisconnect() }
         }
 
-        // Subscriptions (JSON)
+        // JSON
         scope.launch {
             try {
                 activeSession.subscribeText("/topic/rcv-object").collect { msg ->
@@ -80,7 +89,7 @@ class MyStomp(val callbacks: Callbacks) {
             } catch (e: Exception) { handleDisconnect() }
         }
 
-        // Subscriptions (User)
+        // User
         scope.launch {
             try {
                 activeSession.subscribeText("/topic/user-response").collect { msg ->
@@ -88,13 +97,27 @@ class MyStomp(val callbacks: Callbacks) {
                 }
             } catch (e: Exception) { handleDisconnect() }
         }
+
+        // ── NEU: Lobby – von Anfang an subscribed ─────────────────────────
+        scope.launch {
+            try {
+                activeSession.subscribeText("/topic/lobby").collect { msg ->
+                    Log.d("LOBBY_DEBUG", "MyStomp received: $msg")
+                    lobbyCallback?.invoke(msg)
+                }
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Lobby subscription error", e)
+                handleDisconnect()
+            }
+        }
+        // ─────────────────────────────────────────────────────────────────
     }
 
     private fun handleDisconnect() {
         if (_isConnected.value) {
             _isConnected.value = false
             callback("Connection lost. Reconnecting...")
-            connect() // Startet den Loop von vorne
+            connect()
         }
     }
 
@@ -104,7 +127,6 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
-    // Methode um Nickname an Server zu senden
     fun sendUserConnect(nickname: String) {
         val json = JSONObject()
         json.put("nickName", nickname)
@@ -122,10 +144,8 @@ class MyStomp(val callbacks: Callbacks) {
         scope.launch {
             try {
                 session?.let {
-                    Log.e("tag", "connecting to topic")
                     it.sendText("/app/hello", "message from client")
                 } ?: run {
-                    Log.e("MyStomp", "Cannot send: Session is null")
                     callback(errorMsg)
                 }
             } catch (e: Exception) {
@@ -138,11 +158,10 @@ class MyStomp(val callbacks: Callbacks) {
         val json = JSONObject()
         json.put("from", "client")
         json.put("text", "from client")
-        val o = json.toString()
 
         scope.launch {
             try {
-                session?.sendText("/app/object", o) ?: callback(errorMsg)
+                session?.sendText("/app/object", json.toString()) ?: callback(errorMsg)
             } catch (e: Exception) {
                 Log.e("MyStomp", "Send JSON failed", e)
             }
