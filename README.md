@@ -1,7 +1,7 @@
 # Scotland Yard App
 
 Android App in Kotlin für das Spiel Scotland Yard – [621.252] SE2 Gruppe 2.
-Basierend auf dem bereitgestellten [Demo Projekt](https://github.com/AAU-SE2/WebSocketBrokerDemo-App/)).
+Basierend auf dem bereitgestellten [Demo Projekt](https://github.com/AAU-SE2/WebSocketBrokerDemo-App/).
 
 ## CI/CD
 
