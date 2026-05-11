@@ -20,8 +20,10 @@ val AccentGlow = Color(0xFF22AA80)
 val TextPrimary = Color(0xFFE8EEF4)
 val TextMuted = Color(0xFF7A96B0)
 val CanvasBgColor = Color(0xFF0F2235)
+val NodeFill = Color(0xFF1A3A55)
+
 val WalkingColor = Color(0xFFD4B963)
 val EScooterColor = Color(0xFF3D8E79)
 val CarSharingColor = Color(0xFFED2939) // or Brown:0xFFA67C65
 val BlackColor = Color(0xFFCC44CC)
-val NodeFill = Color(0xFF1A3A55)
+val DoubleColor = Color(0xFF2C2C2C)
