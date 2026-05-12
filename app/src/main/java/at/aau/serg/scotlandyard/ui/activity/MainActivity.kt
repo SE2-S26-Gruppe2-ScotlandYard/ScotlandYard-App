@@ -21,6 +21,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
         setContent {
             ScotlandYardTheme {
                 val authViewModel: AuthViewModel = viewModel()
@@ -88,6 +89,12 @@ class MainActivity : ComponentActivity() {
                     }
                     composable("settings") {
                         SettingsScreen(onBackClick = { navController.popBackStack() })
+                    }
+                    composable("assignstartposition") {
+                        AssignStartPositionScreen(
+                            onBackClick = { navController.popBackStack() },
+                            onPositionConfirmed = { navController.navigate("lobby") }
+                        )
                     }
                     composable("mrxwin") {
                         MrXWinScreen(

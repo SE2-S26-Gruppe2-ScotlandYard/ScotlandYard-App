@@ -1,10 +1,5 @@
 package at.aau.serg.scotlandyard.ui.activity
 
-import android.content.Context
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -72,8 +66,12 @@ fun AssignStartPositionScreen(
     // Shake detector state
     var shakeDetector by remember { mutableStateOf<ShakeDetector?>(null) }
 
-    // Initialize shake detector
+    // Initialize: Subscribe to start position topic and initialize shake detector
     LaunchedEffect(Unit) {
+        // First, subscribe to start position topic
+        gameViewModel.subscribeToStartPosition(gameId, playerId)
+
+        // Then, initialize shake detector
         shakeDetector = ShakeDetector(context).apply {
             setOnShakeListener(object : ShakeDetector.OnShakeListener {
                 override fun onShake() {
