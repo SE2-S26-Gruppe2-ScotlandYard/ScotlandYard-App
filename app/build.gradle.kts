@@ -114,6 +114,7 @@ sonar {
         property("sonar.issue.ignore.multicriteria.e1.ruleKey", "kotlin:S8569")
         property("sonar.issue.ignore.multicriteria.e1.resourceKey", "**/build.gradle.kts")
         property("sonar.coverage.exclusions", "**/network/LobbyStompService.kt,**/network/MyStomp.kt,**/viewmodel/LobbyViewModel.kt,**/viewmodel/AuthViewModel.kt,**/ui/activity/**,**/ui/theme/**")
+
     }
 }
 
@@ -135,6 +136,7 @@ dependencies {
     implementation(libs.gson)
     testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter.api)
+    testImplementation("org.robolectric:robolectric:4.12.1")
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
     androidTestImplementation(libs.androidx.junit)
