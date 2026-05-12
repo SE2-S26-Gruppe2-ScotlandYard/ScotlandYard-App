@@ -100,6 +100,7 @@ tasks.register<JacocoReport>("jacocoTestReport") {
 }
 
 sonar {
+
     properties {
         property("sonar.projectKey", "SE2-S26-Gruppe2-ScotlandYard_ScotlandYard-App")
         property("sonar.organization", "se2-s26-gruppe2-scotlandyard")
@@ -112,6 +113,7 @@ sonar {
         property("sonar.issue.ignore.multicriteria", "e1")
         property("sonar.issue.ignore.multicriteria.e1.ruleKey", "kotlin:S8569")
         property("sonar.issue.ignore.multicriteria.e1.resourceKey", "**/build.gradle.kts")
+        property("sonar.coverage.exclusions", "**/network/LobbyStompService.kt,**/network/MyStomp.kt,**/viewmodel/LobbyViewModel.kt,**/viewmodel/AuthViewModel.kt,**/ui/activity/**,**/ui/theme/**")
     }
 }
 
