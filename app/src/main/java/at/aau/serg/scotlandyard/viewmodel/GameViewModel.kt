@@ -3,10 +3,12 @@ package at.aau.serg.scotlandyard.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import at.aau.serg.scotlandyard.Callbacks
+import at.aau.serg.scotlandyard.dtos.StartPositionResponse
 import at.aau.serg.scotlandyard.network.MyStomp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.json.JSONObject
 
 class GameViewModel : ViewModel(), Callbacks {
 
@@ -30,24 +32,24 @@ class GameViewModel : ViewModel(), Callbacks {
     }
 
     /**
+     * Subscribe to start position responses from the backend
+     * Must be called before requestStartPosition to ensure subscription is active
+     */
+    fun subscribeToStartPosition(gameId: String, playerId: String) {
+        Log.d("GameViewModel", "Subscribing to start position topic for game=$gameId, player=$playerId")
+        myStomp.subscribeToStartPosition(gameId, playerId)
+    }
+
+    /**
      * Request start position from the backend via shake gesture
+     * This sends a request to the backend, which will respond via STOMP subscription
      */
     fun requestStartPosition(gameId: String, playerId: String) {
         _isLoading.value = true
         _errorMessage.value = null
 
-        // Simulate API call - in real scenario this would be a network call
-        // For now, we'll generate a random position between 1-199 (typical Scotland Yard board)
-        try {
-            val randomPosition = (1..199).random()
-            _startPosition.value = randomPosition
-            _isLoading.value = false
-            Log.d("GameViewModel", "Start position assigned: $randomPosition")
-        } catch (e: Exception) {
-            Log.e("GameViewModel", "Error requesting start position", e)
-            _errorMessage.value = "Fehler beim Abrufen der Startposition: ${e.message}"
-            _isLoading.value = false
-        }
+        Log.d("GameViewModel", "Requesting start position for game=$gameId, player=$playerId")
+        myStomp.requestStartPosition(gameId, playerId)
     }
 
     /**
@@ -80,7 +82,44 @@ class GameViewModel : ViewModel(), Callbacks {
 
     override fun onResponse(res: String) {
         Log.d("GameViewModel", "Server response: $res")
-        // Handle server responses here
+
+        // Handle start position responses
+        if (res.startsWith("startPosition:")) {
+            val jsonString = res.removePrefix("startPosition:")
+            try {
+                val jsonObject = JSONObject(jsonString)
+                val response = StartPositionResponse(
+                    type = jsonObject.optString("type", ""),
+                    gameId = jsonObject.optString("gameId", ""),
+                    playerId = jsonObject.optString("playerId", ""),
+                    startPosition = if (jsonObject.has("startPosition")) jsonObject.optInt("startPosition") else null,
+                    message = jsonObject.optString("message", null)
+                )
+
+                Log.d("GameViewModel", "Parsed start position response: type=${response.type}, position=${response.startPosition}")
+
+                when (response.type) {
+                    "START_POSITION_ASSIGNED" -> {
+                        _startPosition.value = response.startPosition
+                        _isLoading.value = false
+                        _errorMessage.value = null
+                        Log.d("GameViewModel", "Start position assigned: ${response.startPosition}")
+                    }
+                    "ERROR" -> {
+                        _isLoading.value = false
+                        _errorMessage.value = response.message ?: "Unbekannter Fehler bei der Positionsvergabe"
+                        Log.e("GameViewModel", "Error assigning start position: ${response.message}")
+                    }
+                    else -> {
+                        Log.w("GameViewModel", "Unknown response type: ${response.type}")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("GameViewModel", "Error parsing start position response", e)
+                _isLoading.value = false
+                _errorMessage.value = "Fehler beim Parsen der Serverantwort: ${e.message}"
+            }
+        }
     }
 
     override fun onCleared() {
