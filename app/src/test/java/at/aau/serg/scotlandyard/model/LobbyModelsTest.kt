@@ -1,13 +1,8 @@
 package at.aau.serg.scotlandyard.model
 
-import org.json.JSONArray
-import org.json.JSONObject
-import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.junit.Assert.*
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Assertions.*
 
-@RunWith(RobolectricTestRunner::class)
 class LobbyModelsTest {
 
     // ── LobbyUserData ──────────────────────────────────────────────────────
@@ -21,33 +16,27 @@ class LobbyModelsTest {
 
     @Test
     fun lobbyUserData_equality() {
-        val a = LobbyUserData("1", "Hans")
-        val b = LobbyUserData("1", "Hans")
-        assertEquals(a, b)
+        assertEquals(LobbyUserData("1", "Hans"), LobbyUserData("1", "Hans"))
     }
 
     @Test
     fun lobbyUserData_inequality_different_id() {
-        val a = LobbyUserData("1", "Hans")
-        val b = LobbyUserData("2", "Hans")
-        assertNotEquals(a, b)
+        assertNotEquals(LobbyUserData("1", "Hans"), LobbyUserData("2", "Hans"))
     }
 
     @Test
     fun lobbyUserData_inequality_different_name() {
-        val a = LobbyUserData("1", "Hans")
-        val b = LobbyUserData("1", "Fritz")
-        assertNotEquals(a, b)
+        assertNotEquals(LobbyUserData("1", "Hans"), LobbyUserData("1", "Fritz"))
     }
 
     // ── LobbyData ──────────────────────────────────────────────────────────
 
     @Test
     fun lobbyData_stores_all_fields() {
-        val users = listOf(LobbyUserData("1", "Hans"))
         val lobby = LobbyData(
             id = "AB3KP", name = "Test Lobby", hostId = "1",
-            isStarted = false, users = users,
+            isStarted = false,
+            users = listOf(LobbyUserData("1", "Hans")),
             readyStatus = mapOf("1" to false),
             selectedRoles = mapOf("1" to "NONE")
         )
@@ -59,35 +48,12 @@ class LobbyModelsTest {
     }
 
     @Test
-    fun lobbyData_selectedRoles_mrx_and_detective() {
-        val users = listOf(LobbyUserData("1", "Hans"), LobbyUserData("2", "Fritz"))
-        val lobby = LobbyData(
-            id = "AB3KP", name = "Lobby", hostId = "1", isStarted = false,
-            users = users,
-            readyStatus = mapOf("1" to false, "2" to false),
-            selectedRoles = mapOf("1" to "MRX", "2" to "DETECTIVE")
-        )
-        assertEquals("MRX", lobby.selectedRoles["1"])
-        assertEquals("DETECTIVE", lobby.selectedRoles["2"])
-    }
-
-    @Test
-    fun lobbyData_empty_users_list() {
-        val lobby = LobbyData(
-            id = "AB3KP", name = "Empty", hostId = "1",
-            isStarted = false, users = emptyList(),
-            readyStatus = emptyMap(), selectedRoles = emptyMap()
-        )
-        assertTrue(lobby.users.isEmpty())
-    }
-
-    @Test
     fun lobbyData_mrx_taken_detection() {
         val lobby = LobbyData(
             id = "AB3KP", name = "Lobby", hostId = "1", isStarted = false,
-            users = listOf(LobbyUserData("1", "Hans")),
+            users = listOf(LobbyUserData("1", "Hans"), LobbyUserData("2", "Fritz")),
             readyStatus = emptyMap(),
-            selectedRoles = mapOf("1" to "MRX")
+            selectedRoles = mapOf("1" to "MRX", "2" to "NONE")
         )
         assertTrue(lobby.selectedRoles.values.contains("MRX"))
     }
@@ -97,19 +63,38 @@ class LobbyModelsTest {
         val users = listOf(LobbyUserData("1", "Hans"), LobbyUserData("2", "Fritz"))
         val lobby = LobbyData(
             id = "AB3KP", name = "Lobby", hostId = "1", isStarted = false,
-            users = users,
-            readyStatus = emptyMap(),
+            users = users, readyStatus = emptyMap(),
             selectedRoles = mapOf("1" to "MRX", "2" to "DETECTIVE")
         )
-        val allSet = lobby.users.all { (lobby.selectedRoles[it.id] ?: "NONE") != "NONE" }
-        assertTrue(allSet)
+        assertTrue(lobby.users.all { (lobby.selectedRoles[it.id] ?: "NONE") != "NONE" })
+    }
+
+    @Test
+    fun lobbyData_not_all_roles_set() {
+        val users = listOf(LobbyUserData("1", "Hans"), LobbyUserData("2", "Fritz"))
+        val lobby = LobbyData(
+            id = "AB3KP", name = "Lobby", hostId = "1", isStarted = false,
+            users = users, readyStatus = emptyMap(),
+            selectedRoles = mapOf("1" to "MRX", "2" to "NONE")
+        )
+        assertFalse(lobby.users.all { (lobby.selectedRoles[it.id] ?: "NONE") != "NONE" })
+    }
+
+    @Test
+    fun lobbyData_empty_users() {
+        val lobby = LobbyData(
+            id = "AB3KP", name = "Empty", hostId = "1",
+            isStarted = false, users = emptyList(),
+            readyStatus = emptyMap(), selectedRoles = emptyMap()
+        )
+        assertTrue(lobby.users.isEmpty())
     }
 
     // ── LobbyResponse ──────────────────────────────────────────────────────
 
     @Test
     fun lobbyResponse_success_true() {
-        val response = LobbyResponse(success = true, message = "Lobby created", lobbyId = "AB3KP", lobby = null)
+        val response = LobbyResponse(true, "Lobby created", "AB3KP", null)
         assertTrue(response.success)
         assertEquals("Lobby created", response.message)
         assertEquals("AB3KP", response.lobbyId)
@@ -118,20 +103,16 @@ class LobbyModelsTest {
 
     @Test
     fun lobbyResponse_success_false() {
-        val response = LobbyResponse(success = false, message = "Error", lobbyId = null, lobby = null)
+        val response = LobbyResponse(false, "Error", null, null)
         assertFalse(response.success)
         assertNull(response.lobbyId)
     }
 
-    // ── JSON Parsing mit Robolectric ───────────────────────────────────────
+    // ── JSON Parsing mit Gson (kein Robolectric nötig) ────────────────────
 
     @Test
-    fun toLobbyResponse_parses_success_response() {
-        val json = JSONObject().apply {
-            put("success", true)
-            put("message", "Lobby created")
-            put("lobbyId", "AB3KP")
-        }
+    fun toLobbyResponse_parses_success() {
+        val json = """{"success":true,"message":"Lobby created","lobbyId":"AB3KP"}"""
         val response = json.toLobbyResponse()
         assertTrue(response.success)
         assertEquals("Lobby created", response.message)
@@ -140,11 +121,8 @@ class LobbyModelsTest {
     }
 
     @Test
-    fun toLobbyResponse_parses_failure_response() {
-        val json = JSONObject().apply {
-            put("success", false)
-            put("message", "Lobby not found")
-        }
+    fun toLobbyResponse_parses_failure() {
+        val json = """{"success":false,"message":"Lobby not found"}"""
         val response = json.toLobbyResponse()
         assertFalse(response.success)
         assertEquals("Lobby not found", response.message)
@@ -152,114 +130,122 @@ class LobbyModelsTest {
     }
 
     @Test
-    fun toLobbyData_parses_full_lobby() {
-        val userJson = JSONObject().apply {
-            put("id", "user-1")
-            put("nickName", "Hans")
+    fun toLobbyResponse_parses_with_embedded_lobby() {
+        val json = """
+        {
+            "success": true,
+            "message": "Lobby created",
+            "lobbyId": "AB3KP",
+            "lobby": {
+                "id": "AB3KP",
+                "name": "Hans's Lobby",
+                "hostId": "user-1",
+                "started": false,
+                "users": [{"id": "user-1", "nickName": "Hans"}],
+                "readyStatus": {"user-1": false},
+                "selectedRoles": {"user-1": "NONE"}
+            }
         }
-        val lobbyJson = JSONObject().apply {
-            put("id", "AB3KP")
-            put("name", "Hans's Lobby")
-            put("hostId", "user-1")
-            put("started", false)
-            put("users", JSONArray().apply { put(userJson) })
-            put("readyStatus", JSONObject().apply { put("user-1", false) })
-            put("selectedRoles", JSONObject().apply { put("user-1", "NONE") })
-        }
-        val lobby = lobbyJson.toLobbyData()
-        assertEquals("AB3KP", lobby.id)
-        assertEquals("Hans's Lobby", lobby.name)
-        assertEquals("user-1", lobby.hostId)
-        assertFalse(lobby.isStarted)
-        assertEquals(1, lobby.users.size)
-        assertEquals("Hans", lobby.users[0].name)
-        assertEquals("user-1", lobby.users[0].id)
-        assertEquals(false, lobby.readyStatus["user-1"])
-        assertEquals("NONE", lobby.selectedRoles["user-1"])
-    }
-
-    @Test
-    fun toLobbyData_parses_nickname_field() {
-        val userJson = JSONObject().apply {
-            put("id", "user-2")
-            put("nickName", "Fritz")
-        }
-        val lobbyJson = JSONObject().apply {
-            put("id", "XY123")
-            put("name", "Test")
-            put("hostId", "user-2")
-            put("started", false)
-            put("users", JSONArray().apply { put(userJson) })
-        }
-        val lobby = lobbyJson.toLobbyData()
-        assertEquals("Fritz", lobby.users[0].name)
-    }
-
-    @Test
-    fun toLobbyResponse_with_embedded_lobby() {
-        val userJson = JSONObject().apply {
-            put("id", "1")
-            put("nickName", "Hans")
-        }
-        val lobbyJson = JSONObject().apply {
-            put("id", "AB3KP")
-            put("name", "Hans's Lobby")
-            put("hostId", "1")
-            put("started", false)
-            put("users", JSONArray().apply { put(userJson) })
-        }
-        val responseJson = JSONObject().apply {
-            put("success", true)
-            put("message", "Lobby created")
-            put("lobbyId", "AB3KP")
-            put("lobby", lobbyJson)
-        }
-        val response = responseJson.toLobbyResponse()
+        """.trimIndent()
+        val response = json.toLobbyResponse()
         assertTrue(response.success)
         assertNotNull(response.lobby)
         assertEquals("AB3KP", response.lobby!!.id)
         assertEquals(1, response.lobby!!.users.size)
+        assertEquals("Hans", response.lobby!!.users[0].name)
+    }
+
+    @Test
+    fun toLobbyResponse_parses_nickname_field() {
+        val json = """
+        {
+            "success": true,
+            "message": "Joined lobby",
+            "lobbyId": "AB3KP",
+            "lobby": {
+                "id": "AB3KP",
+                "name": "Lobby",
+                "hostId": "1",
+                "started": false,
+                "users": [{"id": "1", "nickName": "Fritz"}]
+            }
+        }
+        """.trimIndent()
+        val response = json.toLobbyResponse()
+        assertEquals("Fritz", response.lobby!!.users[0].name)
+    }
+
+    @Test
+    fun toLobbyResponse_parses_multiple_users() {
+        val json = """
+        {
+            "success": true,
+            "message": "Joined lobby",
+            "lobbyId": "AB3KP",
+            "lobby": {
+                "id": "AB3KP",
+                "name": "Lobby",
+                "hostId": "1",
+                "started": false,
+                "users": [
+                    {"id": "1", "nickName": "Hans"},
+                    {"id": "2", "nickName": "Fritz"},
+                    {"id": "3", "nickName": "Kurt"}
+                ]
+            }
+        }
+        """.trimIndent()
+        val response = json.toLobbyResponse()
+        assertEquals(3, response.lobby!!.users.size)
     }
 
     @Test
     fun toLobbyResponse_role_selection_started() {
-        val json = JSONObject().apply {
-            put("success", true)
-            put("message", "ROLE_SELECTION_STARTED")
-            put("lobbyId", "AB3KP")
-        }
+        val json = """{"success":true,"message":"ROLE_SELECTION_STARTED","lobbyId":"AB3KP"}"""
         val response = json.toLobbyResponse()
         assertTrue(response.success)
         assertEquals("ROLE_SELECTION_STARTED", response.message)
     }
 
     @Test
-    fun toLobbyData_multiple_users() {
-        val lobbyJson = JSONObject().apply {
-            put("id", "AB3KP")
-            put("name", "Lobby")
-            put("hostId", "1")
-            put("started", false)
-            put("users", JSONArray().apply {
-                put(JSONObject().apply { put("id", "1"); put("nickName", "Hans") })
-                put(JSONObject().apply { put("id", "2"); put("nickName", "Fritz") })
-                put(JSONObject().apply { put("id", "3"); put("nickName", "Kurt") })
-            })
+    fun toLobbyResponse_parses_roles() {
+        val json = """
+        {
+            "success": true,
+            "message": "Role set",
+            "lobbyId": "AB3KP",
+            "lobby": {
+                "id": "AB3KP",
+                "name": "Lobby",
+                "hostId": "1",
+                "started": false,
+                "users": [{"id": "1", "nickName": "Hans"}, {"id": "2", "nickName": "Fritz"}],
+                "selectedRoles": {"1": "MRX", "2": "DETECTIVE"}
+            }
         }
-        val lobby = lobbyJson.toLobbyData()
-        assertEquals(3, lobby.users.size)
+        """.trimIndent()
+        val response = json.toLobbyResponse()
+        assertEquals("MRX", response.lobby!!.selectedRoles["1"])
+        assertEquals("DETECTIVE", response.lobby!!.selectedRoles["2"])
     }
 
     @Test
-    fun toLobbyData_empty_users() {
-        val lobbyJson = JSONObject().apply {
-            put("id", "AB3KP")
-            put("name", "Lobby")
-            put("hostId", "1")
-            put("started", false)
-            put("users", JSONArray())
+    fun toLobbyResponse_empty_users_list() {
+        val json = """
+        {
+            "success": true,
+            "message": "Lobby created",
+            "lobbyId": "AB3KP",
+            "lobby": {
+                "id": "AB3KP",
+                "name": "Lobby",
+                "hostId": "1",
+                "started": false,
+                "users": []
+            }
         }
-        val lobby = lobbyJson.toLobbyData()
-        assertTrue(lobby.users.isEmpty())
+        """.trimIndent()
+        val response = json.toLobbyResponse()
+        assertTrue(response.lobby!!.users.isEmpty())
     }
 }

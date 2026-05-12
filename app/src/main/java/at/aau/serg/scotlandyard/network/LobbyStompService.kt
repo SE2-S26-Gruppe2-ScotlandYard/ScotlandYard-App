@@ -31,7 +31,7 @@ class LobbyStompService(private val session: StompSession) {
                 session.subscribeText("/topic/lobby").collect { msg ->
                     android.util.Log.d("LOBBY_DEBUG", "LobbyStompService received: $msg")
                     try {
-                        val response = org.json.JSONObject(msg).toLobbyResponse()
+                        val response = msg.toLobbyResponse()
                         _lobbyResponse.value = response
                     } catch (e: Exception) {
                         Log.e(TAG, "Parse error: $msg", e)

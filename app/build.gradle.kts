@@ -136,7 +136,6 @@ dependencies {
     implementation(libs.gson)
     testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter.api)
-    testImplementation("org.robolectric:robolectric:4.12.1")
     testRuntimeOnly(libs.junit.jupiter.engine)
     testRuntimeOnly(libs.junit.platform.launcher)
     androidTestImplementation(libs.androidx.junit)

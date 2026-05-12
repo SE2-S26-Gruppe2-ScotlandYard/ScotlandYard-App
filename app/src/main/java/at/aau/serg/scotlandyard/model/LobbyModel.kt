@@ -1,6 +1,9 @@
 package at.aau.serg.scotlandyard.model
 
-import org.json.JSONObject
+import com.google.gson.Gson
+import com.google.gson.annotations.SerializedName
+
+// ── Datenklassen ──────────────────────────────────────────────────────────────
 
 data class LobbyUserData(
     val id: String,
@@ -24,37 +27,58 @@ data class LobbyResponse(
     val lobby: LobbyData?
 )
 
-fun JSONObject.toLobbyResponse(): LobbyResponse {
-    val success = getBoolean("success")
-    val message = getString("message")
-    val lobbyId = optString("lobbyId").takeIf { it.isNotBlank() }
-    val lobby   = if (has("lobby") && !isNull("lobby"))
-        getJSONObject("lobby").toLobbyData()
-    else null
-    return LobbyResponse(success, message, lobbyId, lobby)
+// ── Gson Hilfsdatenklassen (intern für Parsing) ───────────────────────────────
+
+private data class GsonUser(
+    @SerializedName("id") val id: String?,
+    @SerializedName("nickName") val nickName: String?,
+    @SerializedName("name") val name: String?
+)
+
+private data class GsonLobby(
+    @SerializedName("id") val id: String?,
+    @SerializedName("name") val name: String?,
+    @SerializedName("hostId") val hostId: String?,
+    @SerializedName("started") val started: Boolean?,
+    @SerializedName("users") val users: List<GsonUser>?,
+    @SerializedName("readyStatus") val readyStatus: Map<String, Boolean>?,
+    @SerializedName("selectedRoles") val selectedRoles: Map<String, String>?
+)
+
+private data class GsonResponse(
+    @SerializedName("success") val success: Boolean?,
+    @SerializedName("message") val message: String?,
+    @SerializedName("lobbyId") val lobbyId: String?,
+    @SerializedName("lobby") val lobby: GsonLobby?
+)
+
+// ── Parser ────────────────────────────────────────────────────────────────────
+
+private val gson = Gson()
+
+fun String.toLobbyResponse(): LobbyResponse {
+    val raw = gson.fromJson(this, GsonResponse::class.java)
+    return LobbyResponse(
+        success  = raw.success ?: false,
+        message  = raw.message ?: "",
+        lobbyId  = raw.lobbyId?.takeIf { it.isNotBlank() },
+        lobby    = raw.lobby?.toLobbyData()
+    )
 }
 
-fun JSONObject.toLobbyData(): LobbyData {
-    val id        = getString("id")
-    val name      = getString("name")
-    val hostId    = getString("hostId")
-    val isStarted = optBoolean("started", false)
-
-    val usersArray = getJSONArray("users")
-    val users = (0 until usersArray.length()).map { i ->
-        val u = usersArray.getJSONObject(i)
-        LobbyUserData(id = u.getString("id"), name = u.optString("nickName", u.optString("name", "Unknown")))
-    }
-
-    val readyObj    = optJSONObject("readyStatus") ?: JSONObject()
-    val readyStatus = buildMap<String, Boolean> {
-        readyObj.keys().forEach { k -> put(k, readyObj.getBoolean(k)) }
-    }
-
-    val rolesObj      = optJSONObject("selectedRoles") ?: JSONObject()
-    val selectedRoles = buildMap<String, String> {
-        rolesObj.keys().forEach { k -> put(k, rolesObj.getString(k)) }
-    }
-
-    return LobbyData(id, name, hostId, isStarted, users, readyStatus, selectedRoles)
+private fun GsonLobby.toLobbyData(): LobbyData {
+    return LobbyData(
+        id            = id ?: "",
+        name          = name ?: "",
+        hostId        = hostId ?: "",
+        isStarted     = started ?: false,
+        users         = users?.map { u ->
+            LobbyUserData(
+                id   = u.id ?: "",
+                name = u.nickName ?: u.name ?: "Unknown"
+            )
+        } ?: emptyList(),
+        readyStatus   = readyStatus ?: emptyMap(),
+        selectedRoles = selectedRoles ?: emptyMap()
+    )
 }
