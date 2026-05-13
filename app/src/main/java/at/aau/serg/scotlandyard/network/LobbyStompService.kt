@@ -23,6 +23,9 @@ class LobbyStompService(private val session: StompSession, private val userId: S
     private var globalSubscriptionJob: Job? = null
     private var specificLobbyJob: Job? = null
 
+    // Cache für den Host-Namen. Standard-Fallback
+    private var lastKnownHostName: String = "Host"
+
     private val _lobbyResponse = MutableStateFlow<LobbyResponse?>(null)
     val lobbyResponse: StateFlow<LobbyResponse?> = _lobbyResponse.asStateFlow()
 
@@ -56,7 +59,15 @@ class LobbyStompService(private val session: StompSession, private val userId: S
 
     private fun handleIncomingMessage(msg: String) {
         try {
-            val response = msg.toLobbyResponse()
+            var response = msg.toLobbyResponse()
+
+            // Host-Namen immer aktuell halten, solange wir gültige Lobby-Daten erhalten
+            response.lobby?.let { lobby ->
+                val hostUser = lobby.users.find { it.id == lobby.hostId }
+                if (hostUser != null) {
+                    lastKnownHostName = hostUser.name
+                }
+            }
 
             // Automatisches Abonnieren der spezifischen Lobby nach erfolgreichem Beitritt
             if (response.success && response.lobbyId != null) {
@@ -66,6 +77,19 @@ class LobbyStompService(private val session: StompSession, private val userId: S
                     unsubscribeFromSpecificLobby()
                 }
             }
+
+            // Ersetzt generische Server-Texte durch spezifische, auf den Host bezogene Texte
+            val lobbyName = "${lastKnownHostName}'s Lobby"
+            val customMessage = when (response.message) {
+                "Lobby created" -> "$lobbyName created"
+                "Joined lobby" -> "Joined $lobbyName"
+                "Left lobby" -> "Left $lobbyName"
+                "Lobby deleted" -> "$lobbyName deleted"
+                "Lobby deleted (empty)" -> "$lobbyName deleted (empty)"
+                else -> response.message // Unveränderte Originalnachricht (z.B. Fehler oder "Player kicked")
+            }
+
+            response = response.copy(message = customMessage)
 
             _lobbyResponse.value = response
         } catch (e: Exception) {
@@ -80,11 +104,7 @@ class LobbyStompService(private val session: StompSession, private val userId: S
             try {
                 session.subscribeText("/topic/lobby/$lobbyId").collect { msg ->
                     Log.d("LOBBY_DEBUG", "Specific Lobby update received ($lobbyId): $msg")
-                    try {
-                        _lobbyResponse.value = msg.toLobbyResponse()
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Parse error in specific lobby: $msg", e)
-                    }
+                    handleIncomingMessage(msg)
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Specific Lobby Subscription error", e)
