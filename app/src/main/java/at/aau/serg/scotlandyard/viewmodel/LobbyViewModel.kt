@@ -66,7 +66,7 @@ class LobbyViewModel(
 
     private fun setupLobbyService(session: org.hildan.krossbow.stomp.StompSession) {
         lobbyService = LobbyStompService(session, userId)
-        lobbyService!!.subscribe()
+        lobbyService!!.subscribe(myStomp)
         _isConnected.value = true
 
         viewModelScope.launch {
@@ -183,7 +183,7 @@ class LobbyViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        lobbyService?.unsubscribe()
+        lobbyService?.unsubscribe(myStomp)
     }
 }
 
