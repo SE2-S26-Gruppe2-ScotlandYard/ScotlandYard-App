@@ -3,16 +3,14 @@ package at.aau.serg.scotlandyard.network
 import android.util.Log
 import at.aau.serg.scotlandyard.model.LobbyResponse
 import at.aau.serg.scotlandyard.model.toLobbyResponse
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import org.hildan.krossbow.stomp.StompSession
 import org.hildan.krossbow.stomp.sendText
-import org.hildan.krossbow.stomp.subscribeText
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 private const val TAG = "LobbyStompService"
@@ -20,31 +18,25 @@ private const val TAG = "LobbyStompService"
 class LobbyStompService(private val session: StompSession) {
 
     private val scope = CoroutineScope(Dispatchers.IO)
-    private var subscriptionJob: Job? = null
 
     private val _lobbyResponse = MutableStateFlow<LobbyResponse?>(null)
     val lobbyResponse: StateFlow<LobbyResponse?> = _lobbyResponse.asStateFlow()
 
+    // MyStomp subscribed bereits auf /topic/lobby – wir nutzen dessen Callback
     fun subscribe(myStomp: MyStomp? = null) {
-        subscriptionJob = scope.launch {
+        myStomp?.setLobbyCallback { msg ->
+            android.util.Log.d("LOBBY_DEBUG", "LobbyStompService received: $msg")
             try {
-                session.subscribeText("/topic/lobby").collect { msg ->
-                    android.util.Log.d("LOBBY_DEBUG", "LobbyStompService received: $msg")
-                    try {
-                        val response = msg.toLobbyResponse()
-                        _lobbyResponse.value = response
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Parse error: $msg", e)
-                    }
-                }
+                val response = msg.toLobbyResponse()
+                _lobbyResponse.value = response
             } catch (e: Exception) {
-                Log.e(TAG, "Subscription error", e)
+                Log.e(TAG, "Parse error: $msg", e)
             }
         }
     }
 
     fun unsubscribe(myStomp: MyStomp? = null) {
-        subscriptionJob?.cancel()
+        myStomp?.setLobbyCallback(null)
     }
 
     fun createLobby(lobbyName: String, userId: String, nickName: String) {
