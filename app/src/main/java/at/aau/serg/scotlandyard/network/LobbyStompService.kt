@@ -23,6 +23,7 @@ class LobbyStompService(private val session: StompSession, private val userId: S
     private val _lobbyResponse = MutableStateFlow<LobbyResponse?>(null)
     val lobbyResponse: StateFlow<LobbyResponse?> = _lobbyResponse.asStateFlow()
 
+    // MyStomp subscribed bereits auf /topic/lobby – wir nutzen dessen Callback
     fun subscribe(myStomp: MyStomp? = null) {
         myStomp?.setLobbyCallback { msg ->
             Log.d("LOBBY_DEBUG", "LobbyStompService received: $msg")
