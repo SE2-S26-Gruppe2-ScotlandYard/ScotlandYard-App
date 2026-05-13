@@ -39,12 +39,18 @@ fun RoleSelectionScreen(
     onBackClick: () -> Unit,
     onGameStart: () -> Unit
 ) {
+    LaunchedEffect(viewModel) {
+        viewModel.navigateToLobby.collect {
+            onBackClick() // Führt die eigentliche Navigation aus (z.B. popBackStack)
+        }
+    }
+
     RoleSelectionContent(
         localUserId = viewModel.userId,
         isHost = viewModel.isLocalUserHost(),
         lobby = lobby,
         onRoleSelect = { role -> viewModel.setRole(viewModel.userId, role) },
-        onBackClick = onBackClick,
+        onBackClick = { viewModel.goBackToLobby() }, // Klick löst jetzt Backend-Call aus
         onGameStart = onGameStart
     )
 }
@@ -84,40 +90,46 @@ fun RoleSelectionContent(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp, start = 16.dp, end = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            TextButton(
-                onClick = onBackClick,
-                colors = ButtonDefaults.textButtonColors(contentColor = Color.White),
-                modifier = Modifier.wrapContentSize()
-            ) {
-                Icon(Icons.Default.ArrowBack, contentDescription = "Back", modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Back to Lobby", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Serif)
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                // Der "Back to Lobby"-Button ist nur für den Host sichtbar.
+                if (isHost) {
+                    TextButton(
+                        onClick = onBackClick,
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color.White),
+                        modifier = Modifier.wrapContentSize()
+                    ) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Back to Lobby", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Serif)
+                    }
+                }
             }
 
-            if (isHost) {
-                TextButton(
-                    onClick = onGameStart,
-                    enabled = allRolesSet,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color.White,
-                        disabledContentColor = Color(0x44FFFFFF)
-                    ),
-                    modifier = Modifier.wrapContentSize()
-                ) {
-                    Text("Start Game", fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+                if (isHost) {
+                    TextButton(
+                        onClick = onGameStart,
+                        enabled = allRolesSet,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color.White,
+                            disabledContentColor = Color(0x44FFFFFF)
+                        ),
+                        modifier = Modifier.wrapContentSize()
+                    ) {
+                        Text("Start Game", fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
+                    }
+                } else {
+                    Text(
+                        text = "Waiting for host...",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = FontFamily.Serif,
+                        modifier = Modifier.padding(end = 16.dp)
+                    )
                 }
-            } else {
-                Text(
-                    text = "Waiting for host...",
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = FontFamily.Serif,
-                    modifier = Modifier.padding(end = 16.dp)
-                )
             }
         }
 

@@ -57,7 +57,6 @@ fun LobbyScreen(
     val isLoading     by viewModel.isLoading.collectAsState()
     val isConnected   by viewModel.isConnected.collectAsState()
 
-    // Gäste: auf Server-Signal hören und automatisch navigieren
     LaunchedEffect(viewModel) {
         viewModel.navigateToRoleSelection.collect {
             onNavigateToRoleSelection(viewModel)
@@ -100,7 +99,7 @@ fun LobbyScreen(
                     onLeave          = { viewModel.leaveLobby() },
                     onDelete         = { viewModel.deleteLobby() },
                     onKickPlayer     = { targetId -> viewModel.kickPlayer(targetId) },
-                    onProceedToRoles = { onProceedToRoles(viewModel) }
+                    onStartRoleSelection = { viewModel.startRoleSelection() }
                 )
             }
 
@@ -178,7 +177,7 @@ private fun InLobbyView(
     onLeave: () -> Unit,
     onDelete: () -> Unit,
     onKickPlayer: (String) -> Unit,
-    onProceedToRoles: () -> Unit
+    onStartRoleSelection: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
 
@@ -226,7 +225,7 @@ private fun InLobbyView(
                 text    = if (canProceed) "Weiter zur Rollenwahl →" else "Mind. 3 Spieler erforderlich",
                 enabled = canProceed && !isLoading,
                 color   = GreenButton,
-                onClick = onProceedToRoles
+                onClick = onStartRoleSelection
             )
         }
     }

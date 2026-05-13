@@ -98,7 +98,7 @@ class MyStomp(val callbacks: Callbacks) {
             } catch (e: Exception) { handleDisconnect() }
         }
 
-        // ── NEU: Lobby – von Anfang an subscribed ─────────────────────────
+        // Lobby
         scope.launch {
             try {
                 activeSession.subscribeText("/topic/lobby").collect { msg ->
