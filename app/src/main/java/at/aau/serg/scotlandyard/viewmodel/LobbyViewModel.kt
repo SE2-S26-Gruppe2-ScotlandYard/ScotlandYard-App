@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import at.aau.serg.scotlandyard.model.LobbyData
 import at.aau.serg.scotlandyard.network.LobbyStompService
 import at.aau.serg.scotlandyard.network.MyStomp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -13,6 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.json.JSONObject
+import org.hildan.krossbow.stomp.sendText
 
 class LobbyViewModel(
     val userId: String,
@@ -37,6 +41,10 @@ class LobbyViewModel(
     // ── Navigation Event: alle Spieler zur Rollenwahl schicken ────────────
     private val _navigateToRoleSelection = MutableSharedFlow<Unit>()
     val navigateToRoleSelection: SharedFlow<Unit> = _navigateToRoleSelection.asSharedFlow()
+
+    // ── Navigation Event: alle Spieler zurück zur Lobby ────────────
+    private val _navigateToLobby = MutableSharedFlow<Unit>()
+    val navigateToLobby: SharedFlow<Unit> = _navigateToLobby.asSharedFlow()
 
     init {
         val session = myStomp.getSession()
@@ -66,46 +74,48 @@ class LobbyViewModel(
                 response ?: return@collect
                 _isLoading.value = false
 
-                if (response.success) {
-                    val incomingLobby = response.lobby
-                    val currentLobbyId = _currentLobby.value?.id
-
-                    if (incomingLobby != null) {
-                        when {
-                            currentLobbyId == incomingLobby.id -> {
-                                val weAreStillInIt = incomingLobby.users.any { it.id == userId }
-                                if (weAreStillInIt) {
-                                    _currentLobby.value = null
-                                    _currentLobby.value = incomingLobby
-
-                                    // ── Signal: Rollenwahl starten ─────────────
-                                    if (response.message == "ROLE_SELECTION_STARTED") {
-                                        _navigateToRoleSelection.emit(Unit)
-                                    }
-                                } else {
-                                    _currentLobby.value = null
-                                    _statusMessage.value = "Du wurdest aus der Lobby entfernt"
-                                }
-                            }
-                            currentLobbyId == null -> {
-                                val weAreInIt = incomingLobby.users.any { it.id == userId }
-                                if (weAreInIt) {
-                                    _currentLobby.value = incomingLobby
-                                }
-                            }
-                            else -> { /* andere Lobby ignorieren */ }
-                        }
-                    } else {
-                        if (_currentLobby.value?.id == response.lobbyId) {
-                            _currentLobby.value = null
-                        }
-                    }
-
-                    if (response.message != "ROLE_SELECTION_STARTED") {
-                        _statusMessage.value = response.message
-                    }
-                } else {
+                if (!response.success) {
                     _statusMessage.value = "⚠️ ${response.message}"
+                    return@collect
+                }
+
+                // --- Schritt 2: Lobby-Status aktualisieren ---
+                val incomingLobby = response.lobby
+                val currentLobby = _currentLobby.value
+
+                if (incomingLobby != null) {
+                    val isPlayerInLobby = incomingLobby.users.any { it.id == userId }
+
+                    if (isPlayerInLobby) {
+
+                        _currentLobby.value = incomingLobby
+                    } else if (currentLobby?.id == incomingLobby.id) {
+                        // Wir waren in dieser Lobby, sind es aber nicht mehr (z.B. gekickt).
+                        _currentLobby.value = null
+                        _statusMessage.value = "Du wurdest aus der Lobby entfernt"
+                    }
+                    // Eine fremde Lobby wird ignoriert.
+
+                } else if (response.lobbyId != null) {
+                    // Lobby wurde vermutlich gelöscht.
+                    if (currentLobby?.id == response.lobbyId) {
+                        _currentLobby.value = null
+                    }
+                }
+
+                // Navigations-Events verarbeiten
+                when (response.message) {
+                    "ROLE_SELECTION_STARTED" -> _navigateToRoleSelection.emit(Unit)
+                    "BACK_TO_LOBBY" -> {_navigateToLobby.emit(Unit)
+                    }
+                }
+
+                // Status-Nachricht anzeigen
+                // filtern Nachrichten heraus, die nur für die Navigation gedacht sind.
+                if (response.message !in listOf("ROLE_SELECTION_STARTED", "BACK_TO_LOBBY", "OK", "SUCCESS")) {
+                    if(response.message.isNotBlank()) {
+                        _statusMessage.value = response.message
+                        }
                 }
             }
         }
@@ -153,6 +163,21 @@ class LobbyViewModel(
     fun startRoleSelection() {
         val lobbyId = _currentLobby.value?.id ?: return
         lobbyService?.startRoleSelection(lobbyId, userId)
+    }
+
+    fun goBackToLobby() {
+        val lobbyId = _currentLobby.value?.id ?: return
+        val payload = JSONObject().apply {
+            put("lobbyId", lobbyId)
+            put("requesterId", userId)
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                myStomp.getSession()?.sendText("/app/lobby/backToLobby", payload.toString())
+            } catch (e: Exception) {
+                _statusMessage.value = "⚠️ Fehler bei der Rückkehr zur Lobby."
+            }
+        }
     }
 
     fun isLocalUserHost(): Boolean = _currentLobby.value?.hostId == userId

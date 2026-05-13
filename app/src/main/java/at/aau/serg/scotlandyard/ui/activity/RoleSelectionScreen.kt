@@ -1,24 +1,23 @@
 package at.aau.serg.scotlandyard.ui.activity
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.aau.serg.scotlandyard.model.LobbyData
@@ -40,19 +39,40 @@ fun RoleSelectionScreen(
     onBackClick: () -> Unit,
     onGameStart: () -> Unit
 ) {
-    val localUserId = viewModel.userId
-    val isHost = viewModel.isLocalUserHost()
+    LaunchedEffect(viewModel) {
+        viewModel.navigateToLobby.collect {
+            onBackClick() // Führt die eigentliche Navigation aus (z.B. popBackStack)
+        }
+    }
 
+    RoleSelectionContent(
+        localUserId = viewModel.userId,
+        isHost = viewModel.isLocalUserHost(),
+        lobby = lobby,
+        onRoleSelect = { role -> viewModel.setRole(viewModel.userId, role) },
+        onBackClick = { viewModel.goBackToLobby() }, // Klick löst jetzt Backend-Call aus
+        onGameStart = onGameStart
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun RoleSelectionContent(
+    localUserId: String,
+    isHost: Boolean,
+    lobby: LobbyData,
+    onRoleSelect: (String) -> Unit,
+    onBackClick: () -> Unit,
+    onGameStart: () -> Unit
+) {
     val myRole = lobby.selectedRoles[localUserId] ?: "NONE"
     val mrXTaken = lobby.selectedRoles.values.contains("MRX")
-    val mrXOwner = lobby.selectedRoles.entries.find { it.value == "MRX" }?.key
-    val allRolesSet = lobby.users.all { user ->
+
+    val allRolesSet = lobby.users.isNotEmpty() && lobby.users.all { user ->
         (lobby.selectedRoles[user.id] ?: "NONE") != "NONE"
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-
-        // Hintergrundbild
         Image(
             painter = painterResource(id = R.drawable.chooserole_bg),
             contentDescription = null,
@@ -60,234 +80,237 @@ fun RoleSelectionScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Dunkler Overlay
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0x88000000))
+                .background(Color(0x44000000))
         )
 
-        // Hauptinhalt
-        Column(
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxWidth()
+                .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Titel
-            Text(
-                text = "Choose your side:",
-                fontSize = 36.sp,
-                fontWeight = FontWeight.Bold,
-                fontFamily = FontFamily.Serif,
-                color = Color.White,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // Zwei Karten nebeneinander
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // ── Detektiv Karte ─────────────────────────────────────────
-                RoleCard(
-                    modifier = Modifier.weight(1f),
-                    role = "DETECTIVE",
-                    title = "Play as Detective",
-                    subtitle = "Hunt Mr. X together",
-                    backgroundColor = Color(0xFF0D2A1A),
-                    borderColor = if (myRole == "DETECTIVE") Color(0xFF4CAF50) else Color(0x44FFFFFF),
-                    isSelected = myRole == "DETECTIVE",
-                    isDisabled = false,
-                    playerNames = lobby.users
-                        .filter { (lobby.selectedRoles[it.id] ?: "NONE") == "DETECTIVE" }
-                        .map { it.name },
-                    onClick = {
-                        viewModel.setRole(localUserId, "DETECTIVE")
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                // Der "Back to Lobby"-Button ist nur für den Host sichtbar.
+                if (isHost) {
+                    TextButton(
+                        onClick = onBackClick,
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color.White),
+                        modifier = Modifier.wrapContentSize()
+                    ) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Back to Lobby", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Serif)
                     }
-
-                )
-
-                // ── Mr. X Karte ────────────────────────────────────────────
-                RoleCard(
-                    modifier = Modifier.weight(1f),
-                    role = "MRX",
-                    title = "Play as Mr. X",
-                    subtitle = "Outsmart the detectives",
-                    backgroundColor = Color(0xFF1A0D0D),
-                    borderColor = when {
-                        myRole == "MRX" -> Color(0xFFE53935)
-                        mrXTaken -> Color(0x22FFFFFF)
-                        else -> Color(0x44FFFFFF)
-                    },
-                    isSelected = myRole == "MRX",
-                    isDisabled = mrXTaken && myRole != "MRX",
-                    playerNames = if (mrXOwner != null) {
-                        val name = lobby.users.find { it.id == mrXOwner }?.name ?: ""
-                        if (name.isNotBlank()) listOf(name) else emptyList()
-                    } else emptyList(),
-                    onClick = {
-                        if (!mrXTaken || myRole == "MRX") {
-                            viewModel.setRole(localUserId, "MRX")
-                        }
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Spieler ohne Rolle anzeigen
-            val playersWithoutRole = lobby.users.filter {
-                (lobby.selectedRoles[it.id] ?: "NONE") == "NONE"
-            }
-            if (playersWithoutRole.isNotEmpty()) {
-                Text(
-                    text = "Noch ohne Rolle: ${playersWithoutRole.joinToString(", ") { it.name }}",
-                    color = Color(0xFFFFCC80),
-                    fontSize = 13.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 24.dp)
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-            }
-
-            // Zurück Button
-            OutlinedButton(
-                onClick = onBackClick,
-                shape = RoundedCornerShape(8.dp),
-                border = ButtonDefaults.outlinedButtonBorder,
-                modifier = Modifier
-                    .padding(horizontal = 24.dp)
-                    .fillMaxWidth()
-                    .height(48.dp)
-            ) {
-                Text("← Zurück zur Lobby", color = Color.White)
-            }
-
-            // Spiel starten (nur Host, nur wenn alle Rollen vergeben)
-            if (isHost) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = onGameStart,
-                    enabled = allRolesSet,
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFF1A4A3A),
-                        disabledContainerColor = Color(0x441A4A3A)
-                    ),
-                    modifier = Modifier
-                        .padding(horizontal = 24.dp)
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .border(1.dp, Color(0x88FFFFFF), RoundedCornerShape(8.dp))
-                ) {
-                    Text(
-                        text = if (allRolesSet) "Spiel starten ▶" else "Alle müssen eine Rolle wählen",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp
-                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+                if (isHost) {
+                    TextButton(
+                        onClick = onGameStart,
+                        enabled = allRolesSet,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = Color.White,
+                            disabledContentColor = Color(0x44FFFFFF)
+                        ),
+                        modifier = Modifier.wrapContentSize()
+                    ) {
+                        Text("Start Game", fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
+                    }
+                } else {
+                    Text(
+                        text = "Waiting for host...",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        fontFamily = FontFamily.Serif,
+                        modifier = Modifier.padding(end = 16.dp)
+                    )
+                }
+            }
+        }
+
+        Text(
+            text = "Choose your side:",
+            fontSize = 36.sp,
+            fontWeight = FontWeight.Normal,
+            fontFamily = FontFamily.Serif,
+            color = Color.White,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 40.dp)
+                .align(Alignment.TopCenter)
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 24.dp, start = 24.dp, end = 24.dp)
+                .align(Alignment.BottomCenter),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            RoleSelectionColumn(
+                modifier = Modifier.weight(1f),
+                title = "Play as Detective",
+                subtitle = "Hunt Mr. X together",
+                backgroundColor = Color(0xFF142B20),
+                isSelected = myRole == "DETECTIVE",
+                isDisabled = false,
+                players = lobby.users.filter { (lobby.selectedRoles[it.id] ?: "NONE") == "DETECTIVE" },
+                hostId = lobby.hostId,
+                onClick = { onRoleSelect("DETECTIVE") }
+            )
+
+            RoleSelectionColumn(
+                modifier = Modifier.weight(1f),
+                title = "Play as Mr. X",
+                subtitle = "Outsmart the detectives",
+                backgroundColor = if (mrXTaken) Color(0xFF1D1D1D) else Color(0xFF142B20),
+                isSelected = myRole == "MRX",
+                isDisabled = mrXTaken && myRole != "MRX",
+                players = lobby.users.filter { (lobby.selectedRoles[it.id] ?: "NONE") == "MRX" },
+                hostId = lobby.hostId,
+                onClick = {
+                    if (!mrXTaken || myRole == "MRX") {
+                        onRoleSelect("MRX")
+                    }
+                }
+            )
         }
     }
 }
 
-// ── Rollen-Karte ──────────────────────────────────────────────────────────────
-
 @Composable
-private fun RoleCard(
+private fun RoleSelectionColumn(
     modifier: Modifier = Modifier,
-    role: String,
     title: String,
     subtitle: String,
     backgroundColor: Color,
-    borderColor: Color,
     isSelected: Boolean,
     isDisabled: Boolean,
-    playerNames: List<String>,
+    players: List<LobbyUserData>,
+    hostId: String,
     onClick: () -> Unit
 ) {
-    val borderWidth = if (isSelected) 3.dp else 1.dp
-
-    Button(
-        onClick = onClick,
-        enabled = !isDisabled,
-        shape = RoundedCornerShape(16.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = backgroundColor,
-            disabledContainerColor = backgroundColor.copy(alpha = 0.4f)
-        ),
-        contentPadding = PaddingValues(0.dp),
-        modifier = modifier
-            .height(220.dp)
-            .border(borderWidth, borderColor, RoundedCornerShape(16.dp))
+    Column(
+        modifier = modifier.wrapContentHeight(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
+        Button(
+            onClick = onClick,
+            enabled = !isDisabled,
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, Color(0x55FFFFFF)),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = backgroundColor,
+                contentColor = Color.White,
+                disabledContainerColor = backgroundColor,
+                disabledContentColor = Color(0x44FFFFFF)
+            ),
             modifier = Modifier
-                .fillMaxSize()
-                .padding(20.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxWidth()
+                .height(52.dp)
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                // Rolle Icon
-                Text(
-                    text = if (role == "MRX") "🎩" else "🔍",
-                    fontSize = 40.sp
-                )
+            Text(
+                text = title,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                fontSize = 18.sp,
+                fontFamily = FontFamily.Serif
+            )
+        }
 
-                Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(2.dp))
 
-                Text(
-                    text = title,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                    textAlign = TextAlign.Center
-                )
+        Text(
+            text = subtitle,
+            color = Color.White,
+            fontSize = 13.sp,
+            textAlign = TextAlign.Center,
+            fontFamily = FontFamily.Serif
+        )
 
-                Text(
-                    text = subtitle,
-                    color = Color(0xAAFFFFFF),
-                    fontSize = 12.sp,
-                    textAlign = TextAlign.Center
-                )
-            }
+        Spacer(modifier = Modifier.height(4.dp))
 
-            // Spieler die diese Rolle haben
-            if (playerNames.isNotEmpty()) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    playerNames.forEach { name ->
-                        Text(
-                            text = "● $name",
-                            color = if (role == "MRX") Color(0xFFFF8A80) else Color(0xFF80CBC4),
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
+        if (players.isNotEmpty()) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                players.forEachIndexed { index, user ->
+                    val isHost = user.id == hostId
+                    Text(
+                        text = "● ${user.name}",
+                        color = if (isHost) Color(0xFF4CAF50) else Color.White,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        fontFamily = FontFamily.Serif
+                    )
+                    if (index < players.size - 1) {
+                        Spacer(modifier = Modifier.width(12.dp))
                     }
                 }
-            } else if (isDisabled) {
-                Text(
-                    text = "Bereits vergeben",
-                    color = Color(0x88FFFFFF),
-                    fontSize = 12.sp
-                )
-            } else {
-                Text(
-                    text = if (isSelected) "✓ Ausgewählt" else "Klicken zum Wählen",
-                    color = if (isSelected) Color(0xFF80CBC4) else Color(0x88FFFFFF),
-                    fontSize = 12.sp
-                )
             }
+            Spacer(modifier = Modifier.height(2.dp))
+        }
+
+        if (isDisabled) {
+            Text(
+                text = "Already taken",
+                color = Color(0x88FFFFFF),
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Serif
+            )
+        } else if (isSelected) {
+            Text(
+                text = "✓ Selected",
+                color = Color(0xFF4CAF50),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Bold,
+                fontFamily = FontFamily.Serif
+            )
+        } else {
+            Text(
+                text = "Click to select",
+                color = Color(0x88FFFFFF),
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Serif
+            )
         }
     }
+}
+
+@Preview(showBackground = true, device = "spec:width=800dp,height=400dp,dpi=480,orientation=landscape")
+@Composable
+fun RoleSelectionPreview() {
+    val dummyLobby = LobbyData(
+        id = "test-id",
+        name = "Preview Lobby",
+        hostId = "1",
+        isStarted = false,
+        readyStatus = emptyMap(),
+        users = listOf(
+            LobbyUserData("1", "h"),
+            LobbyUserData("2", "i"),
+            LobbyUserData("3", "Max")
+        ),
+        selectedRoles = mutableMapOf(
+            "1" to "DETECTIVE",
+            "2" to "DETECTIVE",
+            "3" to "NONE"
+        )
+    )
+
+    RoleSelectionContent(
+        localUserId = "3",
+        isHost = false,
+        lobby = dummyLobby,
+        onRoleSelect = {},
+        onBackClick = {},
+        onGameStart = {}
+    )
 }

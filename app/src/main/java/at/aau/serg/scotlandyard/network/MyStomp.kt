@@ -26,11 +26,13 @@ class MyStomp(val callbacks: Callbacks) {
 
     fun getSession(): StompSession? = session
 
+    // ── NEU: Lobby-Callback ───────────────────────────────────────────────
     private var lobbyCallback: ((String) -> Unit)? = null
 
     fun setLobbyCallback(callback: ((String) -> Unit)?) {
         lobbyCallback = callback
     }
+    // ─────────────────────────────────────────────────────────────────────
 
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
@@ -96,7 +98,7 @@ class MyStomp(val callbacks: Callbacks) {
             } catch (e: Exception) { handleDisconnect() }
         }
 
-        // Lobby – einmalig subscriben, Callback wird von LobbyStompService gesetzt
+        // Lobby
         scope.launch {
             try {
                 activeSession.subscribeText("/topic/lobby").collect { msg ->
@@ -108,6 +110,7 @@ class MyStomp(val callbacks: Callbacks) {
                 handleDisconnect()
             }
         }
+        // ─────────────────────────────────────────────────────────────────
     }
 
     private fun handleDisconnect() {
