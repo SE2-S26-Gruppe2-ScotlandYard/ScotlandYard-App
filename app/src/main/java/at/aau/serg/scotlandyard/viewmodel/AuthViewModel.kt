@@ -17,6 +17,8 @@ import at.aau.serg.scotlandyard.dtos.User
 class AuthViewModel : ViewModel(), Callbacks {
 
     private val myStomp = MyStomp(this)
+
+    fun getMyStomp(): MyStomp = myStomp
     val isConnected: StateFlow<Boolean> = myStomp.isConnected
 
     private val _currentUser = MutableStateFlow<User?>(null)
