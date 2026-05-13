@@ -248,4 +248,43 @@ class LobbyModelsTest {
         val response = json.toLobbyResponse()
         assertTrue(response.lobby!!.users.isEmpty())
     }
+    @Test
+    fun toLobbyResponse_uses_name_when_nickname_null() {
+        val json = """
+    {
+        "success": true,
+        "message": "Lobby created",
+        "lobbyId": "AB3KP",
+        "lobby": {
+            "id": "AB3KP",
+            "name": "Lobby",
+            "hostId": "1",
+            "started": false,
+            "users": [{"id": "1", "name": "Hans"}]
+        }
+    }
+    """.trimIndent()
+        val response = json.toLobbyResponse()
+        assertEquals("Hans", response.lobby!!.users[0].name)
+    }
+
+    @Test
+    fun toLobbyResponse_uses_unknown_when_both_null() {
+        val json = """
+    {
+        "success": true,
+        "message": "Lobby created",
+        "lobbyId": "AB3KP",
+        "lobby": {
+            "id": "AB3KP",
+            "name": "Lobby",
+            "hostId": "1",
+            "started": false,
+            "users": [{"id": "1"}]
+        }
+    }
+    """.trimIndent()
+        val response = json.toLobbyResponse()
+        assertEquals("Unknown", response.lobby!!.users[0].name)
+    }
 }
