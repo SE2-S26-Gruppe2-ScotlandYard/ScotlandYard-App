@@ -65,8 +65,8 @@ class LobbyViewModel(
     }
 
     private fun setupLobbyService(session: org.hildan.krossbow.stomp.StompSession) {
-        lobbyService = LobbyStompService(session)
-        lobbyService!!.subscribe(myStomp)
+        lobbyService = LobbyStompService(session, userId)
+        lobbyService!!.subscribe()
         _isConnected.value = true
 
         viewModelScope.launch {
@@ -84,10 +84,10 @@ class LobbyViewModel(
                 val currentLobby = _currentLobby.value
 
                 if (incomingLobby != null) {
-                    val isPlayerInLobby = incomingLobby.users.any { it.id == userId }
+                    // Robuste Prüfung: Auch wenn Listen leer sind, crasht nichts.
+                    val isPlayerInLobby = incomingLobby.users?.any { it.id == userId } == true || incomingLobby.hostId == userId
 
                     if (isPlayerInLobby) {
-
                         _currentLobby.value = incomingLobby
                     } else if (currentLobby?.id == incomingLobby.id) {
                         // Wir waren in dieser Lobby, sind es aber nicht mehr (z.B. gekickt).
@@ -106,16 +106,16 @@ class LobbyViewModel(
                 // Navigations-Events verarbeiten
                 when (response.message) {
                     "ROLE_SELECTION_STARTED" -> _navigateToRoleSelection.emit(Unit)
-                    "BACK_TO_LOBBY" -> {_navigateToLobby.emit(Unit)
+                    "BACK_TO_LOBBY" -> {
+                        _navigateToLobby.emit(Unit)
                     }
                 }
 
                 // Status-Nachricht anzeigen
-                // filtern Nachrichten heraus, die nur für die Navigation gedacht sind.
                 if (response.message !in listOf("ROLE_SELECTION_STARTED", "BACK_TO_LOBBY", "OK", "SUCCESS")) {
                     if(response.message.isNotBlank()) {
                         _statusMessage.value = response.message
-                        }
+                    }
                 }
             }
         }
@@ -159,7 +159,6 @@ class LobbyViewModel(
         lobbyService?.setRole(lobbyId, userId, targetUserId, role)
     }
 
-    // ── Host drückt "Weiter zur Rollenwahl" ───────────────────────────────
     fun startRoleSelection() {
         val lobbyId = _currentLobby.value?.id ?: return
         lobbyService?.startRoleSelection(lobbyId, userId)
@@ -184,7 +183,7 @@ class LobbyViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        lobbyService?.unsubscribe(myStomp)
+        lobbyService?.unsubscribe()
     }
 }
 

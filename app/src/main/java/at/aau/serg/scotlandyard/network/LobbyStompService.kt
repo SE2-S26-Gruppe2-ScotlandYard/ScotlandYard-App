@@ -17,34 +17,89 @@ import org.json.JSONObject
 
 private const val TAG = "LobbyStompService"
 
-class LobbyStompService(private val session: StompSession) {
+class LobbyStompService(private val session: StompSession, private val userId: String) {
 
     private val scope = CoroutineScope(Dispatchers.IO)
-    private var subscriptionJob: Job? = null
+    private var globalSubscriptionJob: Job? = null
+    private var specificLobbyJob: Job? = null
 
     private val _lobbyResponse = MutableStateFlow<LobbyResponse?>(null)
     val lobbyResponse: StateFlow<LobbyResponse?> = _lobbyResponse.asStateFlow()
 
-    fun subscribe(myStomp: MyStomp? = null) {
-        subscriptionJob = scope.launch {
-            try {
-                session.subscribeText("/topic/lobby").collect { msg ->
-                    android.util.Log.d("LOBBY_DEBUG", "LobbyStompService received: $msg")
-                    try {
-                        val response = msg.toLobbyResponse()
-                        _lobbyResponse.value = response
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Parse error: $msg", e)
+    fun subscribe() {
+        globalSubscriptionJob = scope.launch {
+            // 1. Globale Lobby-Events (für den Server-Browser)
+            launch {
+                try {
+                    session.subscribeText("/topic/lobby").collect { msg ->
+                        Log.d("LOBBY_DEBUG", "Global Lobby update received: $msg")
+                        handleIncomingMessage(msg)
                     }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Global Subscription error", e)
                 }
-            } catch (e: Exception) {
-                Log.e(TAG, "Subscription error", e)
+            }
+
+            // 2. Private User-Events über das dedizierte Topic
+            launch {
+                try {
+                    session.subscribeText("/topic/player/$userId").collect { msg ->
+                        Log.d("LOBBY_DEBUG", "Private User response received: $msg")
+                        handleIncomingMessage(msg)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Private Subscription error", e)
+                }
             }
         }
     }
 
-    fun unsubscribe(myStomp: MyStomp? = null) {
-        subscriptionJob?.cancel()
+    private fun handleIncomingMessage(msg: String) {
+        try {
+            val response = msg.toLobbyResponse()
+
+            // Automatisches Abonnieren der spezifischen Lobby nach erfolgreichem Beitritt
+            if (response.success && response.lobbyId != null) {
+                if (response.message == "Joined lobby" || response.message == "Lobby created") {
+                    subscribeToSpecificLobby(response.lobbyId)
+                } else if (response.message == "Left lobby" || response.message == "Lobby deleted" || response.message == "Lobby deleted (empty)" || response.message == "Player kicked") {
+                    unsubscribeFromSpecificLobby()
+                }
+            }
+
+            _lobbyResponse.value = response
+        } catch (e: Exception) {
+            Log.e(TAG, "Parse error: $msg", e)
+        }
+    }
+
+    private fun subscribeToSpecificLobby(lobbyId: String) {
+        if (specificLobbyJob?.isActive == true) return // Bereits abonniert
+
+        specificLobbyJob = scope.launch {
+            try {
+                session.subscribeText("/topic/lobby/$lobbyId").collect { msg ->
+                    Log.d("LOBBY_DEBUG", "Specific Lobby update received ($lobbyId): $msg")
+                    try {
+                        _lobbyResponse.value = msg.toLobbyResponse()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Parse error in specific lobby: $msg", e)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Specific Lobby Subscription error", e)
+            }
+        }
+    }
+
+    private fun unsubscribeFromSpecificLobby() {
+        specificLobbyJob?.cancel()
+        specificLobbyJob = null
+    }
+
+    fun unsubscribe() {
+        globalSubscriptionJob?.cancel()
+        unsubscribeFromSpecificLobby()
     }
 
     fun createLobby(lobbyName: String, userId: String, nickName: String) {

@@ -26,17 +26,19 @@ class MyStomp(val callbacks: Callbacks) {
 
     fun getSession(): StompSession? = session
 
-    // ── NEU: Lobby-Callback ───────────────────────────────────────────────
+    private var currentUserId: String? = null
+    private var currentGameId: String? = null
     private var lobbyCallback: ((String) -> Unit)? = null
 
     fun setLobbyCallback(callback: ((String) -> Unit)?) {
         lobbyCallback = callback
     }
-    // ─────────────────────────────────────────────────────────────────────
+
+    fun setCurrentUserId(userId: String) {
+        currentUserId = userId
+    }
 
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
-
-    private var currentGameId: String? = null
     private val errorMsg: String = "Error: Not connected"
 
     private val _isConnected = MutableStateFlow(false)
@@ -70,7 +72,6 @@ class MyStomp(val callbacks: Callbacks) {
     }
 
     private fun subscribeToServer(activeSession: StompSession) {
-        // Hello
         scope.launch {
             try {
                 activeSession.subscribeText("/topic/hello-response").collect { msg ->
@@ -79,7 +80,6 @@ class MyStomp(val callbacks: Callbacks) {
             } catch (e: Exception) { handleDisconnect() }
         }
 
-        // JSON
         scope.launch {
             try {
                 activeSession.subscribeText("/topic/rcv-object").collect { msg ->
@@ -89,20 +89,24 @@ class MyStomp(val callbacks: Callbacks) {
             } catch (e: Exception) { handleDisconnect() }
         }
 
-        // User
+        // Exklusives Topic nur für den allerersten Login.
+        // Geht direkt in das AuthViewModel.
         scope.launch {
             try {
-                activeSession.subscribeText("/topic/user-response").collect { msg ->
+                activeSession.subscribeText("/user/topic/user-response").collect { msg ->
                     callback(msg)
                 }
-            } catch (e: Exception) { handleDisconnect() }
+            } catch (e: Exception) {
+                Log.e("MyStomp", "User response subscription error", e)
+                handleDisconnect()
+            }
         }
 
-        // Lobby
+        // Globale Lobby Updates (Empfängt nur noch Lobby created/deleted, keine privaten Daten mehr)
         scope.launch {
             try {
                 activeSession.subscribeText("/topic/lobby").collect { msg ->
-                    Log.d("LOBBY_DEBUG", "MyStomp received: $msg")
+                    Log.d("LOBBY_DEBUG", "Global lobby update: $msg")
                     lobbyCallback?.invoke(msg)
                 }
             } catch (e: Exception) {
@@ -110,7 +114,6 @@ class MyStomp(val callbacks: Callbacks) {
                 handleDisconnect()
             }
         }
-        // ─────────────────────────────────────────────────────────────────
     }
 
     private fun handleDisconnect() {
@@ -184,6 +187,26 @@ class MyStomp(val callbacks: Callbacks) {
                         }
                     } catch (e: Exception) {
                         Log.e("MyStomp", "Movement subscription failed", e)
+                    }
+                }
+
+                scope.launch {
+                    try {
+                        session?.subscribeText("/topic/game/$gameId/move-response")?.collect { msg ->
+                            callback("move-response:$msg")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("MyStomp", "Move response subscription failed", e)
+                    }
+                }
+
+                scope.launch {
+                    try {
+                        session?.subscribeText("/topic/game/$gameId/over")?.collect { msg ->
+                            callback("game-over:$msg")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("MyStomp", "Game over subscription failed", e)
                     }
                 }
 

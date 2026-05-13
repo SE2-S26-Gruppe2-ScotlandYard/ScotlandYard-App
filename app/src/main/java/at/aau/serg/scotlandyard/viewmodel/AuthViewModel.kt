@@ -61,6 +61,10 @@ class AuthViewModel : ViewModel(), Callbacks {
             if (response != null) {
                 if (response.success) {
                     _currentUser.value = response.user
+                    // Store user ID in MyStomp for private queue subscriptions
+                    if (response.user != null) {
+                        myStomp.setCurrentUserId(response.user.id)
+                    }
                 } else {
                     _errorMessage.value = response.message
                 }
