@@ -23,15 +23,15 @@ class LobbyStompService(private val session: StompSession, private val userId: S
     private val _lobbyResponse = MutableStateFlow<LobbyResponse?>(null)
     val lobbyResponse: StateFlow<LobbyResponse?> = _lobbyResponse.asStateFlow()
 
-    fun subscribe(myStomp: MyStomp) {
-        myStomp.setLobbyCallback { msg ->
+    fun subscribe(myStomp: MyStomp? = null) {
+        myStomp?.setLobbyCallback { msg ->
             Log.d("LOBBY_DEBUG", "LobbyStompService received: $msg")
             handleIncomingMessage(msg)
         }
     }
 
-    fun unsubscribe(myStomp: MyStomp) {
-        myStomp.setLobbyCallback(null)
+    fun unsubscribe(myStomp: MyStomp? = null) {
+        myStomp?.setLobbyCallback(null)
     }
 
     private fun handleIncomingMessage(msg: String) {
