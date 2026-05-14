@@ -92,9 +92,9 @@ class LobbyViewModel(
                     }
                 }
 
-                when (response.message) {
-                    "ROLE_SELECTION_STARTED" -> _navigateToRoleSelection.emit(Unit)
-                    "BACK_TO_LOBBY" -> _navigateToLobby.emit(Unit)
+                when {
+                    response.message.contains("started role selection", ignoreCase = true) -> _navigateToRoleSelection.emit(Unit)
+                    response.message.contains("returned to lobby", ignoreCase = true) -> _navigateToLobby.emit(Unit)
                 }
 
                 if (response.message !in listOf("ROLE_SELECTION_STARTED", "BACK_TO_LOBBY", "OK", "SUCCESS")) {

@@ -80,14 +80,7 @@ class LobbyStompService(
                 if (hostUser != null) lastKnownHostName = hostUser.name
             }
             val lobbyName = "${lastKnownHostName}'s Lobby"
-            val customMessage = when (response.message) {
-                "Lobby created" -> "$lobbyName created"
-                "Joined lobby" -> "Joined $lobbyName"
-                "Left lobby" -> "Left $lobbyName"
-                "Lobby deleted" -> "$lobbyName deleted"
-                "Lobby deleted (empty)" -> "$lobbyName deleted (empty)"
-                else -> response.message
-            }
+            val customMessage = response.message
             response = response.copy(message = customMessage)
             _lobbyResponse.value = response
         } catch (e: Exception) {
