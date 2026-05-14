@@ -17,6 +17,8 @@ import at.aau.serg.scotlandyard.dtos.User
 class AuthViewModel : ViewModel(), Callbacks {
 
     private val myStomp = MyStomp(this)
+
+    fun getMyStomp(): MyStomp = myStomp
     val isConnected: StateFlow<Boolean> = myStomp.isConnected
 
     private val _currentUser = MutableStateFlow<User?>(null)
@@ -56,7 +58,7 @@ class AuthViewModel : ViewModel(), Callbacks {
         try {
             val response = gson.fromJson(res, UserConnectResponse::class.java)
 
-            if (response != null && response.message != null) {
+            if (response != null) {
                 if (response.success) {
                     _currentUser.value = response.user
                 } else {

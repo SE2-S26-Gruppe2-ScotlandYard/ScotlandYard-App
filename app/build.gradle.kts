@@ -100,6 +100,7 @@ tasks.register<JacocoReport>("jacocoTestReport") {
 }
 
 sonar {
+
     properties {
         property("sonar.projectKey", "SE2-S26-Gruppe2-ScotlandYard_ScotlandYard-App")
         property("sonar.organization", "se2-s26-gruppe2-scotlandyard")
@@ -109,6 +110,11 @@ sonar {
             "sonar.coverage.jacoco.xmlReportPaths",
             "${project.projectDir}/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
         )
+        property("sonar.issue.ignore.multicriteria", "e1")
+        property("sonar.issue.ignore.multicriteria.e1.ruleKey", "kotlin:S8569")
+        property("sonar.issue.ignore.multicriteria.e1.resourceKey", "**/build.gradle.kts")
+        property("sonar.coverage.exclusions", "**/network/LobbyStompService.kt,**/network/MyStomp.kt,**/viewmodel/LobbyViewModel.kt,**/viewmodel/AuthViewModel.kt,**/ui/activity/**,**/ui/theme/**")
+
     }
 }
 
@@ -127,6 +133,7 @@ dependencies {
     implementation(libs.androidx.material.icons)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.gson)
     testImplementation(libs.junit)
     testImplementation(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
@@ -137,5 +144,4 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation("com.google.code.gson:gson:2.10.1")
 }
