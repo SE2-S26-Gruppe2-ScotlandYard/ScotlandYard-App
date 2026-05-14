@@ -118,7 +118,7 @@ fun RoleSelectionContent(
                         ),
                         modifier = Modifier.wrapContentSize()
                     ) {
-                        Text("Start Game", fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
+                        Text("Start Position", fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
                     }
                 } else {
                     Text(
