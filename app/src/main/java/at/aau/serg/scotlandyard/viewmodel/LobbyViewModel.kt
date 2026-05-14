@@ -39,6 +39,13 @@ class LobbyViewModel(
     val navigateToLobby: SharedFlow<Unit> = _navigateToLobby.asSharedFlow()
 
     init {
+        // Verbindungsstatus direkt aus MyStomp beziehen
+        viewModelScope.launch {
+            myStomp.isConnected.collect { connected ->
+                _isConnected.value = connected
+            }
+        }
+
         val session = myStomp.getSession()
         if (session != null) {
             setupLobbyService(session)
@@ -48,8 +55,6 @@ class LobbyViewModel(
                     if (connected && lobbyService == null) {
                         val s = myStomp.getSession()
                         if (s != null) setupLobbyService(s)
-                    } else if (!connected) {
-                        _isConnected.value = false
                     }
                 }
             }
@@ -58,8 +63,7 @@ class LobbyViewModel(
 
     private fun setupLobbyService(session: org.hildan.krossbow.stomp.StompSession) {
         lobbyService = LobbyStompService(session, userId, myStomp)
-        lobbyService!!.subscribe()   // abonniert global + privat
-        _isConnected.value = true
+        lobbyService!!.subscribe()
 
         viewModelScope.launch {
             lobbyService!!.lobbyResponse.collect { response ->
@@ -92,9 +96,12 @@ class LobbyViewModel(
                     }
                 }
 
+                // Navigation
                 when {
-                    response.message.contains("started role selection", ignoreCase = true) -> _navigateToRoleSelection.emit(Unit)
-                    response.message.contains("returned to lobby", ignoreCase = true) -> _navigateToLobby.emit(Unit)
+                    response.message.contains("started role selection", ignoreCase = true) ->
+                        _navigateToRoleSelection.emit(Unit)
+                    response.message.contains("returned to lobby", ignoreCase = true) ->
+                        _navigateToLobby.emit(Unit)
                 }
 
                 if (response.message !in listOf("ROLE_SELECTION_STARTED", "BACK_TO_LOBBY", "OK", "SUCCESS")) {
@@ -123,15 +130,13 @@ class LobbyViewModel(
     fun leaveLobby() {
         val lobbyId = _currentLobby.value?.id ?: return
         lobbyService?.leaveLobby(lobbyId, userId)
-        lobbyService?.unsubscribeSpecificLobby()
-        _currentLobby.value = null
+        // _currentLobby wird erst durch die Server-Antwort aktualisiert
     }
 
     fun deleteLobby() {
         val lobbyId = _currentLobby.value?.id ?: return
         lobbyService?.deleteLobby(lobbyId, userId)
-        lobbyService?.unsubscribeSpecificLobby()
-        _currentLobby.value = null
+        // _currentLobby wird erst durch die Server-Antwort aktualisiert
     }
 
     fun kickPlayer(targetUserId: String) {

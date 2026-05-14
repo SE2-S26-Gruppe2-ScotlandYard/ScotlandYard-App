@@ -60,7 +60,7 @@ class AuthViewModel : ViewModel(), Callbacks {
                     _currentUser.value = response.user
                     response.user?.let { user ->
                         myStomp.setCurrentUserId(user.id)
-                        myStomp.enablePrivateTopic(user.id)   // ← privates Topic sofort starten
+                        myStomp.enablePrivateTopic(user.id)
                     }
                 } else {
                     _errorMessage.value = response.message
@@ -69,5 +69,10 @@ class AuthViewModel : ViewModel(), Callbacks {
         } catch (e: Exception) {
             Log.d("AuthViewModel", "Ignoriere Response (kein JSON oder falsches Format): ${e.message}")
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        myStomp.shutdown()
     }
 }

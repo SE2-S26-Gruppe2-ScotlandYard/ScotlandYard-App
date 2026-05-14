@@ -20,7 +20,7 @@ private const val TAG = "LobbyStompService"
 class LobbyStompService(
     private val session: StompSession,
     private val userId: String,
-    private val myStomp: MyStomp   // für privateMessages und globalen Callback
+    private val myStomp: MyStomp
 ) {
     private val scope = CoroutineScope(Dispatchers.IO)
     private var lastKnownHostName: String = "Host"
@@ -31,16 +31,11 @@ class LobbyStompService(
     private var specificLobbyJob: Job? = null
     private var privateCollectJob: Job? = null
 
-    /**
-     * Initialisiert die globalen und privaten Nachrichtenempfänger.
-     */
     fun subscribe() {
-        // Globaler Lobby-Callback (für create/delete)
         myStomp.setLobbyCallback { msg ->
             Log.d("LOBBY_DEBUG", "Global: $msg")
             handleIncomingMessage(msg)
         }
-        // Private Nachrichten aus MyStomp (vorbereitet nach Login)
         privateCollectJob = scope.launch {
             myStomp.privateMessages.collect { msg ->
                 handleIncomingMessage(msg)
@@ -76,10 +71,9 @@ class LobbyStompService(
         try {
             var response = msg.toLobbyResponse()
             response.lobby?.let { lobby ->
-                val hostUser = lobby.users.find { it.id == lobby.hostId }
+                val hostUser = lobby.users?.find { it.id == lobby.hostId }
                 if (hostUser != null) lastKnownHostName = hostUser.name
             }
-            val lobbyName = "${lastKnownHostName}'s Lobby"
             val customMessage = response.message
             response = response.copy(message = customMessage)
             _lobbyResponse.value = response
@@ -88,7 +82,6 @@ class LobbyStompService(
         }
     }
 
-    // Aktionen (unverändert)
     fun createLobby(lobbyName: String, userId: String, nickName: String) {
         sendToServer("/app/lobby/create", JSONObject().apply {
             put("lobbyName", lobbyName)

@@ -226,8 +226,12 @@ private fun InLobbyView(
     onKickPlayer: (String) -> Unit,
     onStartRoleSelection: () -> Unit
 ) {
+    // Dynamischen Lobbynamen basierend auf dem aktuellen Host berechnen
+    val currentHost = lobby.users.find { it.id == lobby.hostId }
+    val lobbyDisplayName = if (currentHost != null) "${currentHost.name}'s Lobby" else lobby.name
+
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        LobbyCard(title = lobby.name) {
+        LobbyCard(title = lobbyDisplayName) {
             Text(
                 text = lobby.id, color = AccentGold, fontSize = 36.sp,
                 fontWeight = FontWeight.Bold, letterSpacing = 8.sp,

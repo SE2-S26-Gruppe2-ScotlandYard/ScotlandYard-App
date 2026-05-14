@@ -44,16 +44,11 @@ class MyStomp(val callbacks: Callbacks) {
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
 
-    // Flows für private Nachrichten
     private val _privateMessages = MutableSharedFlow<String>(replay = 0, extraBufferCapacity = 1)
     val privateMessages: SharedFlow<String> = _privateMessages.asSharedFlow()
 
     private var privateTopicJob: Job? = null
 
-    /**
-     * Aktiviert das private Topic und stellt Nachrichten über privateMessages bereit.
-     * Wird vom AuthViewModel nach erfolgreichem Login aufgerufen.
-     */
     fun enablePrivateTopic(userId: String) {
         currentUserId = userId
         privateTopicJob?.cancel()
@@ -65,7 +60,6 @@ class MyStomp(val callbacks: Callbacks) {
     }
 
     fun connect() {
-        // Alte Verbindung und Jobs sauber beenden
         disconnect()
         client = StompClient(OkHttpWebSocketClient())
         connectionJob = scope.launch {
@@ -93,6 +87,11 @@ class MyStomp(val callbacks: Callbacks) {
         privateTopicJob?.cancel()
         session = null
         _isConnected.value = false
+    }
+
+    fun shutdown() {
+        disconnect()
+        scope.cancel()
     }
 
     private fun subscribeToServer(activeSession: StompSession) {
@@ -124,7 +123,6 @@ class MyStomp(val callbacks: Callbacks) {
                 }
             } catch (_: Exception) { handleDisconnect() }
         }
-        // Falls bereits eine userId bekannt ist, privates Topic sofort abonnieren
         currentUserId?.let { enablePrivateTopic(it) }
     }
 
