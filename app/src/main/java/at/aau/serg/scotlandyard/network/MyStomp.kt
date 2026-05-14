@@ -238,7 +238,7 @@ class MyStomp(val callbacks: Callbacks) {
             try {
                 Log.d("MyStomp", "Requesting start position for game=$gameId, player=$playerId")
                 session?.sendText("/app/game/start-position/request", json.toString())
-                    ?: callback(errorMsg)
+                    ?: callback("Error: Not connected")
             } catch (e: Exception) {
                 Log.e("MyStomp", "Start position request failed", e)
             }
