@@ -12,9 +12,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import at.aau.serg.scotlandyard.data.getDisplayModePreference
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
+import androidx.compose.runtime.collectAsState
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -112,8 +114,8 @@ class MainActivity : ComponentActivity() {
                                     lobby       = lobby!!,
                                     onBackClick = { navController.popBackStack() },
                                     onGameStart = {
-                                        // TODO: Spiel starten
-                                        navController.navigate("start")
+                                        // TODO: Spiel starten (Startpositionen Vergabe, vorrübergehend direkter Übergang zu GameBoard)
+                                        navController.navigate("gameBoard")
                                     }
                                 )
                             }
@@ -122,6 +124,20 @@ class MainActivity : ComponentActivity() {
 
                     composable("settings") {
                         SettingsScreen(onBackClick = { navController.popBackStack() })
+                    }
+
+                    composable("gameBoard") {
+                        val lobbyVm = sharedLobbyViewModel
+                        val isMrX = lobbyVm?.currentLobby?.collectAsState()?.value?.selectedRoles?.get(lobbyVm.userId) == "MRX"
+                        val context = LocalContext.current
+                        val displayMode = remember {
+                            context.getDisplayModePreference()
+                        }
+                        GameBoardScreen(
+                            isMrX = isMrX,
+                            displayMode = displayMode,
+                            onNavigateToSettings = { navController.navigate("settings") }
+                        )
                     }
 
                     composable("mrxwin") {
