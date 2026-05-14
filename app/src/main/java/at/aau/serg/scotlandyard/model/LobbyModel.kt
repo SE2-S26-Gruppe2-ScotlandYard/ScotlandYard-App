@@ -24,6 +24,7 @@ data class LobbyResponse(
     val success: Boolean,
     val message: String,
     val lobbyId: String?,
+    val gameId: String?,
     val lobby: LobbyData?
 )
 
@@ -49,6 +50,7 @@ private data class GsonResponse(
     @SerializedName("success") val success: Boolean?,
     @SerializedName("message") val message: String?,
     @SerializedName("lobbyId") val lobbyId: String?,
+    @SerializedName("gameId") val gameId: String?,
     @SerializedName("lobby") val lobby: GsonLobby?
 )
 
@@ -62,6 +64,7 @@ fun String.toLobbyResponse(): LobbyResponse {
         success  = raw.success ?: false,
         message  = raw.message ?: "",
         lobbyId  = raw.lobbyId?.takeIf { it.isNotBlank() },
+        gameId   = raw.gameId?.takeIf { it.isNotBlank() },
         lobby    = raw.lobby?.toLobbyData()
     )
 }
