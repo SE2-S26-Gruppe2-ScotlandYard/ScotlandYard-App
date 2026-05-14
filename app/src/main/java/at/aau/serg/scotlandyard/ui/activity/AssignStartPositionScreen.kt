@@ -19,8 +19,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -29,8 +27,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -62,32 +58,22 @@ fun AssignStartPositionScreen(
     val context = LocalContext.current
     val gameViewModel: GameViewModel = viewModel()
 
-    // Wenn gameId+playerId bereits übergeben → kein Test-Modus
-    val testMode = gameId.isBlank() || playerId.isBlank()
-
-    var inputGameId by rememberSaveable { mutableStateOf(gameId) }
-    var inputPlayerId by rememberSaveable { mutableStateOf(playerId) }
-    // Im normalen Spielflow: sofort als "subscribed" markieren
-    var subscribed by rememberSaveable { mutableStateOf(!testMode) }
-
-    // Observe states from ViewModel
     val isLoading by gameViewModel.isLoading.collectAsState()
     val startPosition by gameViewModel.startPosition.collectAsState()
     val errorMessage by gameViewModel.errorMessage.collectAsState()
     val isConnected by gameViewModel.isConnected.collectAsState()
 
-    // Shake detector state
-    var shakeDetector by remember { mutableStateOf<ShakeDetector?>(null) }
+    val shakeDetectorRef = remember { mutableStateOf<ShakeDetector?>(null) }
 
-    // Sobald Verbindung steht UND subscribed = true → Topic abonnieren + ShakeDetector starten
-    LaunchedEffect(isConnected, subscribed) {
-        if (isConnected && subscribed) {
-            gameViewModel.subscribeToStartPosition(inputGameId, inputPlayerId)
-            if (shakeDetector == null) {
-                shakeDetector = ShakeDetector(context).apply {
+    // Sobald Verbindung steht → Topic abonnieren + ShakeDetector starten
+    LaunchedEffect(isConnected) {
+        if (isConnected) {
+            gameViewModel.subscribeToStartPosition(gameId, playerId)
+            if (shakeDetectorRef.value == null) {
+                shakeDetectorRef.value = ShakeDetector(context).apply {
                     setOnShakeListener(object : ShakeDetector.OnShakeListener {
                         override fun onShake() {
-                            gameViewModel.requestStartPosition(inputGameId, inputPlayerId)
+                            gameViewModel.requestStartPosition(gameId, playerId)
                         }
                     })
                     start()
@@ -96,166 +82,41 @@ fun AssignStartPositionScreen(
         }
     }
 
-    // Clean up shake detector when screen is disposed
     DisposableEffect(Unit) {
-        onDispose {
-            shakeDetector?.stop()
-        }
+        onDispose { shakeDetectorRef.value?.stop() }
     }
 
     BaseScreen(onBackClick = onBackClick) { modifier ->
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-            // ── TEST-EINGABEFELDER (nur im Test-Modus, wenn keine IDs übergeben) ──
-            if (testMode && !subscribed) {
-                Spacer(modifier = Modifier.height(24.dp))
-                Text(
-                    text = "🧪 TEST-MODUS",
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFFFD700)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                // Verbindungsstatus anzeigen
-                Text(
-                    text = if (isConnected) "🟢 Mit Server verbunden" else "🔴 Verbinde mit Server...",
-                    fontSize = 12.sp,
-                    color = if (isConnected) Color(0xFF90EE90) else Color(0xFFFF6B6B)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = inputGameId,
-                    onValueChange = { inputGameId = it },
-                    label = { Text("Game ID", color = Color.White) },
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFFFFD700),
-                        unfocusedBorderColor = Color.Gray,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    )
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = inputPlayerId,
-                    onValueChange = { inputPlayerId = it },
-                    label = { Text("Player ID", color = Color.White) },
-                    singleLine = true,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 24.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFFFFD700),
-                        unfocusedBorderColor = Color.Gray,
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
-                    )
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = {
-                        if (inputGameId.isNotBlank() && inputPlayerId.isNotBlank()) {
-                            // Shake-Detector starten
-                            shakeDetector = ShakeDetector(context).apply {
-                                setOnShakeListener(object : ShakeDetector.OnShakeListener {
-                                    override fun onShake() {
-                                        gameViewModel.requestStartPosition(inputGameId, inputPlayerId)
-                                    }
-                                })
-                                start()
-                            }
-                            subscribed = true
-                            // Wenn bereits verbunden: sofort subscriben
-                            // Wenn nicht: LaunchedEffect(isConnected) übernimmt das
-                        }
-                    },
-                    enabled = inputGameId.isNotBlank() && inputPlayerId.isNotBlank(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700)),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.padding(horizontal = 24.dp)
-                ) {
-                    Text("Verbinden & Starten", color = Color.Black, fontWeight = FontWeight.Bold)
-                }
-                Spacer(modifier = Modifier.height(24.dp))
-            }
-
-            // ── STATUS-LEISTE (wenn subscribed, nur im Test-Modus sichtbar) ──
-            if (testMode && subscribed) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = if (isConnected) "🟢 Verbunden | Topic aktiv" else "🔴 Verbindung unterbrochen",
-                    fontSize = 11.sp,
-                    color = if (isConnected) Color(0xFF90EE90) else Color(0xFFFF6B6B)
-                )
-                // 🔧 Simulate-Button: testet ob Frontend-Handling funktioniert
-                if (isLoading) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Button(
-                        onClick = {
-                            gameViewModel.onResponse(
-                                "startPosition:{\"type\":\"START_POSITION_ASSIGNED\",\"gameId\":\"$inputGameId\",\"playerId\":\"$inputPlayerId\",\"startPosition\":42}"
-                            )
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF555555)),
-                        shape = RoundedCornerShape(6.dp)
+            when {
+                !isConnected -> {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        Text("🔧 Simulate Backend Response", fontSize = 11.sp, color = Color.White)
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(40.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text("Verbinde mit Server...", color = Color.White, fontSize = 14.sp)
                     }
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            // ── HAUPT-CONTENT ──
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                when {
-                    testMode && !subscribed -> {
-                        Text(
-                            text = "Bitte Game ID und Player ID eingeben und auf \"Verbinden\" tippen.",
-                            fontSize = 14.sp,
-                            color = Color(0xFFCCCCCC),
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(24.dp)
-                        )
+                isLoading -> LoadingState()
+                errorMessage != null -> ErrorState(
+                    errorMessage = errorMessage ?: "Unbekannter Fehler",
+                    onRetry = { gameViewModel.requestStartPosition(gameId, playerId) }
+                )
+                startPosition != null -> SuccessState(
+                    position = startPosition ?: 0,
+                    onConfirm = {
+                        gameViewModel.confirmStartPosition(gameId, playerId)
+                        onPositionConfirmed()
                     }
-                    !isConnected && subscribed -> {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(40.dp))
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text("Verbinde mit Server...", color = Color.White, fontSize = 14.sp)
-                        }
-                    }
-                    isLoading -> LoadingState()
-                    errorMessage != null -> ErrorState(
-                        errorMessage = errorMessage ?: "Unbekannter Fehler",
-                        onRetry = { gameViewModel.requestStartPosition(inputGameId, inputPlayerId) }
-                    )
-                    startPosition != null -> SuccessState(
-                        position = startPosition ?: 0,
-                        onConfirm = {
-                            gameViewModel.confirmStartPosition(inputGameId, inputPlayerId)
-                            onPositionConfirmed()
-                        }
-                    )
-                    else -> ShakeAwaitingState(
-                        onSimulateShake = { gameViewModel.requestStartPosition(inputGameId, inputPlayerId) }
-                    )
-                }
+                )
+                else -> ShakeAwaitingState(
+                    onSimulateShake = { gameViewModel.requestStartPosition(gameId, playerId) }
+                )
             }
         }
     }

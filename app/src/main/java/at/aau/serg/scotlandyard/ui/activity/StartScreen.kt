@@ -36,7 +36,6 @@ fun StartScreen(
     onStartGame: () -> Unit,
     onRules: () -> Unit,
     onSettings: () -> Unit,
-    onTestStartPosition: () -> Unit = {},
     startGameButtonText: String = "Start Game",
     rulesButtonText: String = "Rules"
 ) {
@@ -137,15 +136,6 @@ fun StartScreen(
                 AppDarkActionButton(
                     text = rulesButtonText,
                     onClick = onRules,
-                    modifier = Modifier.fillMaxWidth()
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // 🧪 TEST-Button für Startposition
-                AppDarkActionButton(
-                    text = "🧪 Test Startposition",
-                    onClick = onTestStartPosition,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

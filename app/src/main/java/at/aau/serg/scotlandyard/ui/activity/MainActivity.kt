@@ -54,8 +54,7 @@ class MainActivity : ComponentActivity() {
                         StartScreen(
                             onStartGame = { navController.navigate("login") },
                             onRules     = { navController.navigate("rules") },
-                            onSettings  = { navController.navigate("settings") },
-                            onTestStartPosition = { navController.navigate("assignstartposition") }
+                            onSettings  = { navController.navigate("settings") }
                         )
                     }
                     composable("login") {
@@ -149,13 +148,6 @@ class MainActivity : ComponentActivity() {
                         AssignStartPositionScreen(
                             gameId = gameId,
                             playerId = playerId,
-                            onBackClick = { navController.popBackStack() },
-                            onPositionConfirmed = { navController.navigate("lobby") }
-                        )
-                    }
-                    // Legacy route ohne Parameter (für Test-Button vom StartScreen)
-                    composable("assignstartposition") {
-                        AssignStartPositionScreen(
                             onBackClick = { navController.popBackStack() },
                             onPositionConfirmed = { navController.navigate("lobby") }
                         )
