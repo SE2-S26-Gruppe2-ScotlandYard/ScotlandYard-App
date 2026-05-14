@@ -10,14 +10,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.google.gson.Gson
-
 import at.aau.serg.scotlandyard.dtos.UserConnectResponse
 import at.aau.serg.scotlandyard.dtos.User
 
 class AuthViewModel : ViewModel(), Callbacks {
 
     private val myStomp = MyStomp(this)
-
     fun getMyStomp(): MyStomp = myStomp
     val isConnected: StateFlow<Boolean> = myStomp.isConnected
 
@@ -57,13 +55,12 @@ class AuthViewModel : ViewModel(), Callbacks {
 
         try {
             val response = gson.fromJson(res, UserConnectResponse::class.java)
-
             if (response != null) {
                 if (response.success) {
                     _currentUser.value = response.user
-                    // Store user ID in MyStomp for private queue subscriptions
-                    if (response.user != null) {
-                        myStomp.setCurrentUserId(response.user.id)
+                    response.user?.let { user ->
+                        myStomp.setCurrentUserId(user.id)
+                        myStomp.enablePrivateTopic(user.id)   // ← privates Topic sofort starten
                     }
                 } else {
                     _errorMessage.value = response.message

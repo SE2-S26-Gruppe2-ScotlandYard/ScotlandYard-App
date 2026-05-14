@@ -4,12 +4,13 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import at.aau.serg.scotlandyard.Callbacks
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import org.hildan.krossbow.stomp.StompClient
 import org.hildan.krossbow.stomp.StompSession
 import org.hildan.krossbow.stomp.sendText
@@ -21,8 +22,10 @@ private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/scotlandyard"
 
 class MyStomp(val callbacks: Callbacks) {
 
-    private lateinit var client: StompClient
+    private var client: StompClient? = null
     private var session: StompSession? = null
+    private var connectionJob: Job? = null
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     fun getSession(): StompSession? = session
 
@@ -38,88 +41,98 @@ class MyStomp(val callbacks: Callbacks) {
         currentUserId = userId
     }
 
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO)
-    private val errorMsg: String = "Error: Not connected"
-
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
 
-    fun connect() {
-        client = StompClient(OkHttpWebSocketClient())
-        scope.launch {
-            var isSuccessfullyConnected = false
+    // Flows für private Nachrichten
+    private val _privateMessages = MutableSharedFlow<String>(replay = 0, extraBufferCapacity = 1)
+    val privateMessages: SharedFlow<String> = _privateMessages.asSharedFlow()
 
-            while (!isSuccessfullyConnected) {
+    private var privateTopicJob: Job? = null
+
+    /**
+     * Aktiviert das private Topic und stellt Nachrichten über privateMessages bereit.
+     * Wird vom AuthViewModel nach erfolgreichem Login aufgerufen.
+     */
+    fun enablePrivateTopic(userId: String) {
+        currentUserId = userId
+        privateTopicJob?.cancel()
+        privateTopicJob = scope.launch {
+            session?.subscribeText("/topic/player/$userId")?.collect { msg ->
+                _privateMessages.emit(msg)
+            }
+        }
+    }
+
+    fun connect() {
+        // Alte Verbindung und Jobs sauber beenden
+        disconnect()
+        client = StompClient(OkHttpWebSocketClient())
+        connectionJob = scope.launch {
+            while (isActive) {
                 try {
                     Log.d("MyStomp", "Versuche Verbindung zum Server...")
-                    val activeSession = client.connect(WEBSOCKET_URI)
+                    val activeSession = client!!.connect(WEBSOCKET_URI)
                     session = activeSession
                     _isConnected.value = true
-
                     subscribeToServer(activeSession)
-
-                    isSuccessfullyConnected = true
                     callback("connected to server")
-                    Log.d("MyStomp", "Verbindung erfolgreich hergestellt.")
-
+                    Log.d("MyStomp", "Verbindung erfolgreich.")
+                    break
                 } catch (e: Exception) {
-                    Log.e("MyStomp", "Verbindung fehlgeschlagen. Erneuter Versuch in 5 Sekunden...", e)
+                    Log.e("MyStomp", "Verbindung fehlgeschlagen, neuer Versuch in 5s", e)
                     _isConnected.value = false
-                    kotlinx.coroutines.delay(5000)
+                    delay(5000)
                 }
             }
         }
     }
 
+    private fun disconnect() {
+        connectionJob?.cancel()
+        privateTopicJob?.cancel()
+        session = null
+        _isConnected.value = false
+    }
+
     private fun subscribeToServer(activeSession: StompSession) {
         scope.launch {
             try {
-                activeSession.subscribeText("/topic/hello-response").collect { msg ->
-                    callback(msg)
-                }
-            } catch (e: Exception) { handleDisconnect() }
+                activeSession.subscribeText("/topic/hello-response").collect { callback(it) }
+            } catch (_: Exception) { handleDisconnect() }
         }
-
         scope.launch {
             try {
                 activeSession.subscribeText("/topic/rcv-object").collect { msg ->
                     val o = JSONObject(msg)
                     callback(o.get("text").toString())
                 }
-            } catch (e: Exception) { handleDisconnect() }
+            } catch (_: Exception) { handleDisconnect() }
         }
-
-        // Exklusives Topic nur für den allerersten Login.
-        // Geht direkt in das AuthViewModel.
         scope.launch {
             try {
                 activeSession.subscribeText("/user/topic/user-response").collect { msg ->
                     callback(msg)
                 }
-            } catch (e: Exception) {
-                Log.e("MyStomp", "User response subscription error", e)
-                handleDisconnect()
-            }
+            } catch (_: Exception) { handleDisconnect() }
         }
-
-        // Globale Lobby Updates (Empfängt nur noch Lobby created/deleted, keine privaten Daten mehr)
         scope.launch {
             try {
                 activeSession.subscribeText("/topic/lobby").collect { msg ->
                     Log.d("LOBBY_DEBUG", "Global lobby update: $msg")
                     lobbyCallback?.invoke(msg)
                 }
-            } catch (e: Exception) {
-                Log.e("MyStomp", "Lobby subscription error", e)
-                handleDisconnect()
-            }
+            } catch (_: Exception) { handleDisconnect() }
         }
+        // Falls bereits eine userId bekannt ist, privates Topic sofort abonnieren
+        currentUserId?.let { enablePrivateTopic(it) }
     }
 
     private fun handleDisconnect() {
         if (_isConnected.value) {
             _isConnected.value = false
             callback("Connection lost. Reconnecting...")
+            disconnect()
             connect()
         }
     }
@@ -131,12 +144,10 @@ class MyStomp(val callbacks: Callbacks) {
     }
 
     fun sendUserConnect(nickname: String) {
-        val json = JSONObject()
-        json.put("nickName", nickname)
-
+        val json = JSONObject().apply { put("nickName", nickname) }
         scope.launch {
             try {
-                session?.sendText("/app/user/connect", json.toString()) ?: callback(errorMsg)
+                session?.sendText("/app/user/connect", json.toString()) ?: callback("Error: Not connected")
             } catch (e: Exception) {
                 Log.e("MyStomp", "Send UserConnect failed", e)
             }
@@ -146,75 +157,34 @@ class MyStomp(val callbacks: Callbacks) {
     fun sendHello() {
         scope.launch {
             try {
-                session?.let {
-                    it.sendText("/app/hello", "message from client")
-                } ?: run {
-                    callback(errorMsg)
-                }
-            } catch (e: Exception) {
-                Log.e("MyStomp", "Send failed", e)
-            }
+                session?.sendText("/app/hello", "message from client") ?: callback("Error: Not connected")
+            } catch (_: Exception) { }
         }
     }
 
     fun sendJson() {
-        val json = JSONObject()
-        json.put("from", "client")
-        json.put("text", "from client")
-
+        val json = JSONObject().apply {
+            put("from", "client")
+            put("text", "from client")
+        }
         scope.launch {
             try {
-                session?.sendText("/app/object", json.toString()) ?: callback(errorMsg)
-            } catch (e: Exception) {
-                Log.e("MyStomp", "Send JSON failed", e)
-            }
+                session?.sendText("/app/object", json.toString()) ?: callback("Error: Not connected")
+            } catch (_: Exception) { }
         }
     }
 
     fun connectToGame(gameId: String) {
         currentGameId = gameId
         scope.launch {
-            try {
-                if (session == null) {
-                    val activeSession = client.connect(WEBSOCKET_URI)
-                    session = activeSession
-                }
-
-                scope.launch {
-                    try {
-                        session?.subscribeText("/topic/game/$gameId/movements")?.collect { msg ->
-                            callback("movement:$msg")
-                        }
-                    } catch (e: Exception) {
-                        Log.e("MyStomp", "Movement subscription failed", e)
-                    }
-                }
-
-                scope.launch {
-                    try {
-                        session?.subscribeText("/topic/game/$gameId/move-response")?.collect { msg ->
-                            callback("move-response:$msg")
-                        }
-                    } catch (e: Exception) {
-                        Log.e("MyStomp", "Move response subscription failed", e)
-                    }
-                }
-
-                scope.launch {
-                    try {
-                        session?.subscribeText("/topic/game/$gameId/over")?.collect { msg ->
-                            callback("game-over:$msg")
-                        }
-                    } catch (e: Exception) {
-                        Log.e("MyStomp", "Game over subscription failed", e)
-                    }
-                }
-
+            if (session == null) {
+                client?.let { session = it.connect(WEBSOCKET_URI) }
+            }
+            session?.let { s ->
+                launch { s.subscribeText("/topic/game/$gameId/movements").collect { callback("movement:$it") } }
+                launch { s.subscribeText("/topic/game/$gameId/move-response").collect { callback("move-response:$it") } }
+                launch { s.subscribeText("/topic/game/$gameId/over").collect { callback("game-over:$it") } }
                 callback("connected to:$gameId")
-
-            } catch (e: Exception) {
-                Log.e("MyStomp", "Failed to connect to game", e)
-                callback("Connection error")
             }
         }
     }
@@ -227,14 +197,10 @@ class MyStomp(val callbacks: Callbacks) {
             put("targetPosition", targetPosition)
             put("timestamp", System.currentTimeMillis())
         }
-
         scope.launch {
             try {
-                session?.sendText("/app/game/$gameId/move", json.toString())
-                    ?: callback(errorMsg)
-            } catch (e: Exception) {
-                Log.e("MyStomp", "Send move failed", e)
-            }
+                session?.sendText("/app/game/$gameId/move", json.toString()) ?: callback("Error: Not connected")
+            } catch (_: Exception) { }
         }
     }
 }
