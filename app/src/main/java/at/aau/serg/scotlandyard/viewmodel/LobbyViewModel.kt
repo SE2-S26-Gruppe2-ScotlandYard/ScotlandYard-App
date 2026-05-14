@@ -46,6 +46,10 @@ class LobbyViewModel(
     private val _navigateToLobby = MutableSharedFlow<Unit>()
     val navigateToLobby: SharedFlow<Unit> = _navigateToLobby.asSharedFlow()
 
+    // ── Navigation Event: alle Spieler zum Spiel schicken ────────────
+    private val _navigateToGame = MutableSharedFlow<String>() // emits gameId
+    val navigateToGame: SharedFlow<String> = _navigateToGame.asSharedFlow()
+
     init {
         val session = myStomp.getSession()
         if (session != null) {
@@ -106,13 +110,15 @@ class LobbyViewModel(
                 // Navigations-Events verarbeiten
                 when (response.message) {
                     "ROLE_SELECTION_STARTED" -> _navigateToRoleSelection.emit(Unit)
-                    "BACK_TO_LOBBY" -> {_navigateToLobby.emit(Unit)
+                    "BACK_TO_LOBBY" -> { _navigateToLobby.emit(Unit) }
+                    "GAME_STARTED" -> {
+                        val gameId = incomingLobby?.id ?: response.lobbyId ?: ""
+                        _navigateToGame.emit(gameId)
                     }
                 }
 
                 // Status-Nachricht anzeigen
-                // filtern Nachrichten heraus, die nur für die Navigation gedacht sind.
-                if (response.message !in listOf("ROLE_SELECTION_STARTED", "BACK_TO_LOBBY", "OK", "SUCCESS")) {
+                if (response.message !in listOf("ROLE_SELECTION_STARTED", "BACK_TO_LOBBY", "GAME_STARTED", "OK", "SUCCESS")) {
                     if(response.message.isNotBlank()) {
                         _statusMessage.value = response.message
                         }
@@ -163,6 +169,12 @@ class LobbyViewModel(
     fun startRoleSelection() {
         val lobbyId = _currentLobby.value?.id ?: return
         lobbyService?.startRoleSelection(lobbyId, userId)
+    }
+
+    // ── Host drückt "Start Game" in der Rollenwahl ────────────────────────
+    fun startGame() {
+        val lobbyId = _currentLobby.value?.id ?: return
+        lobbyService?.startGame(lobbyId, userId)
     }
 
     fun goBackToLobby() {

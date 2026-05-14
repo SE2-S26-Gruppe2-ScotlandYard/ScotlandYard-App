@@ -83,6 +83,18 @@ class GameViewModel : ViewModel(), Callbacks {
     override fun onResponse(res: String) {
         Log.d("GameViewModel", "Server response: $res")
 
+        // Verbindungsstatus tracken
+        when {
+            res == "connected to server" -> {
+                _isConnected.value = true
+                return
+            }
+            res.startsWith("Connection lost") -> {
+                _isConnected.value = false
+                return
+            }
+        }
+
         // Handle start position responses
         if (res.startsWith("startPosition:")) {
             val jsonString = res.removePrefix("startPosition:")
@@ -127,4 +139,3 @@ class GameViewModel : ViewModel(), Callbacks {
         // Clean up resources if needed
     }
 }
-
