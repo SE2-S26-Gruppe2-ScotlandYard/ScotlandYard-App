@@ -24,6 +24,6 @@ val NodeFill = Color(0xFF1A3A55)
 
 val WalkingColor = Color(0xFFD4B963)
 val EScooterColor = Color(0xFF3D8E79)
-val CarSharingColor = Color(0xFFED2939) // or Brown:0xFFA67C65
+val CarSharingColor = Color(0xFFED2939) // or Brown:0xFFA67C65 (DO NOT FORGET TO CHANGE IN TESTS)
 val BlackColor = Color(0xFFCC44CC)
 val DoubleColor = Color(0xFF2C2C2C)
