@@ -1,5 +1,6 @@
 package at.aau.serg.scotlandyard.ui.activity
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -9,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
@@ -17,6 +19,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -29,8 +33,8 @@ import at.aau.serg.scotlandyard.model.LobbyUserData
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModelFactory
+import com.example.scotlandyard.R
 
-private val BgDark        = Color(0xFF0D1B2A)
 private val GreenButton   = Color(0xFF1A4A3A)
 private val DarkButton    = Color(0xFF102920)
 private val CardBg        = Color(0xFF152535)
@@ -63,22 +67,66 @@ fun LobbyScreen(
         }
     }
 
-    BaseScreen(onBackClick = onBackClick) { _ ->
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(id = R.drawable.background),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0x99000000))
+        )
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .statusBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
+                .padding(top = 16.dp, bottom = 24.dp)
         ) {
+            if (currentLobby == null) {
+                TextButton(
+                    onClick = onBackClick,
+                    contentPadding = PaddingValues(0.dp),
+                    modifier = Modifier.padding(bottom = 8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = TextSecondary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Return to main menu",
+                        color = TextSecondary,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+
+            val titleText = if (currentLobby == null) {
+                "LOBBY SELECTION"
+            } else {
+                val host = currentLobby!!.users.find { it.id == currentLobby!!.hostId }
+                if (host != null) "${host.name.uppercase()}'S LOBBY" else "LOBBY"
+            }
+
             Text(
-                text = "LOBBY",
-                fontSize = 40.sp,
+                text = titleText,
+                fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Serif,
                 color = TextPrimary,
                 modifier = Modifier
                     .align(Alignment.CenterHorizontally)
-                    .padding(top = 8.dp, bottom = 16.dp)
+                    .padding(bottom = 16.dp)
             )
 
             ConnectionBadge(isConnected = isConnected)
@@ -107,7 +155,6 @@ fun LobbyScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 StatusBar(message = statusMessage)
             }
-            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
@@ -179,9 +226,12 @@ private fun InLobbyView(
     onKickPlayer: (String) -> Unit,
     onStartRoleSelection: () -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    // Dynamischen Lobbynamen basierend auf dem aktuellen Host berechnen
+    val currentHost = lobby.users.find { it.id == lobby.hostId }
+    val lobbyDisplayName = if (currentHost != null) "${currentHost.name}'s Lobby" else lobby.name
 
-        LobbyCard(title = lobby.name) {
+    Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LobbyCard(title = lobbyDisplayName) {
             Text(
                 text = lobby.id, color = AccentGold, fontSize = 36.sp,
                 fontWeight = FontWeight.Bold, letterSpacing = 8.sp,
@@ -224,7 +274,7 @@ private fun InLobbyView(
             LobbyActionButton(
                 text    = if (canProceed) "Weiter zur Rollenwahl →" else "Mind. 3 Spieler erforderlich",
                 enabled = canProceed && !isLoading,
-                color   = GreenButton,
+                color    = GreenButton,
                 onClick = onStartRoleSelection
             )
         }
