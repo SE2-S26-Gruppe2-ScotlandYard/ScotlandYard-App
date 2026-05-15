@@ -413,7 +413,7 @@ object BoardData {
         199 to setOf(TicketType.ESCOOTER, TicketType.WALKING)
     )
 
-    // 467 unique edges derived from board.json (deduplicated, undirected).
+    // 467 unique edges derived from board.json (deduplicated, directed).
     val edges: List<BoardEdge> = listOf(
         BoardEdge(1, 8, TicketType.WALKING),
         BoardEdge(1, 9, TicketType.WALKING),
