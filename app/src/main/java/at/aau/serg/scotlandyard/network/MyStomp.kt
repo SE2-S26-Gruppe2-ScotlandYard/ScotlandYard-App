@@ -18,8 +18,8 @@ import org.hildan.krossbow.stomp.subscribeText
 import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
 
-private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/scotlandyard"
-
+//private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/scotlandyard"
+private const val WEBSOCKET_URI = "ws://10.0.0.42:8080/scotlandyard"
 class MyStomp(val callbacks: Callbacks) {
 
     private var client: StompClient? = null
@@ -199,6 +199,49 @@ class MyStomp(val callbacks: Callbacks) {
             try {
                 session?.sendText("/app/game/$gameId/move", json.toString()) ?: callback("Error: Not connected")
             } catch (_: Exception) { }
+        }
+    }
+
+    /**
+     * Subscribe to start position assignments for a specific player
+     * Subscribes to: /topic/game/{gameId}/player/{playerId}/start-position
+     * Incoming messages are forwarded with prefix "startPosition:"
+     */
+    fun subscribeToStartPosition(gameId: String, playerId: String) {
+        scope.launch {
+            try {
+                val topic = "/topic/game/$gameId/player/$playerId/start-position"
+                Log.d("MyStomp", "Subscribing to start position topic: $topic")
+                session?.subscribeText(topic)?.collect { msg ->
+                    callback("startPosition:$msg")
+                } ?: run {
+                    Log.w("MyStomp", "Cannot subscribe: Session is null")
+                }
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Start position subscription failed", e)
+            }
+        }
+    }
+
+    /**
+     * Request start position from the backend
+     * Sends JSON to: /app/game/start-position/request
+     * Backend will respond via subscribed topic: /topic/game/{gameId}/player/{playerId}/start-position
+     */
+    fun requestStartPosition(gameId: String, playerId: String) {
+        val json = JSONObject().apply {
+            put("gameId", gameId)
+            put("playerId", playerId)
+        }
+
+        scope.launch {
+            try {
+                Log.d("MyStomp", "Requesting start position for game=$gameId, player=$playerId")
+                session?.sendText("/app/game/start-position/request", json.toString())
+                    ?: callback("Error: Not connected")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "Start position request failed", e)
+            }
         }
     }
 }

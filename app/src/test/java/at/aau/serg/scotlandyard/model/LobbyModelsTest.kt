@@ -94,18 +94,45 @@ class LobbyModelsTest {
 
     @Test
     fun lobbyResponse_success_true() {
-        val response = LobbyResponse(true, "Lobby created", "AB3KP", null)
+        val response = LobbyResponse(true, "Lobby created", "AB3KP", null, null)
         assertTrue(response.success)
         assertEquals("Lobby created", response.message)
         assertEquals("AB3KP", response.lobbyId)
+        assertNull(response.gameId)
         assertNull(response.lobby)
     }
 
     @Test
     fun lobbyResponse_success_false() {
-        val response = LobbyResponse(false, "Error", null, null)
+        val response = LobbyResponse(false, "Error", null, null, null)
         assertFalse(response.success)
         assertNull(response.lobbyId)
+        assertNull(response.gameId)
+    }
+
+    @Test
+    fun lobbyResponse_with_gameId() {
+        val response = LobbyResponse(true, "GAME_STARTED", "AB3KP", "game-xyz-789", null)
+        assertTrue(response.success)
+        assertEquals("AB3KP", response.lobbyId)
+        assertEquals("game-xyz-789", response.gameId)
+    }
+
+    @Test
+    fun toLobbyResponse_parses_gameId_field() {
+        val json = """{"success":true,"message":"GAME_STARTED","lobbyId":"AB3KP","gameId":"game-xyz-789"}"""
+        val response = json.toLobbyResponse()
+        assertTrue(response.success)
+        assertEquals("GAME_STARTED", response.message)
+        assertEquals("AB3KP", response.lobbyId)
+        assertEquals("game-xyz-789", response.gameId)
+    }
+
+    @Test
+    fun toLobbyResponse_gameId_null_when_not_present() {
+        val json = """{"success":true,"message":"Lobby created","lobbyId":"AB3KP"}"""
+        val response = json.toLobbyResponse()
+        assertNull(response.gameId)
     }
 
     // ── JSON Parsing mit Gson (kein Robolectric nötig) ────────────────────

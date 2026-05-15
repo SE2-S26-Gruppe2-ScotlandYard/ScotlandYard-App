@@ -8,10 +8,12 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
@@ -48,7 +50,6 @@ class MainActivity : ComponentActivity() {
                 }
 
                 NavHost(navController = navController, startDestination = "start") {
-
                     composable("start") {
                         StartScreen(
                             onStartGame = { navController.navigate("login") },
@@ -56,7 +57,6 @@ class MainActivity : ComponentActivity() {
                             onSettings  = { navController.navigate("settings") }
                         )
                     }
-
                     composable("login") {
                         LaunchedEffect(currentUser) {
                             if (currentUser != null) {
@@ -65,6 +65,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
+
                         LoginScreen(
                             onConnectClick      = { nickname -> authViewModel.connectUser(nickname) },
                             onBackClick         = { navController.popBackStack() },
@@ -106,14 +107,26 @@ class MainActivity : ComponentActivity() {
                         val lobbyVm = sharedLobbyViewModel
                         if (lobbyVm != null) {
                             val lobby by lobbyVm.currentLobby.collectAsState()
+
+                            // Wenn Backend "GAME_STARTED" sendet → alle Spieler navigieren
+                            LaunchedEffect(lobbyVm) {
+                                lobbyVm.navigateToGame.collect { gameId ->
+                                    val playerId = lobbyVm.userId
+                                    navController.navigate("assignstartposition/$gameId/$playerId") {
+                                        popUpTo("roleSelection") { inclusive = true }
+                                    }
+                                }
+                            }
+
                             if (lobby != null) {
                                 RoleSelectionScreen(
                                     viewModel   = lobbyVm,
                                     lobby       = lobby!!,
                                     onBackClick = { navController.popBackStack() },
                                     onGameStart = {
-                                        // TODO: Spiel starten
-                                        navController.navigate("start")
+                                        // Host sendet startGame ans Backend
+                                        // Backend antwortet mit GAME_STARTED → navigateToGame Event
+                                        lobbyVm.startGame()
                                     }
                                 )
                             }
@@ -123,7 +136,22 @@ class MainActivity : ComponentActivity() {
                     composable("settings") {
                         SettingsScreen(onBackClick = { navController.popBackStack() })
                     }
-
+                    composable(
+                        route = "assignstartposition/{gameId}/{playerId}",
+                        arguments = listOf(
+                            navArgument("gameId") { type = NavType.StringType },
+                            navArgument("playerId") { type = NavType.StringType }
+                        )
+                    ) { backStackEntry ->
+                        val gameId = backStackEntry.arguments?.getString("gameId") ?: ""
+                        val playerId = backStackEntry.arguments?.getString("playerId") ?: ""
+                        AssignStartPositionScreen(
+                            gameId = gameId,
+                            playerId = playerId,
+                            onBackClick = { navController.popBackStack() },
+                            onPositionConfirmed = { navController.navigate("lobby") }
+                        )
+                    }
                     composable("mrxwin") {
                         MrXWinScreen(
                             onBackClick = { navController.navigate("start") },

@@ -38,6 +38,10 @@ class LobbyViewModel(
     private val _navigateToLobby = MutableSharedFlow<Unit>()
     val navigateToLobby: SharedFlow<Unit> = _navigateToLobby.asSharedFlow()
 
+    // ── Navigation Event: alle Spieler zum Spiel schicken ────────────
+    private val _navigateToGame = MutableSharedFlow<String>() // emits gameId
+    val navigateToGame: SharedFlow<String> = _navigateToGame.asSharedFlow()
+
     init {
         // Verbindungsstatus direkt aus MyStomp beziehen
         viewModelScope.launch {
@@ -96,17 +100,27 @@ class LobbyViewModel(
                     }
                 }
 
-                // Navigation
+                // Navigation (kombiniert aus beiden branches + GAME_STARTED)
                 when {
-                    response.message.contains("started role selection", ignoreCase = true) ->
+                    response.message.contains("started role selection", ignoreCase = true)
+                            || response.message == "ROLE_SELECTION_STARTED" ->
                         _navigateToRoleSelection.emit(Unit)
-                    response.message.contains("returned to lobby", ignoreCase = true) ->
+                    response.message.contains("returned to lobby", ignoreCase = true)
+                            || response.message == "BACK_TO_LOBBY" ->
                         _navigateToLobby.emit(Unit)
+                    response.message == "GAME_STARTED" -> {
+                        val gameId = response.gameId
+                            ?: response.lobbyId
+                            ?: incomingLobby?.id
+                            ?: ""
+                        _navigateToGame.emit(gameId)
+                    }
                 }
 
-                if (response.message !in listOf("ROLE_SELECTION_STARTED", "BACK_TO_LOBBY", "OK", "SUCCESS")) {
+                if (response.message !in listOf("ROLE_SELECTION_STARTED", "BACK_TO_LOBBY", "GAME_STARTED", "OK", "SUCCESS")) {
                     if (response.message.isNotBlank()) _statusMessage.value = response.message
                 }
+
             }
         }
     }
@@ -152,6 +166,12 @@ class LobbyViewModel(
     fun startRoleSelection() {
         val lobbyId = _currentLobby.value?.id ?: return
         lobbyService?.startRoleSelection(lobbyId, userId)
+    }
+
+    // ── Host drückt "Start Game" in der Rollenwahl ────────────────────────
+    fun startGame() {
+        val lobbyId = _currentLobby.value?.id ?: return
+        lobbyService?.startGame(lobbyId, userId)
     }
 
     fun goBackToLobby() {

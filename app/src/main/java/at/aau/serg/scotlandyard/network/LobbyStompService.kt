@@ -136,6 +136,13 @@ class LobbyStompService(
         })
     }
 
+    fun startGame(lobbyId: String, requesterId: String) {
+        sendToServer("/app/lobby/startGame", JSONObject().apply {
+            put("lobbyId", lobbyId)
+            put("requesterId", requesterId)
+        })
+    }
+
     private fun sendToServer(destination: String, json: JSONObject) {
         scope.launch {
             try {
