@@ -10,14 +10,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import com.google.gson.Gson
-
 import at.aau.serg.scotlandyard.dtos.UserConnectResponse
 import at.aau.serg.scotlandyard.dtos.User
 
 class AuthViewModel : ViewModel(), Callbacks {
 
     private val myStomp = MyStomp(this)
-
     fun getMyStomp(): MyStomp = myStomp
     val isConnected: StateFlow<Boolean> = myStomp.isConnected
 
@@ -57,10 +55,13 @@ class AuthViewModel : ViewModel(), Callbacks {
 
         try {
             val response = gson.fromJson(res, UserConnectResponse::class.java)
-
             if (response != null) {
                 if (response.success) {
                     _currentUser.value = response.user
+                    response.user?.let { user ->
+                        myStomp.setCurrentUserId(user.id)
+                        myStomp.enablePrivateTopic(user.id)
+                    }
                 } else {
                     _errorMessage.value = response.message
                 }
@@ -68,5 +69,10 @@ class AuthViewModel : ViewModel(), Callbacks {
         } catch (e: Exception) {
             Log.d("AuthViewModel", "Ignoriere Response (kein JSON oder falsches Format): ${e.message}")
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        myStomp.shutdown()
     }
 }

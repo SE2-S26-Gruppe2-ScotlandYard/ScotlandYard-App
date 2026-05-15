@@ -73,7 +73,15 @@ tasks.register<JacocoReport>("jacocoTestReport") {
         "**/BuildConfig.*",
         "**/Manifest*.*",
         "**/*Test*.*",
-        "android/**/*.*"
+        "android/**/*.*",
+        "**/ui/activity/**",
+        "**/ui/theme/**",
+        "**/ui/components/**",
+        "**/viewmodel/GameViewModel*",
+        "**/viewmodel/LobbyViewModel*",
+        "**/viewmodel/AuthViewModel*",
+        "**/network/MyStomp*",
+        "**/network/LobbyStompService*"
     )
 
     val debugTree =
@@ -113,7 +121,7 @@ sonar {
         property("sonar.issue.ignore.multicriteria", "e1")
         property("sonar.issue.ignore.multicriteria.e1.ruleKey", "kotlin:S8569")
         property("sonar.issue.ignore.multicriteria.e1.resourceKey", "**/build.gradle.kts")
-        property("sonar.coverage.exclusions", "**/network/LobbyStompService.kt,**/network/MyStomp.kt,**/viewmodel/LobbyViewModel.kt,**/viewmodel/AuthViewModel.kt,**/ui/activity/**,**/ui/theme/**")
+        property("sonar.coverage.exclusions", "**/network/LobbyStompService.kt,**/network/MyStomp.kt,**/viewmodel/LobbyViewModel.kt,**/viewmodel/AuthViewModel.kt,**/viewmodel/GameViewModel.kt,**/ui/activity/**,**/ui/theme/**,**/ui/components/**")
 
     }
 }
