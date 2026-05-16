@@ -1,20 +1,27 @@
 package at.aau.serg.scotlandyard.viewmodel
 
 import android.util.Log
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import at.aau.serg.scotlandyard.Callbacks
+import at.aau.serg.scotlandyard.dtos.GameStateDto
 import at.aau.serg.scotlandyard.dtos.StartPositionResponse
+import at.aau.serg.scotlandyard.network.GameStompService
 import at.aau.serg.scotlandyard.network.MyStomp
+import at.aau.serg.scotlandyard.ui.theme.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 class GameViewModel : ViewModel(), Callbacks {
 
     private val myStomp = MyStomp(this)
+    val gameStompService = GameStompService(myStomp)
 
-    // Game State
+    // ── Start position ─────────────────────────────────────────────────────────
     private val _startPosition = MutableStateFlow<Int?>(null)
     val startPosition: StateFlow<Int?> = _startPosition.asStateFlow()
 
@@ -27,14 +34,41 @@ class GameViewModel : ViewModel(), Callbacks {
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
 
+    private val _gameState = MutableStateFlow<GameStateDto?>(null)
+    val gameState: StateFlow<GameStateDto?> = _gameState.asStateFlow()
+
     init {
         myStomp.connect()
+        viewModelScope.launch {
+            gameStompService.latestGameState.collect { state ->
+                if (state != null) {
+                    Log.d("PLAYER_DEBUG", "GameState received: detectives=${state.detectivePositions}, mrX=${state.mrXPosition}")
+                    _gameState.value = state
+                } else {
+                    Log.d("PLAYER_DEBUG", "GameState is null")
+                }
+            }
+        }
     }
 
-    /**
-     * Subscribe to start position responses from the backend
-     * Must be called before requestStartPosition to ensure subscription is active
-     */
+    fun buildPlayerPositions(isMrX: Boolean, detectiveIdOrder: List<String>): Map<Color, Int> {
+        val state = _gameState.value
+        Log.d("PLAYER_DEBUG", "buildPlayerPositions called: isMrX=$isMrX, state=$state, detectiveIds=$detectiveIdOrder")
+        if (state == null) return emptyMap()
+        val result = buildMap {
+            detectiveIdOrder.forEachIndexed { index, playerId ->
+                val position = state.detectivePositions[playerId] ?: return@forEachIndexed
+                val color = DETECTIVE_COLORS.getOrElse(index) { Color.Gray }
+                put(color, position)
+            }
+            if (isMrX) {
+                state.mrXPosition?.let { put(MRX_COLOR, it) }
+            }
+        }
+        Log.d("PLAYER_DEBUG", "buildPlayerPositions result: $result")
+        return result
+    }
+
     fun subscribeToStartPosition(gameId: String, playerId: String) {
         Log.d("GameViewModel", "Subscribing to start position topic for game=$gameId, player=$playerId")
         myStomp.subscribeToStartPosition(gameId, playerId)
@@ -69,6 +103,10 @@ class GameViewModel : ViewModel(), Callbacks {
      */
     fun clearError() {
         _errorMessage.value = null
+    }
+
+    fun requestGameState(gameId: String) {
+        myStomp.requestGameState(gameId)
     }
 
     /**
@@ -136,6 +174,6 @@ class GameViewModel : ViewModel(), Callbacks {
 
     override fun onCleared() {
         super.onCleared()
-        // Clean up resources if needed
+        gameStompService.unsubscribe()
     }
 }

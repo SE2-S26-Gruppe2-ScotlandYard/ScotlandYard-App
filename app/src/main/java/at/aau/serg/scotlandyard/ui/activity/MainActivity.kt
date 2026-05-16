@@ -19,6 +19,8 @@ import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import androidx.compose.runtime.collectAsState
+import at.aau.serg.scotlandyard.viewmodel.GameViewModel
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -172,12 +174,30 @@ class MainActivity : ComponentActivity() {
                             navArgument("isMrX") { type = NavType.BoolType }
                         )
                     ) { backStackEntry ->
+                        val gameId = backStackEntry.arguments?.getString("gameId") ?: ""
                         val isMrX = backStackEntry.arguments?.getBoolean("isMrX") ?: false
                         val context = LocalContext.current
                         val displayMode = remember { context.getDisplayModePreference() }
+
+                        val gameViewModel: GameViewModel = viewModel()
+
+                        LaunchedEffect(gameId) {
+                            gameViewModel.gameStompService.subscribe(gameId)
+                            delay(300) // wait to ensure subscription is active
+                            gameViewModel.requestGameState(gameId)
+                        }
+
+                        // subscribe to GameState
+                        val gameState by gameViewModel.gameState.collectAsState()
+
+
+                        val detectiveIdOrder = gameState?.detectivePositions?.keys?.sorted() ?: emptyList()
+                        val playerPositions = gameViewModel.buildPlayerPositions(isMrX, detectiveIdOrder)
+
                         GameBoardScreen(
                             isMrX = isMrX,
                             displayMode = displayMode,
+                            playerPositions = playerPositions,
                             onNavigateToSettings = { navController.navigate("settings") }
                         )
                     }

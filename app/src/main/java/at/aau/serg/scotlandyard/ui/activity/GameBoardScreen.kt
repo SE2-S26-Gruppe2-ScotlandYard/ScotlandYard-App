@@ -79,6 +79,7 @@ enum class PlayerRole { DETECTIVE, MR_X }
  * @param currentRound          Round number displayed in the header badge
  * @param totalRounds           Total rounds in the game
  * @param ticketCounts          Map from TicketType to remaining count for the local player
+ * @param playerPositions       Map from Color to position of the players to draw the "figures"
  * @param onTicketSelect        Called when the player taps a ticket
  * @param onNavigateToSettings  Called when the player taps Settings in the menu
  */
@@ -89,6 +90,7 @@ fun GameBoardScreen(
     displayMode: BoardDisplayMode,
     totalRounds: Int = 22,
     ticketCounts: Map<TicketType, Int> = defaultTicketCounts(isMrX),
+    playerPositions: Map<Color, Int> = emptyMap(),
     onTicketSelect: (TicketType) -> Unit = {},
     onNavigateToSettings: () -> Unit = {}
 ) {
@@ -102,7 +104,8 @@ fun GameBoardScreen(
     ) {
         BoardArea(
             modifier = Modifier.fillMaxSize(),
-            displayMode = displayMode
+            displayMode = displayMode,
+            playerPositions = playerPositions
         )
 
         SidePanel(
@@ -156,7 +159,7 @@ private fun MenuOverlay(
                 exit = scaleOut(targetScale = 0.88f, animationSpec = tween(160)) +
                         fadeOut(animationSpec = tween(160))
             ) {
-                PauseMenuCard(
+                MenuCard(
                     onClose = onClose,
                     onNavigateToSettings = onNavigateToSettings
                 )
@@ -166,7 +169,7 @@ private fun MenuOverlay(
 }
 
 @Composable
-private fun PauseMenuCard(
+private fun MenuCard(
     onClose: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
@@ -480,7 +483,8 @@ private fun SidePanelTicketButton(
 @Composable
 private fun BoardArea(
     modifier: Modifier = Modifier,
-    displayMode: BoardDisplayMode
+    displayMode: BoardDisplayMode,
+    playerPositions: Map<Color, Int> = emptyMap()
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -536,7 +540,7 @@ private fun BoardArea(
                     translationY = offset.y
                 )
         ) {
-            GameBoardCanvas(displayMode = displayMode)
+            GameBoardCanvas(displayMode = displayMode, playerPositions = playerPositions)
         }
 
         // Usability hint
