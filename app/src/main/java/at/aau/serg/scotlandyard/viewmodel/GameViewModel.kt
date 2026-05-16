@@ -11,6 +11,7 @@ import at.aau.serg.scotlandyard.model.BoardConnection
 import at.aau.serg.scotlandyard.model.TicketType
 import at.aau.serg.scotlandyard.network.GameStompService
 import at.aau.serg.scotlandyard.network.MyStomp
+import at.aau.serg.scotlandyard.ui.activity.defaultTicketCounts
 import at.aau.serg.scotlandyard.ui.theme.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -112,6 +113,29 @@ class GameViewModel : ViewModel(), Callbacks {
         _startPosition.value = null
         _isLoading.value = false
         _errorMessage.value = null
+    }
+
+    fun getTicketCounts(playerId: String, isMrX: Boolean): Map<TicketType, Int> {
+        val state = _gameState.value ?: return defaultTicketCounts(isMrX)
+
+        return if (isMrX) {
+            // Mr. X: reguläre Tickets sind unendlich, nur BLACK und DOUBLE tracken
+            val special = state.mrXSpecialTickets
+            mapOf(
+                TicketType.WALKING   to Int.MAX_VALUE,
+                TicketType.ESCOOTER  to Int.MAX_VALUE,
+                TicketType.CARSHARING to Int.MAX_VALUE,
+                TicketType.BLACK     to (special["BLACK"] ?: 0),
+                TicketType.DOUBLE    to (special["DOUBLE"] ?: 0)
+            )
+        } else {
+            val tickets = state.playerTickets[playerId] ?: return defaultTicketCounts(false)
+            mapOf(
+                TicketType.WALKING    to (tickets["WALKING"] ?: 0),
+                TicketType.ESCOOTER   to (tickets["ESCOOTER"] ?: 0),
+                TicketType.CARSHARING to (tickets["CARSHARING"] ?: 0)
+            )
+        }
     }
 
     override fun onResponse(res: String) {

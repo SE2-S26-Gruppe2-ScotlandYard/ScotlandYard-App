@@ -218,7 +218,9 @@ class MainActivity : ComponentActivity() {
                             } else emptySet()
                         }
 
-                        val ticketCounts = defaultTicketCounts(isMrX)
+                        val ticketCounts = remember(gameState) {
+                            gameViewModel.getTicketCounts(playerId, isMrX)
+                        }
 
                         GameBoardScreen(
                             isMrX = isMrX,

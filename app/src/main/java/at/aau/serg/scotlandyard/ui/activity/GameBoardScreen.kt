@@ -474,7 +474,7 @@ private fun SidePanelTicketButton(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = count.toString(),
+                    text = if (count == Int.MAX_VALUE) "∞" else count.toString(),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace,
@@ -495,6 +495,7 @@ private fun BoardArea(
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
+
     var viewportWidth by remember { mutableFloatStateOf(0f) }
     var viewportHeight by remember { mutableFloatStateOf(0f) }
 
