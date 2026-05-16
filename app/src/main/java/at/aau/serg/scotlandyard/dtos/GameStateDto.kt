@@ -10,7 +10,8 @@ data class GameStateDto(
     val mrxMovesRemaining: Int,
     val playerTickets: Map<String, Map<String, Int>> = emptyMap(),
     val mrXSpecialTickets: Map<String, Int> = emptyMap(),
-    val mrXMoveHistory: List<String> = emptyList()
+    val mrXMoveHistory: List<String> = emptyList(),
+    val mrXRevealedPositions: Map<Int, Int> = emptyMap()
 ) {
     val isMrXPhase: Boolean get() = currentPhase == "MRX"
     val isDetectivesPhase: Boolean get() = currentPhase == "DETECTIVES"

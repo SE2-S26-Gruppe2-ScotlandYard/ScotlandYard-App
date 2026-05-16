@@ -239,6 +239,7 @@ class MainActivity : ComponentActivity() {
 
                         GameBoardScreen(
                             isMrX = isMrX,
+                            mrXRevealedPositions = if (!isMrX) gameState?.mrXRevealedPositions ?: emptyMap() else emptyMap(),
                             currentRound = gameState?.currentRound ?: 1,
                             displayMode = displayMode,
                             playerPositions = playerPositions,

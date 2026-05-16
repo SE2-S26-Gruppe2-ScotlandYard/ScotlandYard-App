@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -78,6 +79,7 @@ import kotlin.math.abs
  * Main game screen.
  *
  * @param isMrX                 true → show all 5 tickets; false → show detective tickets only
+ * @param mrXRevealedPositions
  * @param currentRound          Round number displayed in the header badge
  * @param totalRounds           Total rounds in the game
  * @param ticketCounts          Map from TicketType to remaining count for the local player
@@ -92,6 +94,7 @@ import kotlin.math.abs
 @Composable
 fun GameBoardScreen(
     isMrX: Boolean = false,
+    mrXRevealedPositions: Map<Int, Int> = emptyMap(),
     currentRound: Int = 1,
     displayMode: BoardDisplayMode,
     totalRounds: Int = 22,
@@ -107,6 +110,11 @@ fun GameBoardScreen(
 ) {
     var isMenuOpen by remember { mutableStateOf(false) }
     var isHistoryOpen by remember { mutableStateOf(false) }
+
+    val revealRounds = setOf(3, 8, 13, 18)
+    val currentRevealPosition = if (currentRound in revealRounds) {
+        mrXRevealedPositions[currentRound]
+    } else null
 
     Box(
         modifier = Modifier
@@ -152,10 +160,30 @@ fun GameBoardScreen(
             }
         }
 
+        if (!isMrX && currentRevealPosition != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = if (selectedTicket == TicketType.DOUBLE) 48.dp else 8.dp)
+                    .background(AccentGlow.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                    .border(1.dp, AccentGlow.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = "Mr. X was spotted at station $currentRevealPosition!",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
         // Mr. X move history overlay
         MrXHistoryOverlay(
             isVisible = isHistoryOpen,
             moveHistory = mrXMoveHistory,
+            mrXRevealedPositions = mrXRevealedPositions,
             onClose = { isHistoryOpen = false }
         )
 
@@ -312,6 +340,7 @@ private fun MenuItem(
 private fun MrXHistoryOverlay(
     isVisible: Boolean,
     moveHistory: List<String>,
+    mrXRevealedPositions: Map<Int, Int> = emptyMap(),
     onClose: () -> Unit
 ) {
     AnimatedVisibility(
@@ -333,7 +362,7 @@ private fun MrXHistoryOverlay(
                 exit = scaleOut(targetScale = 0.88f, animationSpec = tween(160)) +
                         fadeOut(animationSpec = tween(160))
             ) {
-                MrXHistoryCard(moveHistory = moveHistory, onClose = onClose)
+                MrXHistoryCard(moveHistory = moveHistory, mrXRevealedPositions = mrXRevealedPositions, onClose = onClose)
             }
         }
     }
@@ -342,6 +371,7 @@ private fun MrXHistoryOverlay(
 @Composable
 private fun MrXHistoryCard(
     moveHistory: List<String>,
+    mrXRevealedPositions: Map<Int, Int> = emptyMap(),
     onClose: () -> Unit
 ) {
     Card(
@@ -387,9 +417,9 @@ private fun MrXHistoryCard(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(vertical = 16.dp)
                     .height(1.dp)
                     .background(SidebarBorder)
-                    .padding(vertical = 12.dp)
             )
 
             if (moveHistory.isEmpty()) {
@@ -415,21 +445,28 @@ private fun MrXHistoryCard(
                         ) {
                             rowItems.forEachIndexed { colIndex, ticket ->
                                 val globalIndex = rowIndex * 3 + colIndex
+                                val moveNumber = globalIndex + 1
+                                val isRevealRound = moveNumber in setOf(3, 8, 13, 18)
+                                val revealedPos = if (isRevealRound) mrXRevealedPositions[moveNumber] else null
 
                                 Text(
-                                    text = "${globalIndex + 1}.",
+                                    text = "$moveNumber.",
                                     fontSize = 9.sp,
-                                    color = TextMuted,
-                                    modifier = Modifier.width(10.dp),
+                                    color = if (isRevealRound) TextPrimary else TextMuted,
+                                    fontWeight = if (isRevealRound) FontWeight.Bold else FontWeight.Normal,
+                                    modifier = Modifier.width(20.dp),
                                     textAlign = TextAlign.End
                                 )
 
                                 Spacer(modifier = Modifier.width(4.dp))
 
-                                MrXHistoryTicketChip(
-                                    ticket = ticket,
-                                    modifier = Modifier.weight(1f)
-                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    MrXHistoryTicketChip(
+                                        ticket = ticket,
+                                        revealedPos = revealedPos,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
 
                                 if (colIndex < rowItems.size - 1) {
                                     Box(
@@ -454,6 +491,7 @@ private fun MrXHistoryCard(
 @Composable
 private fun MrXHistoryTicketChip(
     ticket: String,
+    revealedPos: Int? = null,
     modifier: Modifier = Modifier
 ) {
     val (color, label) = when (ticket) {
@@ -464,20 +502,43 @@ private fun MrXHistoryTicketChip(
         else -> Pair(Color.Gray, ticket)
     }
 
-    Box(
-        modifier = modifier
-            .background(color.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
-            .border(1.dp, color, RoundedCornerShape(8.dp))
-            .padding(vertical = 6.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = label,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            textAlign = TextAlign.Center
-        )
+    Box(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(color.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
+                .border(1.dp, color, RoundedCornerShape(8.dp))
+                .padding(vertical = 6.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = label,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center
+            )
+        }
+
+        if (revealedPos != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = (-8).dp)
+                    .size(20.dp)
+                    .background(color, CircleShape)
+                    .border(1.dp, Color.White, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "$revealedPos",
+                    fontSize = 7.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
     }
 }
 
