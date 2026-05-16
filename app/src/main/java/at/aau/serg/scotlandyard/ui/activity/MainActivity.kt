@@ -210,6 +210,19 @@ class MainActivity : ComponentActivity() {
 
                         val myPosition by gameViewModel.myPosition.collectAsState()
 
+                        LaunchedEffect(Unit) {
+                            gameViewModel.gameOver.collect { result ->
+                                when (result) {
+                                    "DETECTIVES_WIN" -> navController.navigate("detectiveswin") {
+                                        popUpTo("gameboard/$gameId/$playerId/$isMrX") { inclusive = true }
+                                    }
+                                    "MRX_WINS" -> navController.navigate("mrxwin") {
+                                        popUpTo("gameboard/$gameId/$playerId/$isMrX") { inclusive = true }
+                                    }
+                                }
+                            }
+                        }
+
                         val highlightedNodes = remember(selectedTicket, myPosition) {
                             val ticket = selectedTicket
                             val pos = myPosition

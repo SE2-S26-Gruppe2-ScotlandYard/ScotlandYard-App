@@ -13,8 +13,11 @@ import at.aau.serg.scotlandyard.network.GameStompService
 import at.aau.serg.scotlandyard.network.MyStomp
 import at.aau.serg.scotlandyard.ui.activity.defaultTicketCounts
 import at.aau.serg.scotlandyard.ui.theme.*
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -42,6 +45,9 @@ class GameViewModel : ViewModel(), Callbacks {
     private val _myPosition = MutableStateFlow<Int?>(null)
     val myPosition: StateFlow<Int?> = _myPosition.asStateFlow()
 
+    private val _gameOver = MutableSharedFlow<String>()
+    val gameOver: SharedFlow<String> = _gameOver.asSharedFlow()
+
     init {
         myStomp.connect()
         viewModelScope.launch {
@@ -49,6 +55,11 @@ class GameViewModel : ViewModel(), Callbacks {
                 if (state != null) {
                     _gameState.value = state
                 }
+            }
+        }
+        viewModelScope.launch {
+            gameStompService.gameOver.collect { result ->
+                _gameOver.emit(result)
             }
         }
     }
