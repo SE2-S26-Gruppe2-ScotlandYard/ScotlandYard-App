@@ -128,6 +128,25 @@ fun GameBoardScreen(
             onTicketSelect = { type -> onTicketSelect(type) }
         )
 
+        if (selectedTicket == TicketType.DOUBLE) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 8.dp)
+                    .background(AccentGlow.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                    .border(1.dp, AccentGlow.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = "Double Move active – tap a station to use",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentGlow,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
         // Menu overlay - rendered on top of everything else
         MenuOverlay(
             isVisible = isMenuOpen,

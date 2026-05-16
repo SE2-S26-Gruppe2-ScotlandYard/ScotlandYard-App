@@ -222,6 +222,8 @@ class MainActivity : ComponentActivity() {
                             gameViewModel.getTicketCounts(playerId, isMrX)
                         }
 
+                        val isDoubleActive = gameState?.doubleMoveActive ?: false
+
                         GameBoardScreen(
                             isMrX = isMrX,
                             currentRound = gameState?.currentRound ?: 1,
@@ -230,7 +232,9 @@ class MainActivity : ComponentActivity() {
                             highlightedNodes = highlightedNodes,
                             isMyTurn = isMyTurn,
                             selectedTicket = selectedTicket,
-                            ticketCounts = ticketCounts,
+                            ticketCounts = ticketCounts.toMutableMap().apply {
+                                if (isDoubleActive) put(TicketType.DOUBLE, 0)   // GameState from server contains real count of DOUBLE tickets, this only disables the button
+                            },
                             onTicketSelect = { ticket ->
                                 if (isMyTurn) {
                                     selectedTicket = if (selectedTicket == ticket) null else ticket
