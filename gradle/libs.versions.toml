@@ -13,6 +13,9 @@ lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.13.0"
 composeBom = "2026.03.00"
 constraintlayout = "2.2.1"
+mockitoCore = "5.23.0"
+mockitoInline = "5.2.0"
+mockitoKotlin = "6.3.0"
 navigationCompose = "2.8.9"
 gson = "2.10.1"
 
@@ -41,6 +44,9 @@ krossbow-websocket-okhttp = { module = "org.hildan.krossbow:krossbow-websocket-o
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junitJupiterApi" }
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockitoCore" }
+mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockitoInline" }
+mockito-kotlin = { module = "org.mockito.kotlin:mockito-kotlin", version.ref = "mockitoKotlin" }
 
 [plugins]
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

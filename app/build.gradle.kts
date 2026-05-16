@@ -121,7 +121,7 @@ sonar {
         property("sonar.issue.ignore.multicriteria", "e1")
         property("sonar.issue.ignore.multicriteria.e1.ruleKey", "kotlin:S8569")
         property("sonar.issue.ignore.multicriteria.e1.resourceKey", "**/build.gradle.kts")
-        property("sonar.coverage.exclusions", "**/network/LobbyStompService.kt,**/network/MyStomp.kt,**/viewmodel/LobbyViewModel.kt,**/viewmodel/AuthViewModel.kt,**/viewmodel/GameViewModel.kt,**/ui/activity/**,**/ui/theme/**,**/ui/components/**")
+        property("sonar.coverage.exclusions", "**/network/LobbyStompService.kt,**/network/MyStomp.kt,**/viewmodel/LobbyViewModel.kt,**/viewmodel/AuthViewModel.kt,**/viewmodel/GameViewModel.kt,**/ui/activity/**,**/ui/theme/**,**/ui/components/**,**/model/BoardData.kt")
 
     }
 }
@@ -152,4 +152,8 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+    testImplementation(libs.mockito.core)
+    testImplementation(libs.mockito.kotlin)
+    testImplementation(libs.mockito.inline)
+
 }

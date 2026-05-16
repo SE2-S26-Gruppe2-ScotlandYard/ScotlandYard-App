@@ -13,10 +13,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import at.aau.serg.scotlandyard.data.getDisplayModePreference
 import androidx.navigation.navArgument
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
+import androidx.compose.runtime.collectAsState
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
