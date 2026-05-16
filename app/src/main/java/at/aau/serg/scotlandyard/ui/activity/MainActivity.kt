@@ -138,6 +138,7 @@ class MainActivity : ComponentActivity() {
                     composable("settings") {
                         SettingsScreen(onBackClick = { navController.popBackStack() })
                     }
+
                     composable(
                         route = "assignstartposition/{gameId}/{playerId}",
                         arguments = listOf(
@@ -147,13 +148,40 @@ class MainActivity : ComponentActivity() {
                     ) { backStackEntry ->
                         val gameId = backStackEntry.arguments?.getString("gameId") ?: ""
                         val playerId = backStackEntry.arguments?.getString("playerId") ?: ""
+                        val lobbyVm = sharedLobbyViewModel
                         AssignStartPositionScreen(
                             gameId = gameId,
                             playerId = playerId,
                             onBackClick = { navController.popBackStack() },
-                            onPositionConfirmed = { navController.navigate("lobby") }
+                            onPositionConfirmed = {
+                                // Determine role: MRX or DETECTIVE
+                                val selectedRoles = lobbyVm?.currentLobby?.value?.selectedRoles
+                                val isMrX = selectedRoles?.get(playerId) == "MRX"
+                                navController.navigate("gameboard/$gameId/$playerId/$isMrX") {
+                                    popUpTo("assignstartposition/$gameId/$playerId") { inclusive = true }
+                                }
+                            }
                         )
                     }
+
+                    composable(
+                        route = "gameboard/{gameId}/{playerId}/{isMrX}",
+                        arguments = listOf(
+                            navArgument("gameId") { type = NavType.StringType },
+                            navArgument("playerId") { type = NavType.StringType },
+                            navArgument("isMrX") { type = NavType.BoolType }
+                        )
+                    ) { backStackEntry ->
+                        val isMrX = backStackEntry.arguments?.getBoolean("isMrX") ?: false
+                        val context = LocalContext.current
+                        val displayMode = remember { context.getDisplayModePreference() }
+                        GameBoardScreen(
+                            isMrX = isMrX,
+                            displayMode = displayMode,
+                            onNavigateToSettings = { navController.navigate("settings") }
+                        )
+                    }
+
                     composable("mrxwin") {
                         MrXWinScreen(
                             onBackClick = { navController.navigate("start") },
