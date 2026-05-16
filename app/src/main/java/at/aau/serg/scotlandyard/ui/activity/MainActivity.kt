@@ -245,6 +245,7 @@ class MainActivity : ComponentActivity() {
                             highlightedNodes = highlightedNodes,
                             isMyTurn = isMyTurn,
                             selectedTicket = selectedTicket,
+                            mrXMoveHistory = if (!isMrX) gameState?.mrXMoveHistory ?: emptyList() else emptyList(),
                             ticketCounts = ticketCounts.toMutableMap().apply {
                                 if (isDoubleActive) put(TicketType.DOUBLE, 0)   // GameState from server contains real count of DOUBLE tickets, this only disables the button
                             },

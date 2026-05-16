@@ -99,12 +99,14 @@ fun GameBoardScreen(
     playerPositions: Map<Color, Int> = emptyMap(),
     highlightedNodes: Set<Int> = emptySet(),
     isMyTurn: Boolean = false,
+    mrXMoveHistory: List<String> = emptyList(),
     selectedTicket: TicketType? = null,
     onNodeClick: ((Int) -> Unit)? = null,
     onTicketSelect: (TicketType) -> Unit = {},
     onNavigateToSettings: () -> Unit = {}
 ) {
     var isMenuOpen by remember { mutableStateOf(false) }
+    var isHistoryOpen by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -127,6 +129,7 @@ fun GameBoardScreen(
             selectedTicket = selectedTicket,
             isMyTurn = isMyTurn,
             onMenuClick = { isMenuOpen = true },
+            onMrXHistoryClick = { isHistoryOpen = true },
             onTicketSelect = { type -> onTicketSelect(type) }
         )
 
@@ -148,6 +151,13 @@ fun GameBoardScreen(
                 )
             }
         }
+
+        // Mr. X move history overlay
+        MrXHistoryOverlay(
+            isVisible = isHistoryOpen,
+            moveHistory = mrXMoveHistory,
+            onClose = { isHistoryOpen = false }
+        )
 
         // Menu overlay - rendered on top of everything else
         MenuOverlay(
@@ -286,12 +296,187 @@ private fun MenuItem(
             tint = AccentGlow,
             modifier = Modifier.size(20.dp)
         )
+
         Spacer(modifier = Modifier.width(12.dp))
+
         Text(
             text = label,
             fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold,
             color = TextPrimary
+        )
+    }
+}
+
+@Composable
+private fun MrXHistoryOverlay(
+    isVisible: Boolean,
+    moveHistory: List<String>,
+    onClose: () -> Unit
+) {
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = fadeIn(animationSpec = tween(200)),
+        exit = fadeOut(animationSpec = tween(180))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xCC000000))
+                .clickable(onClick = onClose),
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = scaleIn(initialScale = 0.88f, animationSpec = tween(220)) +
+                        fadeIn(animationSpec = tween(220)),
+                exit = scaleOut(targetScale = 0.88f, animationSpec = tween(160)) +
+                        fadeOut(animationSpec = tween(160))
+            ) {
+                MrXHistoryCard(moveHistory = moveHistory, onClose = onClose)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MrXHistoryCard(
+    moveHistory: List<String>,
+    onClose: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .widthIn(min = 260.dp, max = 360.dp)
+            .clickable(enabled = false, onClick = {}),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1E2E)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 24.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Mr. X Moves",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp,
+                    color = TextPrimary
+                )
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(Color(0xFF1E3347), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = TextPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(SidebarBorder)
+                    .padding(vertical = 12.dp)
+            )
+
+            if (moveHistory.isEmpty()) {
+                Text(
+                    text = "No moves yet",
+                    fontSize = 13.sp,
+                    color = TextMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                val displayedMoves = moveHistory.takeLast(24)
+                val rows = displayedMoves.chunked(3)
+
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),  // ← scrollable
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    rows.forEachIndexed { rowIndex, rowItems ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            rowItems.forEachIndexed { colIndex, ticket ->
+                                val globalIndex = rowIndex * 3 + colIndex
+
+                                Text(
+                                    text = "${globalIndex + 1}.",
+                                    fontSize = 9.sp,
+                                    color = TextMuted,
+                                    modifier = Modifier.width(10.dp),
+                                    textAlign = TextAlign.End
+                                )
+
+                                Spacer(modifier = Modifier.width(4.dp))
+
+                                MrXHistoryTicketChip(
+                                    ticket = ticket,
+                                    modifier = Modifier.weight(1f)
+                                )
+
+                                if (colIndex < rowItems.size - 1) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .width(10.dp)
+                                    )
+                                }
+                            }
+
+                            repeat(3 - rowItems.size) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MrXHistoryTicketChip(
+    ticket: String,
+    modifier: Modifier = Modifier
+) {
+    val (color, label) = when (ticket) {
+        "WALKING" -> Pair(WalkingColor, "Walking")
+        "ESCOOTER" -> Pair(EScooterColor, "E-Scooter")
+        "CARSHARING" -> Pair(CarSharingColor,"Car Sharing")
+        "BLACK" -> Pair(BlackColor, "Black")
+        else -> Pair(Color.Gray, ticket)
+    }
+
+    Box(
+        modifier = modifier
+            .background(color.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
+            .border(1.dp, color, RoundedCornerShape(8.dp))
+            .padding(vertical = 6.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = label,
+            fontSize = 10.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+            textAlign = TextAlign.Center
         )
     }
 }
@@ -305,6 +490,7 @@ private fun SidePanel(
     selectedTicket: TicketType?,
     isMyTurn: Boolean = false,
     onMenuClick: () -> Unit,
+    onMrXHistoryClick: () -> Unit = {},
     onTicketSelect: (TicketType) -> Unit
 ) {
     val visibleTickets = if (isMrX)
@@ -370,6 +556,26 @@ private fun SidePanel(
                     isSelected = selectedTicket == type,
                     isDisabled = count == 0 || !isMyTurn,
                     onClick = { onTicketSelect(type) }
+                )
+            }
+        }
+
+        if (!isMrX) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF1A2E40), RoundedCornerShape(8.dp))
+                    .border(1.dp, SidebarBorder, RoundedCornerShape(8.dp))
+                    .clickable(onClick = onMrXHistoryClick)
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Mr. X Moves",
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFF090F5),
+                    textAlign = TextAlign.Center
                 )
             }
         }
