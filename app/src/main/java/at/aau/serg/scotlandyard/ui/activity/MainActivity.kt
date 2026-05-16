@@ -1,7 +1,6 @@
 package at.aau.serg.scotlandyard.ui.activity
 
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -65,6 +64,7 @@ class MainActivity : ComponentActivity() {
                             onSettings  = { navController.navigate("settings") }
                         )
                     }
+
                     composable("login") {
                         LaunchedEffect(currentUser) {
                             if (currentUser != null) {
@@ -131,11 +131,7 @@ class MainActivity : ComponentActivity() {
                                     viewModel   = lobbyVm,
                                     lobby       = lobby!!,
                                     onBackClick = { navController.popBackStack() },
-                                    onGameStart = {
-                                        // Host sendet startGame ans Backend
-                                        // Backend antwortet mit GAME_STARTED → navigateToGame Event
-                                        lobbyVm.startGame()
-                                    }
+                                    onGameStart = { lobbyVm.startGame() }
                                 )
                             }
                         }
@@ -200,7 +196,6 @@ class MainActivity : ComponentActivity() {
                         }
 
                         val isMyTurn = remember(gameState) {
-                            Log.d("TURN_DEBUG", "phase=${gameState?.currentPhase}, isMrXPhase=${gameState?.isMrXPhase}, isMrX=$isMrX, isMyTurn=${if (isMrX) gameState?.isMrXPhase else gameState?.isDetectivesPhase}")
                             gameState?.let { if (isMrX) it.isMrXPhase else it.isDetectivesPhase } ?: false
                         }
 
@@ -213,8 +208,14 @@ class MainActivity : ComponentActivity() {
                             if (!isMyTurn) selectedTicket = null
                         }
 
-                        val highlightedNodes = remember(selectedTicket) {
-                            selectedTicket?.let { gameViewModel.reachableStations(it) } ?: emptySet()
+                        val myPosition by gameViewModel.myPosition.collectAsState()
+
+                        val highlightedNodes = remember(selectedTicket, myPosition) {
+                            val ticket = selectedTicket
+                            val pos = myPosition
+                            if (ticket != null && pos != null) {
+                                gameViewModel.reachableStations(ticket)
+                            } else emptySet()
                         }
 
                         val ticketCounts = defaultTicketCounts(isMrX)
@@ -226,6 +227,7 @@ class MainActivity : ComponentActivity() {
                             playerPositions = playerPositions,
                             highlightedNodes = highlightedNodes,
                             isMyTurn = isMyTurn,
+                            selectedTicket = selectedTicket,
                             ticketCounts = ticketCounts,
                             onTicketSelect = { ticket ->
                                 if (isMyTurn) {
@@ -234,7 +236,7 @@ class MainActivity : ComponentActivity() {
                             },
                             onNodeClick = { stationId ->
                                 val ticket = selectedTicket
-                                if (ticket != null && stationId in highlightedNodes) {
+                                if (ticket != null) {
                                     gameViewModel.sendMove(gameId, playerId, ticket, stationId)
                                     selectedTicket = null
                                 }

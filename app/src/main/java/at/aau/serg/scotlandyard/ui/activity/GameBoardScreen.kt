@@ -1,6 +1,5 @@
 package at.aau.serg.scotlandyard.ui.activity
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -9,12 +8,14 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroidSize
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,7 +42,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -54,8 +54,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -70,9 +70,7 @@ import at.aau.serg.scotlandyard.ui.components.BOARD_WIDTH_DP
 import at.aau.serg.scotlandyard.ui.components.GameBoardCanvas
 import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
-
-enum class PlayerRole { DETECTIVE, MR_X }
-
+import kotlin.math.abs
 
 /**
  * Main game screen.
@@ -81,8 +79,12 @@ enum class PlayerRole { DETECTIVE, MR_X }
  * @param currentRound          Round number displayed in the header badge
  * @param totalRounds           Total rounds in the game
  * @param ticketCounts          Map from TicketType to remaining count for the local player
- * @param playerPositions       Map from Color to position of the players to draw the "figures"
+ * @param playerPositions       Map from Color to station ID for drawing player tokens
+ * @param highlightedNodes      Set of station IDs to highlight as reachable
+ * @param isMyTurn              Whether the local player is currently allowed to move
+ * @param selectedTicket        Currently selected ticket (managed externally)
  * @param onTicketSelect        Called when the player taps a ticket
+ * @param onNodeClick           Called when the player taps a board node
  * @param onNavigateToSettings  Called when the player taps Settings in the menu
  */
 @Composable
@@ -95,15 +97,11 @@ fun GameBoardScreen(
     playerPositions: Map<Color, Int> = emptyMap(),
     highlightedNodes: Set<Int> = emptySet(),
     isMyTurn: Boolean = false,
+    selectedTicket: TicketType? = null,
     onNodeClick: ((Int) -> Unit)? = null,
     onTicketSelect: (TicketType) -> Unit = {},
     onNavigateToSettings: () -> Unit = {}
 ) {
-    LaunchedEffect(isMyTurn) {
-        Log.d("TURN_DEBUG", "GameBoardScreen: isMyTurn=$isMyTurn")
-    }
-
-    var selectedTicket by remember { mutableStateOf<TicketType?>(null) }
     var isMenuOpen by remember { mutableStateOf(false) }
 
     Box(
@@ -127,10 +125,7 @@ fun GameBoardScreen(
             selectedTicket = selectedTicket,
             isMyTurn = isMyTurn,
             onMenuClick = { isMenuOpen = true },
-            onTicketSelect = { type ->
-                selectedTicket = if (selectedTicket == type) null else type
-                onTicketSelect(type)
-            }
+            onTicketSelect = { type -> onTicketSelect(type) }
         )
 
         // Menu overlay - rendered on top of everything else
@@ -342,15 +337,12 @@ private fun SidePanel(
         // Ticket buttons
         visibleTickets.forEach { type ->
             val count = ticketCounts[type] ?: 0
-            val isSelected = selectedTicket == type
-            val isDisabled = count == 0
-
             SidePanelTicketButton(
                 type = type,
                 count = count,
-                isSelected = isSelected,
+                isSelected = selectedTicket == type,
                 isDisabled = count == 0 || !isMyTurn,
-                onClick = { if (!isDisabled) onTicketSelect(type) }
+                onClick = { onTicketSelect(type) }
             )
         }
 
@@ -503,59 +495,84 @@ private fun BoardArea(
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
-
     var viewportWidth by remember { mutableFloatStateOf(0f) }
     var viewportHeight by remember { mutableFloatStateOf(0f) }
 
     val boardWidthDp = BOARD_WIDTH_DP
     val boardHeightDp = BOARD_HEIGHT_DP
-    val density = LocalDensity.current
-
-    val transformState = rememberTransformableState { zoomChange, panChange, _ ->
-        val newScale = (scale * zoomChange).coerceIn(0.8f, 5f)
-
-        val boardWidthPx = boardWidthDp * density.density
-        val boardHeightPx = boardHeightDp * density.density
-
-        val scaledHalfW = (boardWidthPx * newScale) / 2f
-        val scaledHalfH = (boardHeightPx * newScale) / 2f
-        val viewHalfW = viewportWidth / 2f
-        val viewHalfH = viewportHeight / 2f
-
-        val xPaddingPx = 200f * density.density
-        val maxX = (scaledHalfW - viewHalfW + xPaddingPx).coerceAtLeast(0f)
-        val maxY = (scaledHalfH - viewHalfH).coerceAtLeast(0f)
-
-        val newOffset = Offset(
-            x = (offset.x + panChange.x).coerceIn(-maxX, maxX),
-            y = (offset.y + panChange.y).coerceIn(-maxY, maxY)
-        )
-
-        scale = newScale
-        offset = newOffset
-    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF0A1520))
-            .transformable(state = transformState)
             .onSizeChanged { size ->
                 viewportWidth = size.width.toFloat()
                 viewportHeight = size.height.toFloat()
+            }
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    var zoom = 1f
+                    var pan = Offset.Zero
+                    var pastTouchSlop = false
+                    val touchSlop = viewConfiguration.touchSlop
+
+                    awaitFirstDown(requireUnconsumed = false)
+                    do {
+                        val event = awaitPointerEvent()
+                        val canceled = event.changes.any { it.isConsumed }
+                        if (!canceled) {
+                            val zoomChange = event.calculateZoom()
+                            val panChange = event.calculatePan()
+
+                            if (!pastTouchSlop) {
+                                zoom *= zoomChange
+                                pan += panChange
+                                val centroidSize = event.calculateCentroidSize(useCurrent = false)
+                                val zoomMotion = abs(1 - zoom) * centroidSize
+                                val panMotion = pan.getDistance()
+                                if (zoomMotion > touchSlop || panMotion > touchSlop) {
+                                    pastTouchSlop = true
+                                }
+                            }
+
+                            if (pastTouchSlop) {
+                                val newScale = (scale * zoomChange).coerceIn(0.8f, 5f)
+                                val boardWidthPx = boardWidthDp * density
+                                val boardHeightPx = boardHeightDp * density
+                                val scaledHalfW = (boardWidthPx * newScale) / 2f
+                                val scaledHalfH = (boardHeightPx * newScale) / 2f
+                                val viewHalfW = viewportWidth / 2f
+                                val viewHalfH = viewportHeight / 2f
+                                val xPaddingPx = 200f * density
+                                val maxX = (scaledHalfW - viewHalfW + xPaddingPx).coerceAtLeast(0f)
+                                val maxY = (scaledHalfH - viewHalfH).coerceAtLeast(0f)
+                                scale = newScale
+                                offset = Offset(
+                                    x = (offset.x + panChange.x).coerceIn(-maxX, maxX),
+                                    y = (offset.y + panChange.y).coerceIn(-maxY, maxY)
+                                )
+                                event.changes.forEach { it.consume() }
+                            }
+                        }
+                    } while (event.changes.any { it.pressed })
+                }
             },
         contentAlignment = Alignment.Center
     ) {
         Box(
-            modifier = Modifier
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offset.x,
-                    translationY = offset.y
-                )
+            modifier = Modifier.graphicsLayer(
+                scaleX = scale,
+                scaleY = scale,
+                translationX = offset.x,
+                translationY = offset.y
+            )
         ) {
-            GameBoardCanvas(displayMode = displayMode, playerPositions = playerPositions, highlightedNodes = highlightedNodes, onNodeClick = onNodeClick)
+            GameBoardCanvas(
+                displayMode = displayMode,
+                playerPositions = playerPositions,
+                highlightedNodes = highlightedNodes,
+                onNodeClick = onNodeClick
+            )
         }
 
         // Usability hint
@@ -572,16 +589,14 @@ private fun BoardArea(
 
 // Ticket Count helper TODO: Replace hardcoded values with requests to server
 fun defaultTicketCounts(isMrX: Boolean): Map<TicketType, Int> = buildMap {
-    put(TicketType.WALKING, isMrX.not().let { if (it) 10 else 4 })
-    put(TicketType.ESCOOTER, isMrX.not().let { if (it) 8 else 3 })
-    put(TicketType.CARSHARING, isMrX.not().let { if (it) 4 else 3 })
+    put(TicketType.WALKING, if (isMrX) 4 else 10)
+    put(TicketType.ESCOOTER, if (isMrX) 3 else 8)
+    put(TicketType.CARSHARING, if (isMrX) 3 else 4)
     if (isMrX) {
         put(TicketType.BLACK, 5)
         put(TicketType.DOUBLE, 2)
     }
 }
-
-// Previews
 
 @Preview(showBackground = true, widthDp = 800, heightDp = 400, name = "Detective View")
 @Composable

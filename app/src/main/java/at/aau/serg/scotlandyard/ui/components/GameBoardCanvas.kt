@@ -110,13 +110,15 @@ fun GameBoardCanvas(
                 .fillMaxSize()
                 .then(
                     if (onNodeClick != null) {
-                        Modifier.pointerInput(positions) {
+                        Modifier.pointerInput(Unit) {
                             detectTapGestures { tapOffset ->
+                                if (positions.isEmpty()) return@detectTapGestures
                                 val nodeRadius = NODE_RADIUS_FACTOR * minOf(size.width, size.height)
+                                val hitRadius = nodeRadius * 2.5f
                                 val tappedNode = positions.entries.firstOrNull { (_, pos) ->
                                     val dx = tapOffset.x - pos.x
                                     val dy = tapOffset.y - pos.y
-                                    dx * dx + dy * dy <= (nodeRadius * 2.5f) * (nodeRadius * 2.5f)
+                                    dx * dx + dy * dy <= hitRadius * hitRadius
                                 }
                                 tappedNode?.let { (id, _) -> onNodeClick(id) }
                             }
@@ -166,10 +168,10 @@ private fun DrawScope.drawEdges(
         val isHighlighted = edge.to in highlightedTargets || edge.from in highlightedTargets
 
         val (color, strokeWidth, offset) = when (edge.transport) {
-            TicketType.WALKING   -> Triple(WalkingColor,    walkStroke,  walkOffset)
-            TicketType.ESCOOTER  -> Triple(EScooterColor,  scootStroke, scootOffset)
-            TicketType.CARSHARING -> Triple(CarSharingColor, carStroke,  carOffset)
-            else                 -> Triple(BlackColor,      blackStroke, blackOffset)
+            TicketType.WALKING -> Triple(WalkingColor, walkStroke, walkOffset)
+            TicketType.ESCOOTER -> Triple(EScooterColor, scootStroke, scootOffset)
+            TicketType.CARSHARING -> Triple(CarSharingColor, carStroke, carOffset)
+            else -> Triple(BlackColor, blackStroke, blackOffset)
         }
 
         val finalOffset = parallelOffset(a, b, offset)

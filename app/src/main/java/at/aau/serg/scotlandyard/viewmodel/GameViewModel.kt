@@ -23,7 +23,6 @@ class GameViewModel : ViewModel(), Callbacks {
     private val myStomp = MyStomp(this)
     val gameStompService = GameStompService(myStomp)
 
-    // ── Start position ─────────────────────────────────────────────────────────
     private val _startPosition = MutableStateFlow<Int?>(null)
     val startPosition: StateFlow<Int?> = _startPosition.asStateFlow()
 
@@ -47,20 +46,15 @@ class GameViewModel : ViewModel(), Callbacks {
         viewModelScope.launch {
             gameStompService.latestGameState.collect { state ->
                 if (state != null) {
-                    Log.d("PLAYER_DEBUG", "GameState received: detectives=${state.detectivePositions}, mrX=${state.mrXPosition}")
                     _gameState.value = state
-                } else {
-                    Log.d("PLAYER_DEBUG", "GameState is null")
                 }
             }
         }
     }
 
     fun buildPlayerPositions(isMrX: Boolean, detectiveIdOrder: List<String>): Map<Color, Int> {
-        val state = _gameState.value
-        Log.d("PLAYER_DEBUG", "buildPlayerPositions called: isMrX=$isMrX, state=$state, detectiveIds=$detectiveIdOrder")
-        if (state == null) return emptyMap()
-        val result = buildMap {
+        val state = _gameState.value ?: return emptyMap()
+        return buildMap {
             detectiveIdOrder.forEachIndexed { index, playerId ->
                 val position = state.detectivePositions[playerId] ?: return@forEachIndexed
                 val color = DETECTIVE_COLORS.getOrElse(index) { Color.Gray }
@@ -70,8 +64,6 @@ class GameViewModel : ViewModel(), Callbacks {
                 state.mrXPosition?.let { put(MRX_COLOR, it) }
             }
         }
-        Log.d("PLAYER_DEBUG", "buildPlayerPositions result: $result")
-        return result
     }
 
     fun reachableStations(ticket: TicketType): Set<Int> {
@@ -90,25 +82,15 @@ class GameViewModel : ViewModel(), Callbacks {
     }
 
     fun subscribeToStartPosition(gameId: String, playerId: String) {
-        Log.d("GameViewModel", "Subscribing to start position topic for game=$gameId, player=$playerId")
         myStomp.subscribeToStartPosition(gameId, playerId)
     }
 
-    /**
-     * Request start position from the backend via shake gesture
-     * This sends a request to the backend, which will respond via STOMP subscription
-     */
     fun requestStartPosition(gameId: String, playerId: String) {
         _isLoading.value = true
         _errorMessage.value = null
-
-        Log.d("GameViewModel", "Requesting start position for game=$gameId, player=$playerId")
         myStomp.requestStartPosition(gameId, playerId)
     }
 
-    /**
-     * Confirm the assigned start position and proceed
-     */
     fun confirmStartPosition(gameId: String, playerId: String) {
         val position = _startPosition.value
         if (position != null) {
@@ -118,9 +100,6 @@ class GameViewModel : ViewModel(), Callbacks {
         }
     }
 
-    /**
-     * Reset error message
-     */
     fun clearError() {
         _errorMessage.value = null
     }
@@ -129,9 +108,6 @@ class GameViewModel : ViewModel(), Callbacks {
         myStomp.requestGameState(gameId)
     }
 
-    /**
-     * Reset all game state
-     */
     fun resetGameState() {
         _startPosition.value = null
         _isLoading.value = false
@@ -139,8 +115,6 @@ class GameViewModel : ViewModel(), Callbacks {
     }
 
     override fun onResponse(res: String) {
-        Log.d("GameViewModel", "Server response: $res")
-
         // Verbindungsstatus tracken
         when {
             res == "connected to server" -> {
@@ -166,22 +140,15 @@ class GameViewModel : ViewModel(), Callbacks {
                     message = jsonObject.optString("message", null)
                 )
 
-                Log.d("GameViewModel", "Parsed start position response: type=${response.type}, position=${response.startPosition}")
-
                 when (response.type) {
                     "START_POSITION_ASSIGNED" -> {
                         _startPosition.value = response.startPosition
                         _isLoading.value = false
                         _errorMessage.value = null
-                        Log.d("GameViewModel", "Start position assigned: ${response.startPosition}")
                     }
                     "ERROR" -> {
                         _isLoading.value = false
                         _errorMessage.value = response.message ?: "Unbekannter Fehler bei der Positionsvergabe"
-                        Log.e("GameViewModel", "Error assigning start position: ${response.message}")
-                    }
-                    else -> {
-                        Log.w("GameViewModel", "Unknown response type: ${response.type}")
                     }
                 }
             } catch (e: Exception) {
