@@ -204,8 +204,8 @@ class MainActivity : ComponentActivity() {
 
                         var selectedTicket by remember { mutableStateOf<TicketType?>(null) }
 
-                        LaunchedEffect(isMyTurn) {
-                            if (!isMyTurn) selectedTicket = null
+                        LaunchedEffect(!isMyTurn && selectedTicket != null) {
+                            selectedTicket = null
                         }
 
                         val myPosition by gameViewModel.myPosition.collectAsState()
