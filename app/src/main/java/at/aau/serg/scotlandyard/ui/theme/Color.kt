@@ -27,3 +27,13 @@ val EScooterColor = Color(0xFF3D8E79)
 val CarSharingColor = Color(0xFFED2939) // or Brown:0xFFA67C65 (DO NOT FORGET TO CHANGE IN TESTS)
 val BlackColor = Color(0xFFCC44CC)
 val DoubleColor = Color(0xFF2C2C2C)
+
+val DETECTIVE_COLORS = listOf(
+    Color(0xFF2196F3), // Blau
+    Color(0xFFFF9800), // Orange
+    Color(0xFF9C27B0), // Lila
+    Color(0xFFF44336), // Rot
+    Color(0xFF00BCD4), // Cyan
+)
+
+val MRX_COLOR = Color(0xFF2C2C2C)

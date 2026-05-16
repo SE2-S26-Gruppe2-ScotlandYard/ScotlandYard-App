@@ -306,6 +306,7 @@ private fun DrawScope.drawPlayers(
         val tokenPos = pos + stackOffset + Offset(0f, -(nodeRadius + 8f))
 
         // Outer circle
+        drawCircle(color = Color.White, radius = outerRadius + minDimension * 0.002f, center = tokenPos)
         drawCircle(color = color, radius = outerRadius, center = tokenPos)
         drawCircle(color = color, radius = innerRadius, center = tokenPos)
     }
