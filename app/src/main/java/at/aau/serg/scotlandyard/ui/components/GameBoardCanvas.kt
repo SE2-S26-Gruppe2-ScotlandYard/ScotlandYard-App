@@ -3,6 +3,7 @@ package at.aau.serg.scotlandyard.ui.components
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -24,6 +25,7 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -63,7 +65,8 @@ fun GameBoardCanvas(
     displayMode: BoardDisplayMode = BoardDisplayMode.GRAPH,
     highlightedNodes: Set<Int> = emptySet(),
     highlightedEdgeTargets: Set<Int> = emptySet(),
-    playerPositions: Map<Color, Int> = emptyMap()
+    playerPositions: Map<Color, Int> = emptyMap(),
+    onNodeClick: ((Int) -> Unit)? = null
 ) {
     var canvasWidth by remember { mutableFloatStateOf(0f) }
     var canvasHeight by remember { mutableFloatStateOf(0f) }
@@ -105,12 +108,21 @@ fun GameBoardCanvas(
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                /*.then(
-                    if (displayMode == BoardDisplayMode.GRAPH)
-                        Modifier.background(CanvasBgColor)
-                    else
-                        Modifier
-                )*/
+                .then(
+                    if (onNodeClick != null) {
+                        Modifier.pointerInput(positions) {
+                            detectTapGestures { tapOffset ->
+                                val nodeRadius = NODE_RADIUS_FACTOR * minOf(size.width, size.height)
+                                val tappedNode = positions.entries.firstOrNull { (_, pos) ->
+                                    val dx = tapOffset.x - pos.x
+                                    val dy = tapOffset.y - pos.y
+                                    dx * dx + dy * dy <= (nodeRadius * 2.5f) * (nodeRadius * 2.5f)
+                                }
+                                tappedNode?.let { (id, _) -> onNodeClick(id) }
+                            }
+                        }
+                    } else Modifier
+                )
         ) {
             if (size.width != canvasWidth || size.height != canvasHeight) {
                 canvasWidth = size.width

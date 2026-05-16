@@ -1,5 +1,6 @@
 package at.aau.serg.scotlandyard.ui.activity
 
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -40,6 +41,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -91,9 +93,16 @@ fun GameBoardScreen(
     totalRounds: Int = 22,
     ticketCounts: Map<TicketType, Int> = defaultTicketCounts(isMrX),
     playerPositions: Map<Color, Int> = emptyMap(),
+    highlightedNodes: Set<Int> = emptySet(),
+    isMyTurn: Boolean = false,
+    onNodeClick: ((Int) -> Unit)? = null,
     onTicketSelect: (TicketType) -> Unit = {},
     onNavigateToSettings: () -> Unit = {}
 ) {
+    LaunchedEffect(isMyTurn) {
+        Log.d("TURN_DEBUG", "GameBoardScreen: isMyTurn=$isMyTurn")
+    }
+
     var selectedTicket by remember { mutableStateOf<TicketType?>(null) }
     var isMenuOpen by remember { mutableStateOf(false) }
 
@@ -105,7 +114,9 @@ fun GameBoardScreen(
         BoardArea(
             modifier = Modifier.fillMaxSize(),
             displayMode = displayMode,
-            playerPositions = playerPositions
+            playerPositions = playerPositions,
+            highlightedNodes = highlightedNodes,
+            onNodeClick = if (isMyTurn) onNodeClick else null
         )
 
         SidePanel(
@@ -114,6 +125,7 @@ fun GameBoardScreen(
             totalRounds = totalRounds,
             ticketCounts = ticketCounts,
             selectedTicket = selectedTicket,
+            isMyTurn = isMyTurn,
             onMenuClick = { isMenuOpen = true },
             onTicketSelect = { type ->
                 selectedTicket = if (selectedTicket == type) null else type
@@ -275,6 +287,7 @@ private fun SidePanel(
     totalRounds: Int,
     ticketCounts: Map<TicketType, Int>,
     selectedTicket: TicketType?,
+    isMyTurn: Boolean = false,
     onMenuClick: () -> Unit,
     onTicketSelect: (TicketType) -> Unit
 ) {
@@ -336,7 +349,7 @@ private fun SidePanel(
                 type = type,
                 count = count,
                 isSelected = isSelected,
-                isDisabled = isDisabled,
+                isDisabled = count == 0 || !isMyTurn,
                 onClick = { if (!isDisabled) onTicketSelect(type) }
             )
         }
@@ -484,7 +497,9 @@ private fun SidePanelTicketButton(
 private fun BoardArea(
     modifier: Modifier = Modifier,
     displayMode: BoardDisplayMode,
-    playerPositions: Map<Color, Int> = emptyMap()
+    playerPositions: Map<Color, Int> = emptyMap(),
+    highlightedNodes: Set<Int> = emptySet(),
+    onNodeClick: ((Int) -> Unit)? = null
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -540,7 +555,7 @@ private fun BoardArea(
                     translationY = offset.y
                 )
         ) {
-            GameBoardCanvas(displayMode = displayMode, playerPositions = playerPositions)
+            GameBoardCanvas(displayMode = displayMode, playerPositions = playerPositions, highlightedNodes = highlightedNodes, onNodeClick = onNodeClick)
         }
 
         // Usability hint

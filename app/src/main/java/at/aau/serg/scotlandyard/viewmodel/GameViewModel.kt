@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import at.aau.serg.scotlandyard.Callbacks
 import at.aau.serg.scotlandyard.dtos.GameStateDto
 import at.aau.serg.scotlandyard.dtos.StartPositionResponse
+import at.aau.serg.scotlandyard.model.BoardConnection
+import at.aau.serg.scotlandyard.model.TicketType
 import at.aau.serg.scotlandyard.network.GameStompService
 import at.aau.serg.scotlandyard.network.MyStomp
 import at.aau.serg.scotlandyard.ui.theme.*
@@ -36,6 +38,9 @@ class GameViewModel : ViewModel(), Callbacks {
 
     private val _gameState = MutableStateFlow<GameStateDto?>(null)
     val gameState: StateFlow<GameStateDto?> = _gameState.asStateFlow()
+
+    private val _myPosition = MutableStateFlow<Int?>(null)
+    val myPosition: StateFlow<Int?> = _myPosition.asStateFlow()
 
     init {
         myStomp.connect()
@@ -67,6 +72,21 @@ class GameViewModel : ViewModel(), Callbacks {
         }
         Log.d("PLAYER_DEBUG", "buildPlayerPositions result: $result")
         return result
+    }
+
+    fun reachableStations(ticket: TicketType): Set<Int> {
+        val pos = _myPosition.value ?: return emptySet()
+        return BoardConnection.reachableFrom(pos, ticket)
+    }
+
+    fun updateMyPosition(playerId: String, isMrX: Boolean) {
+        val state = _gameState.value ?: return
+        _myPosition.value = if (isMrX) state.mrXPosition
+        else state.detectivePositions[playerId]
+    }
+
+    fun sendMove(gameId: String, playerId: String, ticket: TicketType, targetStation: Int) {
+        gameStompService.sendMove(gameId, playerId, ticket.name, targetStation)
     }
 
     fun subscribeToStartPosition(gameId: String, playerId: String) {

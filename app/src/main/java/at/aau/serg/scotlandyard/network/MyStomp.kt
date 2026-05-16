@@ -192,9 +192,23 @@ class MyStomp(val callbacks: Callbacks) {
                 client?.let { session = it.connect(WEBSOCKET_URI) }
             }
             session?.let { s ->
-                launch { s.subscribeText("/topic/game/$gameId/movements").collect { callback("movement:$it") } }
-                launch { s.subscribeText("/topic/game/$gameId/move-response").collect { callback("move-response:$it") } }
-                launch { s.subscribeText("/topic/game/$gameId/over").collect { callback("game-over:$it") } }
+                launch {
+                    s.subscribeText("/topic/game/$gameId/movements").collect { msg ->
+                        gameStateCallback?.invoke(msg) ?: callback("movement:$msg")
+                    }
+                }
+                // ✅ move-response → movementCallback (für GameStompService)
+                launch {
+                    s.subscribeText("/topic/game/$gameId/move-response").collect { msg ->
+                        movementCallback?.invoke(msg) ?: callback("move-response:$msg")
+                    }
+                }
+                // ✅ game-over → gameOverCallback (für GameStompService)
+                launch {
+                    s.subscribeText("/topic/game/$gameId/over").collect { msg ->
+                        gameOverCallback?.invoke(msg) ?: callback("game-over:$msg")
+                    }
+                }
                 callback("connected to:$gameId")
             }
         }
@@ -254,6 +268,17 @@ class MyStomp(val callbacks: Callbacks) {
                     ?: callback("Error: Not connected")
             } catch (e: Exception) {
                 Log.e("MyStomp", "Start position request failed", e)
+            }
+        }
+    }
+
+    fun requestGameState(gameId: String) {
+        scope.launch {
+            try {
+                session?.sendText("/app/game/$gameId/state", "")
+                    ?: Log.w("MyStomp", "Cannot request game state: not connected")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "requestGameState failed", e)
             }
         }
     }

@@ -1,6 +1,7 @@
 package at.aau.serg.scotlandyard.ui.activity
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,12 +20,15 @@ import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import androidx.compose.runtime.collectAsState
+import at.aau.serg.scotlandyard.model.BoardConnection
+import at.aau.serg.scotlandyard.model.TicketType
 import at.aau.serg.scotlandyard.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        BoardConnection.init(this)
         enableEdgeToEdge()
         setContent {
             ScotlandYardTheme {
@@ -175,6 +179,7 @@ class MainActivity : ComponentActivity() {
                         )
                     ) { backStackEntry ->
                         val gameId = backStackEntry.arguments?.getString("gameId") ?: ""
+                        val playerId = backStackEntry.arguments?.getString("playerId") ?: ""
                         val isMrX = backStackEntry.arguments?.getBoolean("isMrX") ?: false
                         val context = LocalContext.current
                         val displayMode = remember { context.getDisplayModePreference() }
@@ -190,14 +195,50 @@ class MainActivity : ComponentActivity() {
                         // subscribe to GameState
                         val gameState by gameViewModel.gameState.collectAsState()
 
+                        LaunchedEffect(gameState) {
+                            gameViewModel.updateMyPosition(playerId, isMrX)
+                        }
+
+                        val isMyTurn = remember(gameState) {
+                            Log.d("TURN_DEBUG", "phase=${gameState?.currentPhase}, isMrXPhase=${gameState?.isMrXPhase}, isMrX=$isMrX, isMyTurn=${if (isMrX) gameState?.isMrXPhase else gameState?.isDetectivesPhase}")
+                            gameState?.let { if (isMrX) it.isMrXPhase else it.isDetectivesPhase } ?: false
+                        }
 
                         val detectiveIdOrder = gameState?.detectivePositions?.keys?.sorted() ?: emptyList()
                         val playerPositions = gameViewModel.buildPlayerPositions(isMrX, detectiveIdOrder)
 
+                        var selectedTicket by remember { mutableStateOf<TicketType?>(null) }
+
+                        LaunchedEffect(isMyTurn) {
+                            if (!isMyTurn) selectedTicket = null
+                        }
+
+                        val highlightedNodes = remember(selectedTicket) {
+                            selectedTicket?.let { gameViewModel.reachableStations(it) } ?: emptySet()
+                        }
+
+                        val ticketCounts = defaultTicketCounts(isMrX)
+
                         GameBoardScreen(
                             isMrX = isMrX,
+                            currentRound = gameState?.currentRound ?: 1,
                             displayMode = displayMode,
                             playerPositions = playerPositions,
+                            highlightedNodes = highlightedNodes,
+                            isMyTurn = isMyTurn,
+                            ticketCounts = ticketCounts,
+                            onTicketSelect = { ticket ->
+                                if (isMyTurn) {
+                                    selectedTicket = if (selectedTicket == ticket) null else ticket
+                                }
+                            },
+                            onNodeClick = { stationId ->
+                                val ticket = selectedTicket
+                                if (ticket != null && stationId in highlightedNodes) {
+                                    gameViewModel.sendMove(gameId, playerId, ticket, stationId)
+                                    selectedTicket = null
+                                }
+                            },
                             onNavigateToSettings = { navController.navigate("settings") }
                         )
                     }

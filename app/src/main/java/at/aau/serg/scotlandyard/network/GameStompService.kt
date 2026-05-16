@@ -106,6 +106,7 @@ class GameStompService(private val myStomp: MyStomp) {
     private fun onGameStateMessage(msg: String) {
         scope.launch {
             try {
+                Log.d("PLAYER_DEBUG", "Raw GameState message: $msg")
                 val state = gson.fromJson(msg, GameStateDto::class.java)
                 if (state != null) {
                     _latestGameState.value = state
