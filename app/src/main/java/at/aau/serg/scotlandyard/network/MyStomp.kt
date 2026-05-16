@@ -19,7 +19,7 @@ import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
 
 //private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/scotlandyard"
-private const val WEBSOCKET_URI = "ws://10.0.0.42:8080/scotlandyard"
+private const val WEBSOCKET_URI = "ws://10.233.0.89:8080/scotlandyard"
 class MyStomp(val callbacks: Callbacks) {
 
     private var client: StompClient? = null
@@ -32,6 +32,9 @@ class MyStomp(val callbacks: Callbacks) {
     private var currentUserId: String? = null
     private var currentGameId: String? = null
     private var lobbyCallback: ((String) -> Unit)? = null
+    private var gameStateCallback: ((String) -> Unit)? = null
+    private var movementCallback: ((String) -> Unit)? = null
+    private var gameOverCallback: ((String) -> Unit)? = null
 
     fun setLobbyCallback(callback: ((String) -> Unit)?) {
         lobbyCallback = callback
@@ -39,6 +42,16 @@ class MyStomp(val callbacks: Callbacks) {
 
     fun setCurrentUserId(userId: String) {
         currentUserId = userId
+    }
+
+    fun setGameStateCallback(callback: ((String) -> Unit)?) {
+        gameStateCallback = callback
+    }
+    fun setMovementCallback(callback: ((String) -> Unit)?) {
+        movementCallback = callback
+    }
+    fun setGameOverCallback(callback: ((String) -> Unit)?) {
+        gameOverCallback = callback
     }
 
     private val _isConnected = MutableStateFlow(false)
