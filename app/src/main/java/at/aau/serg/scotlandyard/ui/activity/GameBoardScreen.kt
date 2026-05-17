@@ -78,7 +78,7 @@ import kotlin.math.abs
 /**
  * Main game screen.
  *
- * @param isMrX                 true → show all 5 tickets; false → show detective tickets only
+ * @param isMrX                 true -> show all 5 tickets; false -> show detective tickets only
  * @param mrXRevealedPositions
  * @param currentRound          Round number displayed in the header badge
  * @param totalRounds           Total rounds in the game
@@ -141,6 +141,7 @@ fun GameBoardScreen(
             onTicketSelect = { type -> onTicketSelect(type) }
         )
 
+        // Double ticket usability hint (banner)
         if (selectedTicket == TicketType.DOUBLE) {
             Box(
                 modifier = Modifier
@@ -160,6 +161,7 @@ fun GameBoardScreen(
             }
         }
 
+        // Reveal Mr. X position (banner)
         if (!isMrX && currentRevealPosition != null) {
             Box(
                 modifier = Modifier
@@ -881,7 +883,6 @@ private fun BoardArea(
     }
 }
 
-// Ticket Count helper TODO: Replace hardcoded values with requests to server
 fun defaultTicketCounts(isMrX: Boolean): Map<TicketType, Int> = buildMap {
     put(TicketType.WALKING, if (isMrX) 4 else 10)
     put(TicketType.ESCOOTER, if (isMrX) 3 else 8)

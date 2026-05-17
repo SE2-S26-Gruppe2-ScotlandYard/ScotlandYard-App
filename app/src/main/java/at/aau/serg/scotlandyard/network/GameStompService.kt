@@ -17,26 +17,11 @@ import kotlinx.coroutines.launch
 
 private const val TAG = "GameStompService"
 
-/**
- * Game-specific STOMP service.
- *
- * Registers callbacks on [MyStomp] so the single WebSocket session is shared.
- * Does NOT open its own subscriptions – [MyStomp.connectToGame] handles that
- * and routes payloads here via [setGameStateCallback] / [setMovementCallback] /
- * [setGameOverCallback].
- *
- * Server topic mapping (see WebSocketBrokerController.java + GameService.java):
- *   /topic/game/{gameId}        → game state (GameStateDto JSON)
- *   /topic/game/{gameId}/over   → game-over string ("DETECTIVES_WIN" | "MRX_WINS")
- *   /topic/move-response        → movement result (MovementResponse JSON)
- *   /app/move                   → send a move
- */
 class GameStompService(private val myStomp: MyStomp) {
 
     private val gson = Gson()
     private val scope = CoroutineScope(Dispatchers.IO)
 
-    // ── Exposed flows ──────────────────────────────────────────────────────────
 
     private val _latestGameState = MutableStateFlow<GameStateDto?>(null)
     val latestGameState: StateFlow<GameStateDto?> = _latestGameState.asStateFlow()
@@ -56,12 +41,6 @@ class GameStompService(private val myStomp: MyStomp) {
     private var currentGameId: String? = null
     private var isSubscribed = false
 
-    // ── Subscription ───────────────────────────────────────────────────────────
-
-    /**
-     * Register with [MyStomp] and ask it to subscribe to game-specific topics.
-     * Safe to call multiple times for the same [gameId].
-     */
     fun subscribe(gameId: String) {
         if (isSubscribed && currentGameId == gameId) {
             Log.d(TAG, "Already subscribed to game $gameId")
@@ -71,12 +50,10 @@ class GameStompService(private val myStomp: MyStomp) {
         isSubscribed = true
         Log.d(TAG, "Subscribing to game: $gameId")
 
-        // Register raw-message callbacks on the shared MyStomp instance
         myStomp.setGameStateCallback { msg -> onGameStateMessage(msg) }
         myStomp.setMovementCallback  { msg -> onMovementMessage(msg) }
         myStomp.setGameOverCallback  { msg -> onGameOverMessage(msg) }
 
-        // Ask MyStomp to open the game-specific STOMP topics
         myStomp.connectToGame(gameId)
     }
 
@@ -91,8 +68,6 @@ class GameStompService(private val myStomp: MyStomp) {
         _latestGameState.value = null
     }
 
-    // ── Send move ──────────────────────────────────────────────────────────────
-
     fun sendMove(gameId: String, playerId: String, ticket: String, targetPosition: Int) {
         myStomp.sendMove(gameId, playerId, ticket, targetPosition)
     }
@@ -100,8 +75,6 @@ class GameStompService(private val myStomp: MyStomp) {
     fun sendDoubleMove(gameId: String, playerId: String) {
         myStomp.sendMove(gameId, playerId, "DOUBLE", 0)
     }
-
-    // ── Raw message handlers ───────────────────────────────────────────────────
 
     private fun onGameStateMessage(msg: String) {
         scope.launch {

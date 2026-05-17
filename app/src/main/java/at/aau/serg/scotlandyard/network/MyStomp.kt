@@ -18,7 +18,6 @@ import org.hildan.krossbow.stomp.subscribeText
 import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
 
-//private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/scotlandyard"
 private const val WEBSOCKET_URI = "ws://10.233.0.89:8080/scotlandyard"
 class MyStomp(val callbacks: Callbacks) {
 
@@ -197,13 +196,11 @@ class MyStomp(val callbacks: Callbacks) {
                         gameStateCallback?.invoke(msg) ?: callback("movement:$msg")
                     }
                 }
-                // ✅ move-response → movementCallback (für GameStompService)
                 launch {
                     s.subscribeText("/topic/game/$gameId/move-response").collect { msg ->
                         movementCallback?.invoke(msg) ?: callback("move-response:$msg")
                     }
                 }
-                // ✅ game-over → gameOverCallback (für GameStompService)
                 launch {
                     s.subscribeText("/topic/game/$gameId/over").collect { msg ->
                         gameOverCallback?.invoke(msg) ?: callback("game-over:$msg")

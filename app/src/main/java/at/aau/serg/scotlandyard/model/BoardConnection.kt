@@ -49,7 +49,7 @@ object BoardConnection {
                     "ESCOOTER" -> TicketType.ESCOOTER
                     "CARSHARING" -> TicketType.CARSHARING
                     "BLACK" -> TicketType.BLACK
-                    else -> continue   // unknown transport → skip
+                    else -> continue   // unknown transport -> skip
                 }
 
                 byTicket.getOrPut(ticketType) { mutableSetOf() }.add(to)
