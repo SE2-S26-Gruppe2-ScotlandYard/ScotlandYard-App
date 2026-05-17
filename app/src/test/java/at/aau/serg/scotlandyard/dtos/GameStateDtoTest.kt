@@ -1,7 +1,7 @@
 package at.aau.serg.scotlandyard.dtos
 
-import org.junit.Assert.*
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Test
 
 class GameStateDtoTest {
     private fun createDto(phase: String) = GameStateDto(
