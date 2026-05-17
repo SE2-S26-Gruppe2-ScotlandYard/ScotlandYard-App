@@ -8,12 +8,14 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.rememberTransformableState
-import androidx.compose.foundation.gestures.transformable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.calculateCentroidSize
+import androidx.compose.foundation.gestures.calculatePan
+import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,12 +25,15 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Menu
@@ -52,8 +57,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -68,32 +73,48 @@ import at.aau.serg.scotlandyard.ui.components.BOARD_WIDTH_DP
 import at.aau.serg.scotlandyard.ui.components.GameBoardCanvas
 import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
-
-enum class PlayerRole { DETECTIVE, MR_X }
-
+import kotlin.math.abs
 
 /**
  * Main game screen.
  *
- * @param isMrX                 true → show all 5 tickets; false → show detective tickets only
+ * @param isMrX                 true -> show all 5 tickets; false -> show detective tickets only
+ * @param mrXRevealedPositions
  * @param currentRound          Round number displayed in the header badge
  * @param totalRounds           Total rounds in the game
  * @param ticketCounts          Map from TicketType to remaining count for the local player
+ * @param playerPositions       Map from Color to station ID for drawing player tokens
+ * @param highlightedNodes      Set of station IDs to highlight as reachable
+ * @param isMyTurn              Whether the local player is currently allowed to move
+ * @param selectedTicket        Currently selected ticket (managed externally)
  * @param onTicketSelect        Called when the player taps a ticket
+ * @param onNodeClick           Called when the player taps a board node
  * @param onNavigateToSettings  Called when the player taps Settings in the menu
  */
 @Composable
 fun GameBoardScreen(
     isMrX: Boolean = false,
+    mrXRevealedPositions: Map<Int, Int> = emptyMap(),
     currentRound: Int = 1,
     displayMode: BoardDisplayMode,
     totalRounds: Int = 22,
     ticketCounts: Map<TicketType, Int> = defaultTicketCounts(isMrX),
+    playerPositions: Map<Color, Int> = emptyMap(),
+    highlightedNodes: Set<Int> = emptySet(),
+    isMyTurn: Boolean = false,
+    mrXMoveHistory: List<String> = emptyList(),
+    selectedTicket: TicketType? = null,
+    onNodeClick: ((Int) -> Unit)? = null,
     onTicketSelect: (TicketType) -> Unit = {},
     onNavigateToSettings: () -> Unit = {}
 ) {
-    var selectedTicket by remember { mutableStateOf<TicketType?>(null) }
     var isMenuOpen by remember { mutableStateOf(false) }
+    var isHistoryOpen by remember { mutableStateOf(false) }
+
+    val revealRounds = setOf(3, 8, 13, 18)
+    val currentRevealPosition = if (currentRound in revealRounds) {
+        mrXRevealedPositions[currentRound]
+    } else null
 
     Box(
         modifier = Modifier
@@ -102,7 +123,10 @@ fun GameBoardScreen(
     ) {
         BoardArea(
             modifier = Modifier.fillMaxSize(),
-            displayMode = displayMode
+            displayMode = displayMode,
+            playerPositions = playerPositions,
+            highlightedNodes = highlightedNodes,
+            onNodeClick = if (isMyTurn) onNodeClick else null
         )
 
         SidePanel(
@@ -111,11 +135,58 @@ fun GameBoardScreen(
             totalRounds = totalRounds,
             ticketCounts = ticketCounts,
             selectedTicket = selectedTicket,
+            isMyTurn = isMyTurn,
             onMenuClick = { isMenuOpen = true },
-            onTicketSelect = { type ->
-                selectedTicket = if (selectedTicket == type) null else type
-                onTicketSelect(type)
+            onMrXHistoryClick = { isHistoryOpen = true },
+            onTicketSelect = { type -> onTicketSelect(type) }
+        )
+
+        // Double ticket usability hint (banner)
+        if (selectedTicket == TicketType.DOUBLE) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 8.dp)
+                    .background(AccentGlow.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                    .border(1.dp, AccentGlow.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = "Double Move active – tap a station to use",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = AccentGlow,
+                    textAlign = TextAlign.Center
+                )
             }
+        }
+
+        // Reveal Mr. X position (banner)
+        if (!isMrX && currentRevealPosition != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = if (selectedTicket == TicketType.DOUBLE) 48.dp else 8.dp)
+                    .background(AccentGlow.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                    .border(1.dp, AccentGlow.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 16.dp, vertical = 6.dp)
+            ) {
+                Text(
+                    text = "Mr. X was spotted at station $currentRevealPosition!",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+
+        // Mr. X move history overlay
+        MrXHistoryOverlay(
+            isVisible = isHistoryOpen,
+            moveHistory = mrXMoveHistory,
+            mrXRevealedPositions = mrXRevealedPositions,
+            onClose = { isHistoryOpen = false }
         )
 
         // Menu overlay - rendered on top of everything else
@@ -156,7 +227,7 @@ private fun MenuOverlay(
                 exit = scaleOut(targetScale = 0.88f, animationSpec = tween(160)) +
                         fadeOut(animationSpec = tween(160))
             ) {
-                PauseMenuCard(
+                MenuCard(
                     onClose = onClose,
                     onNavigateToSettings = onNavigateToSettings
                 )
@@ -166,7 +237,7 @@ private fun MenuOverlay(
 }
 
 @Composable
-private fun PauseMenuCard(
+private fun MenuCard(
     onClose: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
@@ -255,7 +326,9 @@ private fun MenuItem(
             tint = AccentGlow,
             modifier = Modifier.size(20.dp)
         )
+
         Spacer(modifier = Modifier.width(12.dp))
+
         Text(
             text = label,
             fontSize = 15.sp,
@@ -266,13 +339,221 @@ private fun MenuItem(
 }
 
 @Composable
+private fun MrXHistoryOverlay(
+    isVisible: Boolean,
+    moveHistory: List<String>,
+    mrXRevealedPositions: Map<Int, Int> = emptyMap(),
+    onClose: () -> Unit
+) {
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = fadeIn(animationSpec = tween(200)),
+        exit = fadeOut(animationSpec = tween(180))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xCC000000))
+                .clickable(onClick = onClose),
+            contentAlignment = Alignment.Center
+        ) {
+            AnimatedVisibility(
+                visible = isVisible,
+                enter = scaleIn(initialScale = 0.88f, animationSpec = tween(220)) +
+                        fadeIn(animationSpec = tween(220)),
+                exit = scaleOut(targetScale = 0.88f, animationSpec = tween(160)) +
+                        fadeOut(animationSpec = tween(160))
+            ) {
+                MrXHistoryCard(moveHistory = moveHistory, mrXRevealedPositions = mrXRevealedPositions, onClose = onClose)
+            }
+        }
+    }
+}
+
+@Composable
+private fun MrXHistoryCard(
+    moveHistory: List<String>,
+    mrXRevealedPositions: Map<Int, Int> = emptyMap(),
+    onClose: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .widthIn(min = 260.dp, max = 360.dp)
+            .clickable(enabled = false, onClick = {}),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1E2E)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 24.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Mr. X Moves",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 2.sp,
+                    color = TextPrimary
+                )
+                IconButton(
+                    onClick = onClose,
+                    modifier = Modifier
+                        .size(32.dp)
+                        .background(Color(0xFF1E3347), CircleShape)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Close",
+                        tint = TextPrimary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp)
+                    .height(1.dp)
+                    .background(SidebarBorder)
+            )
+
+            if (moveHistory.isEmpty()) {
+                Text(
+                    text = "No moves yet",
+                    fontSize = 13.sp,
+                    color = TextMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            } else {
+                val displayedMoves = moveHistory.takeLast(24)
+                val rows = displayedMoves.chunked(3)
+
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),  // ← scrollable
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    rows.forEachIndexed { rowIndex, rowItems ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            rowItems.forEachIndexed { colIndex, ticket ->
+                                val globalIndex = rowIndex * 3 + colIndex
+                                val moveNumber = globalIndex + 1
+                                val isRevealRound = moveNumber in setOf(3, 8, 13, 18)
+                                val revealedPos = if (isRevealRound) mrXRevealedPositions[moveNumber] else null
+
+                                Text(
+                                    text = "$moveNumber.",
+                                    fontSize = 9.sp,
+                                    color = if (isRevealRound) TextPrimary else TextMuted,
+                                    fontWeight = if (isRevealRound) FontWeight.Bold else FontWeight.Normal,
+                                    modifier = Modifier.width(20.dp),
+                                    textAlign = TextAlign.End
+                                )
+
+                                Spacer(modifier = Modifier.width(4.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    MrXHistoryTicketChip(
+                                        ticket = ticket,
+                                        revealedPos = revealedPos,
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                }
+
+                                if (colIndex < rowItems.size - 1) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxHeight()
+                                            .width(10.dp)
+                                    )
+                                }
+                            }
+
+                            repeat(3 - rowItems.size) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MrXHistoryTicketChip(
+    ticket: String,
+    revealedPos: Int? = null,
+    modifier: Modifier = Modifier
+) {
+    val (color, label) = when (ticket) {
+        "WALKING" -> Pair(WalkingColor, "Walking")
+        "ESCOOTER" -> Pair(EScooterColor, "E-Scooter")
+        "CARSHARING" -> Pair(CarSharingColor,"Car Sharing")
+        "BLACK" -> Pair(BlackColor, "Black")
+        else -> Pair(Color.Gray, ticket)
+    }
+
+    Box(modifier = modifier) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(color.copy(alpha = 0.8f), RoundedCornerShape(8.dp))
+                .border(1.dp, color, RoundedCornerShape(8.dp))
+                .padding(vertical = 6.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = label,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center
+            )
+        }
+
+        if (revealedPos != null) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = (-8).dp)
+                    .size(20.dp)
+                    .background(color, CircleShape)
+                    .border(1.dp, Color.White, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "$revealedPos",
+                    fontSize = 7.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun SidePanel(
     isMrX: Boolean,
     currentRound: Int,
     totalRounds: Int,
     ticketCounts: Map<TicketType, Int>,
     selectedTicket: TicketType?,
+    isMyTurn: Boolean = false,
     onMenuClick: () -> Unit,
+    onMrXHistoryClick: () -> Unit = {},
     onTicketSelect: (TicketType) -> Unit
 ) {
     val visibleTickets = if (isMrX)
@@ -324,21 +605,43 @@ private fun SidePanel(
         )
 
         // Ticket buttons
-        visibleTickets.forEach { type ->
-            val count = ticketCounts[type] ?: 0
-            val isSelected = selectedTicket == type
-            val isDisabled = count == 0
-
-            SidePanelTicketButton(
-                type = type,
-                count = count,
-                isSelected = isSelected,
-                isDisabled = isDisabled,
-                onClick = { if (!isDisabled) onTicketSelect(type) }
-            )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            visibleTickets.forEach { type ->
+                val count = ticketCounts[type] ?: 0
+                SidePanelTicketButton(
+                    type = type,
+                    count = count,
+                    isSelected = selectedTicket == type,
+                    isDisabled = count == 0 || !isMyTurn,
+                    onClick = { onTicketSelect(type) }
+                )
+            }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
+        if (!isMrX) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color(0xFF1A2E40), RoundedCornerShape(8.dp))
+                    .border(1.dp, SidebarBorder, RoundedCornerShape(8.dp))
+                    .clickable(onClick = onMrXHistoryClick)
+                    .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Mr. X Moves",
+                    fontSize = 9.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFF090F5),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
 
         // Selected ticket hint
         if (selectedTicket != null) {
@@ -466,7 +769,7 @@ private fun SidePanelTicketButton(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = count.toString(),
+                    text = if (count == Int.MAX_VALUE) "∞" else count.toString(),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace,
@@ -480,7 +783,10 @@ private fun SidePanelTicketButton(
 @Composable
 private fun BoardArea(
     modifier: Modifier = Modifier,
-    displayMode: BoardDisplayMode
+    displayMode: BoardDisplayMode,
+    playerPositions: Map<Color, Int> = emptyMap(),
+    highlightedNodes: Set<Int> = emptySet(),
+    onNodeClick: ((Int) -> Unit)? = null
 ) {
     var scale by remember { mutableFloatStateOf(1f) }
     var offset by remember { mutableStateOf(Offset.Zero) }
@@ -490,53 +796,79 @@ private fun BoardArea(
 
     val boardWidthDp = BOARD_WIDTH_DP
     val boardHeightDp = BOARD_HEIGHT_DP
-    val density = LocalDensity.current
-
-    val transformState = rememberTransformableState { zoomChange, panChange, _ ->
-        val newScale = (scale * zoomChange).coerceIn(0.8f, 5f)
-
-        val boardWidthPx = boardWidthDp * density.density
-        val boardHeightPx = boardHeightDp * density.density
-
-        val scaledHalfW = (boardWidthPx * newScale) / 2f
-        val scaledHalfH = (boardHeightPx * newScale) / 2f
-        val viewHalfW = viewportWidth / 2f
-        val viewHalfH = viewportHeight / 2f
-
-        val xPaddingPx = 200f * density.density
-        val maxX = (scaledHalfW - viewHalfW + xPaddingPx).coerceAtLeast(0f)
-        val maxY = (scaledHalfH - viewHalfH).coerceAtLeast(0f)
-
-        val newOffset = Offset(
-            x = (offset.x + panChange.x).coerceIn(-maxX, maxX),
-            y = (offset.y + panChange.y).coerceIn(-maxY, maxY)
-        )
-
-        scale = newScale
-        offset = newOffset
-    }
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(Color(0xFF0A1520))
-            .transformable(state = transformState)
             .onSizeChanged { size ->
                 viewportWidth = size.width.toFloat()
                 viewportHeight = size.height.toFloat()
+            }
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    var zoom = 1f
+                    var pan = Offset.Zero
+                    var pastTouchSlop = false
+                    val touchSlop = viewConfiguration.touchSlop
+
+                    awaitFirstDown(requireUnconsumed = false)
+                    do {
+                        val event = awaitPointerEvent()
+                        val canceled = event.changes.any { it.isConsumed }
+                        if (!canceled) {
+                            val zoomChange = event.calculateZoom()
+                            val panChange = event.calculatePan()
+
+                            if (!pastTouchSlop) {
+                                zoom *= zoomChange
+                                pan += panChange
+                                val centroidSize = event.calculateCentroidSize(useCurrent = false)
+                                val zoomMotion = abs(1 - zoom) * centroidSize
+                                val panMotion = pan.getDistance()
+                                if (zoomMotion > touchSlop || panMotion > touchSlop) {
+                                    pastTouchSlop = true
+                                }
+                            }
+
+                            if (pastTouchSlop) {
+                                val newScale = (scale * zoomChange).coerceIn(0.8f, 5f)
+                                val boardWidthPx = boardWidthDp * density
+                                val boardHeightPx = boardHeightDp * density
+                                val scaledHalfW = (boardWidthPx * newScale) / 2f
+                                val scaledHalfH = (boardHeightPx * newScale) / 2f
+                                val viewHalfW = viewportWidth / 2f
+                                val viewHalfH = viewportHeight / 2f
+                                val xPaddingPx = 200f * density
+                                val maxX = (scaledHalfW - viewHalfW + xPaddingPx).coerceAtLeast(0f)
+                                val maxY = (scaledHalfH - viewHalfH).coerceAtLeast(0f)
+                                scale = newScale
+                                offset = Offset(
+                                    x = (offset.x + panChange.x).coerceIn(-maxX, maxX),
+                                    y = (offset.y + panChange.y).coerceIn(-maxY, maxY)
+                                )
+                                event.changes.forEach { it.consume() }
+                            }
+                        }
+                    } while (event.changes.any { it.pressed })
+                }
             },
         contentAlignment = Alignment.Center
     ) {
         Box(
-            modifier = Modifier
-                .graphicsLayer(
-                    scaleX = scale,
-                    scaleY = scale,
-                    translationX = offset.x,
-                    translationY = offset.y
-                )
+            modifier = Modifier.graphicsLayer(
+                scaleX = scale,
+                scaleY = scale,
+                translationX = offset.x,
+                translationY = offset.y
+            )
         ) {
-            GameBoardCanvas(displayMode = displayMode)
+            GameBoardCanvas(
+                displayMode = displayMode,
+                playerPositions = playerPositions,
+                highlightedNodes = highlightedNodes,
+                onNodeClick = onNodeClick
+            )
         }
 
         // Usability hint
@@ -551,18 +883,15 @@ private fun BoardArea(
     }
 }
 
-// Ticket Count helper TODO: Replace hardcoded values with requests to server
 fun defaultTicketCounts(isMrX: Boolean): Map<TicketType, Int> = buildMap {
-    put(TicketType.WALKING, isMrX.not().let { if (it) 10 else 4 })
-    put(TicketType.ESCOOTER, isMrX.not().let { if (it) 8 else 3 })
-    put(TicketType.CARSHARING, isMrX.not().let { if (it) 4 else 3 })
+    put(TicketType.WALKING, if (isMrX) 4 else 10)
+    put(TicketType.ESCOOTER, if (isMrX) 3 else 8)
+    put(TicketType.CARSHARING, if (isMrX) 3 else 4)
     if (isMrX) {
         put(TicketType.BLACK, 5)
         put(TicketType.DOUBLE, 2)
     }
 }
-
-// Previews
 
 @Preview(showBackground = true, widthDp = 800, heightDp = 400, name = "Detective View")
 @Composable

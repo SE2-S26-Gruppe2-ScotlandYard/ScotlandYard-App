@@ -18,8 +18,7 @@ import org.hildan.krossbow.stomp.subscribeText
 import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
 
-//private const val WEBSOCKET_URI = "ws://10.0.2.2:8080/scotlandyard"
-private const val WEBSOCKET_URI = "ws://10.0.0.42:8080/scotlandyard"
+private const val WEBSOCKET_URI = "ws://10.233.0.89:8080/scotlandyard"
 class MyStomp(val callbacks: Callbacks) {
 
     private var client: StompClient? = null
@@ -32,6 +31,9 @@ class MyStomp(val callbacks: Callbacks) {
     private var currentUserId: String? = null
     private var currentGameId: String? = null
     private var lobbyCallback: ((String) -> Unit)? = null
+    private var gameStateCallback: ((String) -> Unit)? = null
+    private var movementCallback: ((String) -> Unit)? = null
+    private var gameOverCallback: ((String) -> Unit)? = null
 
     fun setLobbyCallback(callback: ((String) -> Unit)?) {
         lobbyCallback = callback
@@ -39,6 +41,16 @@ class MyStomp(val callbacks: Callbacks) {
 
     fun setCurrentUserId(userId: String) {
         currentUserId = userId
+    }
+
+    fun setGameStateCallback(callback: ((String) -> Unit)?) {
+        gameStateCallback = callback
+    }
+    fun setMovementCallback(callback: ((String) -> Unit)?) {
+        movementCallback = callback
+    }
+    fun setGameOverCallback(callback: ((String) -> Unit)?) {
+        gameOverCallback = callback
     }
 
     private val _isConnected = MutableStateFlow(false)
@@ -179,9 +191,21 @@ class MyStomp(val callbacks: Callbacks) {
                 client?.let { session = it.connect(WEBSOCKET_URI) }
             }
             session?.let { s ->
-                launch { s.subscribeText("/topic/game/$gameId/movements").collect { callback("movement:$it") } }
-                launch { s.subscribeText("/topic/game/$gameId/move-response").collect { callback("move-response:$it") } }
-                launch { s.subscribeText("/topic/game/$gameId/over").collect { callback("game-over:$it") } }
+                launch {
+                    s.subscribeText("/topic/game/$gameId/movements").collect { msg ->
+                        gameStateCallback?.invoke(msg) ?: callback("movement:$msg")
+                    }
+                }
+                launch {
+                    s.subscribeText("/topic/game/$gameId/move-response").collect { msg ->
+                        movementCallback?.invoke(msg) ?: callback("move-response:$msg")
+                    }
+                }
+                launch {
+                    s.subscribeText("/topic/game/$gameId/over").collect { msg ->
+                        gameOverCallback?.invoke(msg) ?: callback("game-over:$msg")
+                    }
+                }
                 callback("connected to:$gameId")
             }
         }
@@ -241,6 +265,17 @@ class MyStomp(val callbacks: Callbacks) {
                     ?: callback("Error: Not connected")
             } catch (e: Exception) {
                 Log.e("MyStomp", "Start position request failed", e)
+            }
+        }
+    }
+
+    fun requestGameState(gameId: String) {
+        scope.launch {
+            try {
+                session?.sendText("/app/game/$gameId/state", "")
+                    ?: Log.w("MyStomp", "Cannot request game state: not connected")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "requestGameState failed", e)
             }
         }
     }

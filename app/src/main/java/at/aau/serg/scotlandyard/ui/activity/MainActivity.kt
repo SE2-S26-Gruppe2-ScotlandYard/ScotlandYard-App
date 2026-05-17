@@ -19,10 +19,15 @@ import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import androidx.compose.runtime.collectAsState
+import at.aau.serg.scotlandyard.model.BoardConnection
+import at.aau.serg.scotlandyard.model.TicketType
+import at.aau.serg.scotlandyard.viewmodel.GameViewModel
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        BoardConnection.init(this)
         enableEdgeToEdge()
         setContent {
             ScotlandYardTheme {
@@ -59,6 +64,7 @@ class MainActivity : ComponentActivity() {
                             onSettings  = { navController.navigate("settings") }
                         )
                     }
+
                     composable("login") {
                         LaunchedEffect(currentUser) {
                             if (currentUser != null) {
@@ -125,11 +131,7 @@ class MainActivity : ComponentActivity() {
                                     viewModel   = lobbyVm,
                                     lobby       = lobby!!,
                                     onBackClick = { navController.popBackStack() },
-                                    onGameStart = {
-                                        // Host sendet startGame ans Backend
-                                        // Backend antwortet mit GAME_STARTED → navigateToGame Event
-                                        lobbyVm.startGame()
-                                    }
+                                    onGameStart = { lobbyVm.startGame() }
                                 )
                             }
                         }
@@ -138,6 +140,7 @@ class MainActivity : ComponentActivity() {
                     composable("settings") {
                         SettingsScreen(onBackClick = { navController.popBackStack() })
                     }
+
                     composable(
                         route = "assignstartposition/{gameId}/{playerId}",
                         arguments = listOf(
@@ -147,13 +150,122 @@ class MainActivity : ComponentActivity() {
                     ) { backStackEntry ->
                         val gameId = backStackEntry.arguments?.getString("gameId") ?: ""
                         val playerId = backStackEntry.arguments?.getString("playerId") ?: ""
+                        val lobbyVm = sharedLobbyViewModel
                         AssignStartPositionScreen(
                             gameId = gameId,
                             playerId = playerId,
                             onBackClick = { navController.popBackStack() },
-                            onPositionConfirmed = { navController.navigate("lobby") }
+                            onPositionConfirmed = {
+                                // Determine role: MRX or DETECTIVE
+                                val selectedRoles = lobbyVm?.currentLobby?.value?.selectedRoles
+                                val isMrX = selectedRoles?.get(playerId) == "MRX"
+                                navController.navigate("gameboard/$gameId/$playerId/$isMrX") {
+                                    popUpTo("assignstartposition/$gameId/$playerId") { inclusive = true }
+                                }
+                            }
                         )
                     }
+
+                    composable(
+                        route = "gameboard/{gameId}/{playerId}/{isMrX}",
+                        arguments = listOf(
+                            navArgument("gameId") { type = NavType.StringType },
+                            navArgument("playerId") { type = NavType.StringType },
+                            navArgument("isMrX") { type = NavType.BoolType }
+                        )
+                    ) { backStackEntry ->
+                        val gameId = backStackEntry.arguments?.getString("gameId") ?: ""
+                        val playerId = backStackEntry.arguments?.getString("playerId") ?: ""
+                        val isMrX = backStackEntry.arguments?.getBoolean("isMrX") ?: false
+                        val context = LocalContext.current
+                        val displayMode = remember { context.getDisplayModePreference() }
+
+                        val gameViewModel: GameViewModel = viewModel()
+
+                        LaunchedEffect(gameId) {
+                            gameViewModel.gameStompService.subscribe(gameId)
+                            delay(300) // wait to ensure subscription is active
+                            gameViewModel.requestGameState(gameId)
+                        }
+
+                        // subscribe to GameState
+                        val gameState by gameViewModel.gameState.collectAsState()
+
+                        LaunchedEffect(gameState) {
+                            gameViewModel.updateMyPosition(playerId, isMrX)
+                        }
+
+                        val isMyTurn = remember(gameState) {
+                            gameState?.let { if (isMrX) it.isMrXPhase else it.isDetectivesPhase } ?: false
+                        }
+
+                        val detectiveIdOrder = gameState?.detectivePositions?.keys?.sorted() ?: emptyList()
+                        val playerPositions = gameViewModel.buildPlayerPositions(isMrX, detectiveIdOrder)
+
+                        var selectedTicket by remember { mutableStateOf<TicketType?>(null) }
+
+                        LaunchedEffect(!isMyTurn && selectedTicket != null) {
+                            selectedTicket = null
+                        }
+
+                        val myPosition by gameViewModel.myPosition.collectAsState()
+
+                        LaunchedEffect(Unit) {
+                            gameViewModel.gameOver.collect { result ->
+                                when (result) {
+                                    "DETECTIVES_WIN" -> navController.navigate("detectiveswin") {
+                                        popUpTo("gameboard/$gameId/$playerId/$isMrX") { inclusive = true }
+                                    }
+                                    "MRX_WINS" -> navController.navigate("mrxwin") {
+                                        popUpTo("gameboard/$gameId/$playerId/$isMrX") { inclusive = true }
+                                    }
+                                }
+                            }
+                        }
+
+                        val highlightedNodes = remember(selectedTicket, myPosition) {
+                            val ticket = selectedTicket
+                            val pos = myPosition
+                            if (ticket != null && pos != null) {
+                                gameViewModel.reachableStations(ticket)
+                            } else emptySet()
+                        }
+
+                        val ticketCounts = remember(gameState) {
+                            gameViewModel.getTicketCounts(playerId, isMrX)
+                        }
+
+                        val isDoubleActive = gameState?.doubleMoveActive ?: false
+
+                        GameBoardScreen(
+                            isMrX = isMrX,
+                            mrXRevealedPositions = if (!isMrX) gameState?.mrXRevealedPositions ?: emptyMap() else emptyMap(),
+                            currentRound = gameState?.currentRound ?: 1,
+                            displayMode = displayMode,
+                            playerPositions = playerPositions,
+                            highlightedNodes = highlightedNodes,
+                            isMyTurn = isMyTurn,
+                            selectedTicket = selectedTicket,
+                            mrXMoveHistory = if (!isMrX) gameState?.mrXMoveHistory ?: emptyList() else emptyList(),
+                            ticketCounts = ticketCounts.toMutableMap().apply {
+                                if (isDoubleActive) put(TicketType.DOUBLE, 0)   // GameState from server contains real count of DOUBLE tickets, this only disables the button
+                            },
+                            onTicketSelect = { ticket ->
+                                if (isMyTurn) {
+                                    selectedTicket = if (selectedTicket == ticket) null else ticket
+                                }
+                            },
+                            onNodeClick = { stationId ->
+                                val ticket = selectedTicket
+                                if (ticket != null) {
+                                    gameViewModel.sendMove(gameId, playerId, ticket, stationId)
+                                    selectedTicket = null
+                                }
+                            },
+                            onNavigateToSettings = { navController.navigate("settings") }
+                        )
+                    }
+
                     composable("mrxwin") {
                         MrXWinScreen(
                             onBackClick = { navController.navigate("start") },

@@ -147,7 +147,7 @@ fun LobbyScreen(
                     onLeave          = { viewModel.leaveLobby() },
                     onDelete         = { viewModel.deleteLobby() },
                     onKickPlayer     = { targetId -> viewModel.kickPlayer(targetId) },
-                    onStartRoleSelection = { viewModel.startRoleSelection() }
+                    onStartRoleSelection = { onProceedToRoles(viewModel) }
                 )
             }
 
