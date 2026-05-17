@@ -4,6 +4,8 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import at.aau.serg.scotlandyard.Callbacks
+import at.aau.serg.scotlandyard.network.ServerConfig.GLOBAL_URI
+import at.aau.serg.scotlandyard.network.ServerConfig.LOCAL_URI
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,7 +20,7 @@ import org.hildan.krossbow.stomp.subscribeText
 import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
 
-private const val WEBSOCKET_URI = "ws://10.233.0.89:8080/scotlandyard"
+private const val WEBSOCKET_URI = GLOBAL_URI
 class MyStomp(val callbacks: Callbacks) {
 
     private var client: StompClient? = null
