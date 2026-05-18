@@ -1,6 +1,8 @@
 package at.aau.serg.scotlandyard.ui.activity
 
 import android.os.Bundle
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -29,6 +31,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         BoardConnection.init(this)
         enableEdgeToEdge()
+
+        window.insetsController?.let { controller ->        // to show system bars again remove/comment this block
+            controller.hide(WindowInsets.Type.systemBars())
+            controller.systemBarsBehavior =
+                WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+
         setContent {
             ScotlandYardTheme {
                 val authViewModel: AuthViewModel = viewModel()
