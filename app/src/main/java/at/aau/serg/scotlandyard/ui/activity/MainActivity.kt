@@ -1,6 +1,7 @@
 package at.aau.serg.scotlandyard.ui.activity
 
 import android.os.Bundle
+import android.view.KeyEvent
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.widget.Toast
@@ -27,6 +28,13 @@ import at.aau.serg.scotlandyard.viewmodel.GameViewModel
 import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
+
+    /** Forward all key events to CheatKeyEventRegistry so composables can react to volume buttons. */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        CheatKeyEventRegistry.notify(event)
+        return super.dispatchKeyEvent(event)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         BoardConnection.init(this)

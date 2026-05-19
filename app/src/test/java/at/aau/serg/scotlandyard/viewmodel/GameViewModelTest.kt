@@ -32,11 +32,9 @@ class GameViewModelTest {
 
     @Test
     fun requestStartPosition_method_has_correct_signature() {
-        // Verify the method exists with String parameters
         val methods = GameViewModel::class.java.declaredMethods
         assertTrue(methods.any {
-            it.name == "requestStartPosition" &&
-            it.parameterCount == 2
+            it.name == "requestStartPosition" && it.parameterCount == 2
         }, "requestStartPosition should have 2 parameters (gameId, playerId)")
     }
 
@@ -44,9 +42,44 @@ class GameViewModelTest {
     fun confirmStartPosition_method_has_correct_signature() {
         val methods = GameViewModel::class.java.declaredMethods
         assertTrue(methods.any {
-            it.name == "confirmStartPosition" &&
-            it.parameterCount == 2
+            it.name == "confirmStartPosition" && it.parameterCount == 2
         }, "confirmStartPosition should have 2 parameters (gameId, playerId)")
+    }
+
+    @Test
+    fun generateLocalStartPosition_method_exists() {
+        assertTrue(GameViewModel::class.java.declaredMethods.any {
+            it.name == "generateLocalStartPosition"
+        }, "generateLocalStartPosition() must exist for local random position generation")
+    }
+
+    @Test
+    fun setCheatStartPosition_method_exists_with_one_int_parameter() {
+        val methods = GameViewModel::class.java.declaredMethods
+        assertTrue(methods.any {
+            it.name == "setCheatStartPosition" && it.parameterCount == 1
+        }, "setCheatStartPosition(Int) must exist for cheat-mode selection")
+    }
+
+    @Test
+    fun activateCheatMode_method_exists() {
+        assertTrue(GameViewModel::class.java.declaredMethods.any {
+            it.name == "activateCheatMode"
+        })
+    }
+
+    @Test
+    fun deactivateCheatMode_method_exists() {
+        assertTrue(GameViewModel::class.java.declaredMethods.any {
+            it.name == "deactivateCheatMode"
+        })
+    }
+
+    @Test
+    fun peekStartPosition_method_exists() {
+        assertTrue(GameViewModel::class.java.declaredMethods.any {
+            it.name == "peekStartPosition"
+        })
     }
 
     @Test
@@ -55,6 +88,8 @@ class GameViewModelTest {
             "GameViewModel should extend ViewModel")
     }
 }
+
+
 
 
 
