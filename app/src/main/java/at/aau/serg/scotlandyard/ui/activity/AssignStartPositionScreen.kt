@@ -1,5 +1,6 @@
 package at.aau.serg.scotlandyard.ui.activity
 
+import android.content.res.Configuration
 import android.os.Handler
 import android.os.Looper
 import android.view.KeyEvent
@@ -11,7 +12,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -36,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -255,53 +259,86 @@ private fun WaitingToSpinState(
     onSimulateShake: () -> Unit,
     onSimulateCheat: () -> Unit = {}
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 32.dp)
-    ) {
-        Text(
-            text = "📳",
-            fontSize = 56.sp,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(20.dp))
-        Text(
-            text = "Schüttle das Gerät\num deine Startposition\nzu bestimmen!",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            textAlign = TextAlign.Center
-        )
-        Spacer(Modifier.height(40.dp))
-        Button(
-            onClick = onSimulateShake,
-            modifier = Modifier
-                .fillMaxWidth(0.75f)
-                .height(52.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    if (isLandscape) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Text(
-                "Schütteln simulieren",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White
-            )
+            // Left: icon + instruction text
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(text = "📳", fontSize = 48.sp, textAlign = TextAlign.Center)
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "Schüttle das Gerät\num deine Startposition\nzu bestimmen!",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+            }
+            // Right: buttons
+            Column(
+                modifier = Modifier.weight(1f).padding(start = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Button(
+                    onClick = onSimulateShake,
+                    modifier = Modifier.fillMaxWidth(0.85f).height(48.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
+                ) {
+                    Text("Schütteln simulieren", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                }
+                Spacer(Modifier.height(10.dp))
+                Button(
+                    onClick = onSimulateCheat,
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A1A00))
+                ) {
+                    Text("🔧 Schummelmodus simulieren", fontSize = 13.sp, color = Color(0xFFFF9944))
+                }
+            }
         }
-        Spacer(Modifier.height(12.dp))
-        Button(
-            onClick = onSimulateCheat,
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A1A00))
+    } else {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp)
         ) {
+            Text(text = "📳", fontSize = 56.sp, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(20.dp))
             Text(
-                "🔧 Schummelmodus simulieren",
-                fontSize = 13.sp,
-                color = Color(0xFFFF9944)
+                text = "Schüttle das Gerät\num deine Startposition\nzu bestimmen!",
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center
             )
+            Spacer(Modifier.height(40.dp))
+            Button(
+                onClick = onSimulateShake,
+                modifier = Modifier.fillMaxWidth(0.75f).height(52.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
+            ) {
+                Text("Schütteln simulieren", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+            }
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = onSimulateCheat,
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A1A00))
+            ) {
+                Text("🔧 Schummelmodus simulieren", fontSize = 13.sp, color = Color(0xFFFF9944))
+            }
         }
     }
 }
@@ -321,78 +358,116 @@ private fun SpinnerAutoState(
 ) {
     var localTrigger by remember { mutableStateOf(false) }
     LaunchedEffect(triggerSpin) {
-        if (triggerSpin) {
-            delay(50)
-            localTrigger = true
-        } else {
-            localTrigger = false
-        }
+        if (triggerSpin) { delay(50); localTrigger = true } else { localTrigger = false }
     }
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 16.dp)
-    ) {
-        Text(
-            text = if (isSpinComplete) "🎯 Deine Startposition!" else "Startposition wird gewürfelt…",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            textAlign = TextAlign.Center
-        )
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
-        Spacer(Modifier.height(32.dp))
-
-        SpinnerWheelPicker(
-            positions = positions,
-            targetPosition = targetPosition,
-            isCheatMode = false,
-            triggerSpin = localTrigger,
-            onSpinComplete = {
-                localTrigger = false
-                onSpinComplete()
-            },
-            onSelectionChanged = {},
-            modifier = Modifier.fillMaxWidth(0.55f)
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        if (isSpinComplete) {
-            Text(
-                text = "Station  $targetPosition",
-                fontSize = 20.sp,
-                color = Color(0xFFCCCCCC),
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(24.dp))
-            Button(
-                onClick = onConfirm,
-                modifier = Modifier
-                    .fillMaxWidth(0.7f)
-                    .height(52.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
+    if (isLandscape) {
+        // ── Landscape: wheel left, info + button right ──────────────────────────
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Left: spinner wheel
+            Box(
+                modifier = Modifier.weight(0.4f).fillMaxHeight(),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    "Bestätigen",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = Color.White
+                SpinnerWheelPicker(
+                    positions = positions,
+                    targetPosition = targetPosition,
+                    isCheatMode = false,
+                    triggerSpin = localTrigger,
+                    onSpinComplete = { localTrigger = false; onSpinComplete() },
+                    onSelectionChanged = {},
+                    modifier = Modifier.fillMaxWidth(0.85f)
                 )
             }
-        } else {
-            CircularProgressIndicator(
-                modifier = Modifier.size(24.dp),
-                color = Color.White,
-                strokeWidth = 2.dp
-            )
+            // Right: title, result, button
+            Column(
+                modifier = Modifier.weight(0.6f).fillMaxHeight().padding(start = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = if (isSpinComplete) "🎯 Deine Startposition!" else "Startposition wird gewürfelt…",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(16.dp))
+                if (isSpinComplete) {
+                    Text(
+                        text = "Station  $targetPosition",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFFCCCCCC),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(20.dp))
+                    Button(
+                        onClick = onConfirm,
+                        modifier = Modifier.fillMaxWidth(0.75f).height(52.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
+                    ) {
+                        Text("Bestätigen", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    }
+                } else {
+                    CircularProgressIndicator(modifier = Modifier.size(28.dp), color = Color.White, strokeWidth = 2.dp)
+                }
+            }
         }
-
-        Spacer(Modifier.height(20.dp))
+    } else {
+        // ── Portrait: content scrollable, button pinned at bottom ───────────────
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    text = if (isSpinComplete) "🎯 Deine Startposition!" else "Startposition wird gewürfelt…",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
+                Spacer(Modifier.height(32.dp))
+                SpinnerWheelPicker(
+                    positions = positions,
+                    targetPosition = targetPosition,
+                    isCheatMode = false,
+                    triggerSpin = localTrigger,
+                    onSpinComplete = { localTrigger = false; onSpinComplete() },
+                    onSelectionChanged = {},
+                    modifier = Modifier.fillMaxWidth(0.55f)
+                )
+                Spacer(Modifier.height(24.dp))
+                if (isSpinComplete) {
+                    Text(text = "Station  $targetPosition", fontSize = 20.sp, color = Color(0xFFCCCCCC), textAlign = TextAlign.Center)
+                } else {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+            Spacer(Modifier.height(12.dp))
+            AnimatedVisibility(visible = isSpinComplete) {
+                Button(
+                    onClick = onConfirm,
+                    modifier = Modifier.fillMaxWidth(0.7f).height(52.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
+                ) {
+                    Text("Bestätigen", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
     }
 }
 
@@ -406,95 +481,120 @@ private fun CheatModeSpinnerState(
     onSelectionChanged: (Int) -> Unit,
     onConfirm: () -> Unit
 ) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 16.dp)
-    ) {
-        // Cheat badge
-        Box(
-            modifier = Modifier
-                .background(Color(0xFFFF6B00), RoundedCornerShape(8.dp))
-                .padding(horizontal = 16.dp, vertical = 6.dp)
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+    if (isLandscape) {
+        // ── Landscape: wheel left, controls right ───────────────────────────────
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "🔧  SCHUMMELMODUS AKTIV",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
+            // Left: wheel with cheat border
+            Box(
+                modifier = Modifier.weight(0.4f).fillMaxHeight(),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .border(2.dp, Color(0xFFFF6B00), RoundedCornerShape(12.dp))
+                        .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                ) {
+                    SpinnerWheelPicker(
+                        positions = positions,
+                        targetPosition = selectedPosition,
+                        isCheatMode = true,
+                        triggerSpin = false,
+                        onSpinComplete = {},
+                        onSelectionChanged = onSelectionChanged,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                    )
+                }
+            }
+            // Right: badge, title, station info, button
+            Column(
+                modifier = Modifier.weight(0.6f).fillMaxHeight().padding(start = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier.background(Color(0xFFFF6B00), RoundedCornerShape(8.dp)).padding(horizontal = 16.dp, vertical = 6.dp)
+                ) {
+                    Text(text = "🔧  SCHUMMELMODUS AKTIV", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+                Spacer(Modifier.height(16.dp))
+                Text(text = "Wähle deine Startposition", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
+                Text(text = "Drehe das Rad und bestätige", fontSize = 12.sp, color = Color(0xFFCCCCCC), textAlign = TextAlign.Center)
+                Spacer(Modifier.height(16.dp))
+                Box(
+                    modifier = Modifier.background(Color(0x33FF6B00), RoundedCornerShape(8.dp)).padding(horizontal = 20.dp, vertical = 8.dp)
+                ) {
+                    Text(text = "Station  $selectedPosition", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                }
+                Spacer(Modifier.height(20.dp))
+                Button(
+                    onClick = onConfirm,
+                    modifier = Modifier.fillMaxWidth(0.85f).height(52.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
+                ) {
+                    Text("Station $selectedPosition bestätigen", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                }
+            }
         }
-
-        Spacer(Modifier.height(20.dp))
-
-        Text(
-            text = "Wähle deine Startposition",
-            fontSize = 22.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            textAlign = TextAlign.Center
-        )
-        Text(
-            text = "Drehe das Rad und bestätige deine Wahl",
-            fontSize = 13.sp,
-            color = Color(0xFFCCCCCC),
-            textAlign = TextAlign.Center
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(0.6f)
-                .border(2.dp, Color(0xFFFF6B00), RoundedCornerShape(12.dp))
-                .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+    } else {
+        // ── Portrait: content scrollable, button pinned at bottom ───────────────
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
-            SpinnerWheelPicker(
-                positions = positions,
-                targetPosition = selectedPosition,
-                isCheatMode = true,
-                triggerSpin = false,
-                onSpinComplete = {},
-                onSelectionChanged = onSelectionChanged,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp)
-            )
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        Box(
-            modifier = Modifier
-                .background(Color(0x33FF6B00), RoundedCornerShape(8.dp))
-                .padding(horizontal = 24.dp, vertical = 8.dp)
-        ) {
-            Text(
-                text = "Station  $selectedPosition  ausgewählt",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White
-            )
-        }
-
-        Spacer(Modifier.height(20.dp))
-
-        Button(
-            onClick = onConfirm,
-            modifier = Modifier
-                .fillMaxWidth(0.75f)
-                .height(52.dp),
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
-        ) {
-            Text(
-                "Station $selectedPosition bestätigen",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White
-            )
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
+            ) {
+                Box(
+                    modifier = Modifier.background(Color(0xFFFF6B00), RoundedCornerShape(8.dp)).padding(horizontal = 16.dp, vertical = 6.dp)
+                ) {
+                    Text(text = "🔧  SCHUMMELMODUS AKTIV", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                }
+                Spacer(Modifier.height(20.dp))
+                Text(text = "Wähle deine Startposition", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
+                Text(text = "Drehe das Rad und bestätige deine Wahl", fontSize = 13.sp, color = Color(0xFFCCCCCC), textAlign = TextAlign.Center)
+                Spacer(Modifier.height(24.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .border(2.dp, Color(0xFFFF6B00), RoundedCornerShape(12.dp))
+                        .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                ) {
+                    SpinnerWheelPicker(
+                        positions = positions,
+                        targetPosition = selectedPosition,
+                        isCheatMode = true,
+                        triggerSpin = false,
+                        onSpinComplete = {},
+                        onSelectionChanged = onSelectionChanged,
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                    )
+                }
+                Spacer(Modifier.height(24.dp))
+                Box(
+                    modifier = Modifier.background(Color(0x33FF6B00), RoundedCornerShape(8.dp)).padding(horizontal = 24.dp, vertical = 8.dp)
+                ) {
+                    Text(text = "Station  $selectedPosition  ausgewählt", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = onConfirm,
+                modifier = Modifier.fillMaxWidth(0.75f).height(52.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
+            ) {
+                Text("Station $selectedPosition bestätigen", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+            }
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
