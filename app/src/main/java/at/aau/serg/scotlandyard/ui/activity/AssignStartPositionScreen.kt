@@ -103,8 +103,10 @@ fun AssignStartPositionScreen(
         }
     }
 
-    // Once connected: subscribe and generate position, then WAIT for shake
-    LaunchedEffect(isConnected) {
+    // Once connected: subscribe and generate position, then WAIT for shake.
+    // Keyed on (gameId, playerId, isConnected) so it only re-runs when these
+    // stable values actually change – not on every unrelated recomposition.
+    LaunchedEffect(gameId, playerId, isConnected) {
         if (isConnected && screenState == SpinnerScreenState.CONNECTING) {
             gameViewModel.subscribeToStartPosition(gameId, playerId)
             delay(300L)
@@ -149,6 +151,7 @@ fun AssignStartPositionScreen(
             shakeDetector.stop()
             cheatDetector.stop()
             gameViewModel.deactivateCheatMode()
+            gameViewModel.unsubscribeFromStartPosition()
         }
     }
 

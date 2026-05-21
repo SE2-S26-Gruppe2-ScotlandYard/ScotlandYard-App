@@ -67,6 +67,7 @@ class MyStomp(val callbacks: Callbacks) {
     val privateMessages: SharedFlow<String> = _privateMessages.asSharedFlow()
 
     private var privateTopicJob: Job? = null
+    private var startPositionJob: Job? = null
 
     fun enablePrivateTopic(userId: String) {
         currentUserId = userId
@@ -242,7 +243,8 @@ class MyStomp(val callbacks: Callbacks) {
      * Incoming messages are forwarded with prefix "startPosition:"
      */
     fun subscribeToStartPosition(gameId: String, playerId: String) {
-        scope.launch {
+        startPositionJob?.cancel()
+        startPositionJob = scope.launch {
             try {
                 val topic = "/topic/game/$gameId/player/$playerId/start-position"
                 Log.d("MyStomp", "Subscribing to start position topic: $topic")
@@ -255,6 +257,12 @@ class MyStomp(val callbacks: Callbacks) {
                 Log.e("MyStomp", "Start position subscription failed", e)
             }
         }
+    }
+
+    fun unsubscribeFromStartPosition() {
+        startPositionJob?.cancel()
+        startPositionJob = null
+        Log.d("MyStomp", "Unsubscribed from start position topic")
     }
 
     /**

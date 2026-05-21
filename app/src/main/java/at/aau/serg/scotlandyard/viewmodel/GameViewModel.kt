@@ -102,7 +102,19 @@ class GameViewModel : ViewModel(), Callbacks {
         myStomp.subscribeToStartPosition(gameId, playerId)
     }
 
+    fun unsubscribeFromStartPosition() {
+        myStomp.unsubscribeFromStartPosition()
+    }
+
     fun requestStartPosition(gameId: String, playerId: String) {
+        if (_isLoading.value) {
+            Log.d("GameViewModel", "requestStartPosition skipped – already loading")
+            return
+        }
+        if (_startPosition.value != null) {
+            Log.d("GameViewModel", "requestStartPosition skipped – position already assigned: ${_startPosition.value}")
+            return
+        }
         _isLoading.value = true
         _errorMessage.value = null
         myStomp.requestStartPosition(gameId, playerId)
@@ -151,8 +163,9 @@ class GameViewModel : ViewModel(), Callbacks {
     fun confirmStartPosition(gameId: String, playerId: String) {
         val position = _startPosition.value
         if (position != null) {
-            Log.d("GameViewModel", "Start position confirmed: $position")
+            Log.d("GameViewModel", "Start position confirmed and sent to server: $position (gameId=$gameId, playerId=$playerId)")
             myStomp.sendConfirmedStartPosition(gameId, playerId, position)
+            requestGameState(gameId)
         }
     }
 
@@ -222,6 +235,7 @@ class GameViewModel : ViewModel(), Callbacks {
                 when (response.type) {
                     "START_POSITION_ASSIGNED" -> {
                         _startPosition.value = response.startPosition
+                        _myPosition.value = response.startPosition
                         _isLoading.value = false
                         _errorMessage.value = null
                     }
