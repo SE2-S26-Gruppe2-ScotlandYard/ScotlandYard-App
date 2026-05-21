@@ -25,7 +25,9 @@ import androidx.compose.runtime.collectAsState
 import at.aau.serg.scotlandyard.model.BoardConnection
 import at.aau.serg.scotlandyard.model.TicketType
 import at.aau.serg.scotlandyard.viewmodel.GameViewModel
+import android.util.Log
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 
 class MainActivity : ComponentActivity() {
 
@@ -201,8 +203,25 @@ class MainActivity : ComponentActivity() {
 
                         LaunchedEffect(gameId) {
                             gameViewModel.gameStompService.subscribe(gameId)
-                            delay(300) // wait to ensure subscription is active
+
+                            // Wait until the WebSocket connection is actually established.
+                            // On a fresh ViewModel the connection attempt is still in progress, so
+                            // the old fixed 300ms delay was too short and the STOMP SUBSCRIBE frames
+                            // hadn't reached the server yet when requestGameState was sent.
+                            gameViewModel.isConnected.first { it }
+
+                            // Additional buffer so the STOMP SUBSCRIBE handshake completes
+                            // on the server side before we fire the state request.
+                            delay(600)
                             gameViewModel.requestGameState(gameId)
+
+                            // Fallback: if the response was still lost (e.g. slow network),
+                            // retry once after 3 s.
+                            delay(3_000)
+                            if (gameViewModel.gameState.value == null) {
+                                Log.d("MainActivity", "GameState still null after 3 s – retrying requestGameState")
+                                gameViewModel.requestGameState(gameId)
+                            }
                         }
 
                         // subscribe to GameState
