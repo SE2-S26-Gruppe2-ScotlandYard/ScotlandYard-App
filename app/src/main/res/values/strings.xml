@@ -21,4 +21,13 @@
     <string name="rules_description_important_rules">• Detectives have no special tickets.\n• A move is only possible, if the correct ticket is available.\n</string>
     <string name="rules_title_game_over">Game Over</string>
     <string name="rules_description_game_over">A game ends, if:\n• A detective catches Mr. X → detectives win.\n• Mr. X evades capture → Mr. X wins.\n• No detective can move → Mr. X wins.</string>
+
+    <string name="title_settings">SETTINGS</string>
+    <string name="title_gameboard">Gameboard</string>
+    <string name="settings_description_display_option">Select a gameboard display option.</string>
+    <string name="settings_gameboard_graph">Graph</string>
+    <string name="settings_gameboard_map">Map</string>
+    <string name="settings_gameboard_description_graph">Draw nodes and edges</string>
+    <string name="settings_gameboard_description_map">Map as background</string>
+    <string name="ckeckmark">✓</string>
 </resources>

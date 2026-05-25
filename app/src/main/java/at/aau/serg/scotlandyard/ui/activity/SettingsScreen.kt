@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -113,7 +114,7 @@ private fun SettingsSidebar(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
-            text = "SETTINGS",
+            text = stringResource(R.string.title_settings),
             fontSize = 9.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.5.sp,
@@ -185,7 +186,7 @@ private fun GameboardSettingsContent(
 
         // Titel
         Text(
-            text = "Gameboard",
+            text = stringResource(R.string.title_gameboard),
             fontSize = 26.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White,
@@ -193,7 +194,7 @@ private fun GameboardSettingsContent(
         )
 
         Text(
-            text = "Select a gameboard display option.",
+            text = stringResource(R.string.settings_description_display_option),
             fontSize = 12.sp,
             color = TextMuted,
             modifier = Modifier.padding(bottom = 20.dp)
@@ -205,8 +206,8 @@ private fun GameboardSettingsContent(
         ) {
             DisplayModeOption(
                 modifier = Modifier.weight(1f),
-                title = "Graph",
-                description = "Draw nodes and edges",
+                title = stringResource(R.string.settings_gameboard_graph),
+                description = stringResource(R.string.settings_gameboard_description_graph),
                 previewImageRes = R.drawable.graph_preview,
                 isSelected = displayMode == BoardDisplayMode.GRAPH,
                 onClick = { onModeChange(BoardDisplayMode.GRAPH) }
@@ -214,8 +215,8 @@ private fun GameboardSettingsContent(
 
             DisplayModeOption(
                 modifier = Modifier.weight(1f),
-                title = "Map",
-                description = "Map as background",
+                title = stringResource(R.string.settings_gameboard_map),
+                description = stringResource(R.string.settings_gameboard_description_map),
                 previewImageRes = R.drawable.map,
                 isSelected = displayMode == BoardDisplayMode.MAP,
                 onClick = { onModeChange(BoardDisplayMode.MAP) }
@@ -277,7 +278,7 @@ private fun DisplayModeOption(
                         .background(AccentGlow, RoundedCornerShape(50))
                 ) {
                     Text(
-                        text = "✓",
+                        text = stringResource(R.string.ckeckmark),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
