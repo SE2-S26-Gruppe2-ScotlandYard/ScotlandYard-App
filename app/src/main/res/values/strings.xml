@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Scotland Yard</string>
-    <string name="title_activity_connection_view">ConnectionView</string>
-    <string name="title_activity_view">view</string>
-    <string name="title_activity_main2">MainActivity2</string>
+    <string name="button_start_game">Start Game</string>
+    <string name="title_rules">Rules</string>
+    <string name="title_main_scotland_yard">SCOTLAND\nYARD</string>
+    <string name="subtitle_hunt_mrx">Hunt Mr. X ecofriendly</string>
 </resources>
