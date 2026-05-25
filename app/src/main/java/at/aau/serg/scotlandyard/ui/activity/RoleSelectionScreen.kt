@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -77,18 +78,23 @@ fun RoleSelectionContent(
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
-        Box(modifier = Modifier.fillMaxSize().background(Color(0x44000000)))
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0x44000000)))
 
         RoleSelectionTopBar(isHost = isHost, allRolesSet = allRolesSet, onBackClick = onBackClick, onGameStart = onGameStart)
 
         Text(
-            text = "Choose your side:",
+            text = stringResource(R.string.title_choose_your_side),
             fontSize = 36.sp,
             fontWeight = FontWeight.Normal,
             fontFamily = FontFamily.Serif,
             color = Color.White,
             textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(top = 40.dp).align(Alignment.TopCenter)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 40.dp)
+                .align(Alignment.TopCenter)
         )
 
         Row(
@@ -101,8 +107,8 @@ fun RoleSelectionContent(
             RoleSelectionColumn(
                 modifier = Modifier.weight(1f),
                 config = RoleColumnConfig(
-                    title = "Play as Detective",
-                    subtitle = "Hunt Mr. X together",
+                    title = stringResource(R.string.role_selection_title_detective),
+                    subtitle = stringResource(R.string.role_selection_description_detective),
                     backgroundColor = Color(0xFF142B20),
                     isSelected = myRole == "DETECTIVE",
                     isDisabled = false,
@@ -115,8 +121,8 @@ fun RoleSelectionContent(
             RoleSelectionColumn(
                 modifier = Modifier.weight(1f),
                 config = RoleColumnConfig(
-                    title = "Play as Mr. X",
-                    subtitle = "Outsmart the detectives",
+                    title = stringResource(R.string.role_selection_title_mrx),
+                    subtitle = stringResource(R.string.role_selection_description_mrx),
                     backgroundColor = if (mrXTaken) Color(0xFF1D1D1D) else Color(0xFF142B20),
                     isSelected = myRole == "MRX",
                     isDisabled = mrXTaken && myRole != "MRX",
@@ -137,7 +143,9 @@ private fun RoleSelectionTopBar(
     onGameStart: () -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp, start = 16.dp, end = 16.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp, start = 16.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
@@ -147,9 +155,9 @@ private fun RoleSelectionTopBar(
                     colors = ButtonDefaults.textButtonColors(contentColor = Color.White),
                     modifier = Modifier.wrapContentSize()
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", modifier = Modifier.size(20.dp))
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.button_back), modifier = Modifier.size(20.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Back to Lobby", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Serif)
+                    Text(stringResource(R.string.button_back_to_lobby), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Serif)
                 }
             }
         }
@@ -164,11 +172,11 @@ private fun RoleSelectionTopBar(
                     ),
                     modifier = Modifier.wrapContentSize()
                 ) {
-                    Text("Start Position", fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
+                    Text(stringResource(R.string.button_start_position), fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
                 }
             } else {
                 Text(
-                    text = "Waiting for host...",
+                    text = stringResource(R.string.status_waiting_for_host),
                     color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium,
@@ -211,7 +219,9 @@ private fun RoleSelectionColumn(
                 disabledContainerColor = config.backgroundColor,
                 disabledContentColor = Color(0x44FFFFFF)
             ),
-            modifier = Modifier.fillMaxWidth().height(52.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp)
         ) {
             Text(text = config.title, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp, fontFamily = FontFamily.Serif)
         }
@@ -246,9 +256,9 @@ private fun PlayerList(players: List<LobbyUserData>, hostId: String) {
 @Composable
 private fun RoleStatusLabel(isDisabled: Boolean, isSelected: Boolean) {
     when {
-        isDisabled -> Text(text = "Already taken", color = Color(0x88FFFFFF), fontSize = 12.sp, fontFamily = FontFamily.Serif)
-        isSelected -> Text(text = "✓ Selected", color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
-        else       -> Text(text = "Click to select", color = Color(0x88FFFFFF), fontSize = 12.sp, fontFamily = FontFamily.Serif)
+        isDisabled -> Text(text = stringResource(R.string.status_already_taken), color = Color(0x88FFFFFF), fontSize = 12.sp, fontFamily = FontFamily.Serif)
+        isSelected -> Text(text = stringResource(R.string.status_selected), color = Color(0xFF4CAF50), fontSize = 12.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
+        else       -> Text(text = stringResource(R.string.button_click_to_select), color = Color(0x88FFFFFF), fontSize = 12.sp, fontFamily = FontFamily.Serif)
     }
 }
 
