@@ -110,4 +110,6 @@
     <string name="button_quit">Quit</string>
     <string name="text_mrx_victory">Mr. X vanished into the city.</string>
     <string name="text_detectives_victory">Mr. X has been caught.</string>
+
+    <string name="toast_connection_lost">Connection lost!</string>
 </resources>

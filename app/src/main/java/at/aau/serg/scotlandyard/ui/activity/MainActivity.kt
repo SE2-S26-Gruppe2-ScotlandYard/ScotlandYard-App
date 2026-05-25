@@ -1,5 +1,6 @@
 package at.aau.serg.scotlandyard.ui.activity
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.WindowInsets
 import android.view.WindowInsetsController
@@ -36,6 +37,7 @@ import at.aau.serg.scotlandyard.viewmodel.GameViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import androidx.compose.runtime.collectAsState
 import android.util.Log
+import com.example.scotlandyard.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
@@ -58,6 +60,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@SuppressLint("LocalContextGetResourceValueCall")
 @Composable
 private fun ScotlandYardApp() {
     val focusRequester = remember { FocusRequester() }
@@ -91,7 +94,8 @@ private fun ScotlandYardApp() {
         LaunchedEffect(isConnected) {
             if (!isConnected && currentRoute != null
                 && currentRoute != "start" && currentRoute != "login") {
-                Toast.makeText(context, "Verbindung verloren!", Toast.LENGTH_LONG).show()
+                Toast.makeText(context,
+                    context.getString(R.string.toast_connection_lost), Toast.LENGTH_LONG).show()
                 navController.navigate("start") { popUpTo(0) }
             }
         }
