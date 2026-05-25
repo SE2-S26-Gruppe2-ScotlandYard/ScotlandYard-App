@@ -29,5 +29,14 @@
     <string name="settings_gameboard_map">Map</string>
     <string name="settings_gameboard_description_graph">Draw nodes and edges</string>
     <string name="settings_gameboard_description_map">Map as background</string>
-    <string name="ckeckmark">✓</string>
+    <string name="checkmark">✓</string>
+
+    <string name="status_connected">Connected</string>
+    <string name="status_disconnected">Disconnected</string>
+
+    <string name="title_nickname">NICKNAME</string>
+    <string name="description_nickname">Choose your Nickname</string>
+    <string name="button_connect">Connect</string>
+    <string name="button_refresh_connection">Refresh Connection</string>
+    <string name="button_back">Back</string>
 </resources>

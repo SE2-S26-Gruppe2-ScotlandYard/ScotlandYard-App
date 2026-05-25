@@ -278,7 +278,7 @@ private fun DisplayModeOption(
                         .background(AccentGlow, RoundedCornerShape(50))
                 ) {
                     Text(
-                        text = stringResource(R.string.ckeckmark),
+                        text = stringResource(R.string.checkmark),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
