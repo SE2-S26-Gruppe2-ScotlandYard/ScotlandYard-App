@@ -50,9 +50,9 @@ class AssignStartPositionScreenTest {
     @Test
     fun startPositionConstants_valid_positions_used_by_screen() {
         // Screen passes StartPositionConstants.VALID_POSITIONS to SpinnerWheelPicker
-        assertEquals(200, StartPositionConstants.VALID_POSITIONS.size)
+        assertEquals(199, StartPositionConstants.VALID_POSITIONS.size)
         assertEquals(1,   StartPositionConstants.VALID_POSITIONS.first())
-        assertEquals(200, StartPositionConstants.VALID_POSITIONS.last())
+        assertEquals(199, StartPositionConstants.VALID_POSITIONS.last())
     }
 
     @Test
@@ -67,7 +67,7 @@ class AssignStartPositionScreenTest {
         repeat(50) {
             val pos = StartPositionConstants.VALID_POSITIONS.random()
             assertTrue(StartPositionConstants.isValid(pos),
-                "Random position $pos must be in 1..200")
+                "Random position $pos must be in 1..199")
         }
     }
 

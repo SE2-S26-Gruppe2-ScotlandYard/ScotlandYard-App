@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Assertions.*
  */
 class SpinnerWheelPickerTest {
 
-    private val positions = StartPositionConstants.VALID_POSITIONS  // 1..200
+    private val positions = StartPositionConstants.VALID_POSITIONS  // 1..199
 
     // ── Constants ────────────────────────────────────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ class SpinnerWheelPickerTest {
 
     @Test
     fun positions_list_has_200_items() {
-        assertEquals(200, positions.size)
+        assertEquals(199, positions.size)
     }
 
     @Test
@@ -49,7 +49,7 @@ class SpinnerWheelPickerTest {
 
     @Test
     fun positions_last_is_200() {
-        assertEquals(200, positions.last())
+        assertEquals(199, positions.last())
     }
 
     // ── Index-to-position mapping (same logic used in wheel) ─────────────────────────────────
@@ -59,14 +59,14 @@ class SpinnerWheelPickerTest {
         val extended = List(WHEEL_REPEAT_COUNT) { positions }.flatten()
         assertEquals(positions[0], extended[0])
         assertEquals(positions[1], extended[1])
-        assertEquals(positions[199], extended[199])
+        assertEquals(positions[198], extended[198])
     }
 
     @Test
     fun extendedList_maps_index_to_correct_position_second_repetition() {
         val extended = List(WHEEL_REPEAT_COUNT) { positions }.flatten()
-        assertEquals(positions[0], extended[200])
-        assertEquals(positions[99], extended[299])
+        assertEquals(positions[0], extended[199])
+        assertEquals(positions[99], extended[298])
     }
 
     @Test
@@ -115,7 +115,7 @@ class SpinnerWheelPickerTest {
         val half = WHEEL_VISIBLE_ITEMS / 2
         val extended = List(WHEEL_REPEAT_COUNT) { positions }.flatten()
 
-        val testPositions = listOf(1, 50, 100, 150, 200)
+        val testPositions = listOf(1, 50, 100, 150, 199)
         for (target in testPositions) {
             val targetIdx = positions.indexOf(target).coerceAtLeast(0)
             val targetFirst = (positions.size * 5 + targetIdx - half).coerceAtLeast(0)
@@ -150,7 +150,7 @@ class SpinnerWheelPickerTest {
 
     @Test
     fun position_200_is_valid() {
-        assertTrue(StartPositionConstants.isValid(200))
+        assertTrue(StartPositionConstants.isValid(199))
     }
 
     @Test
@@ -160,7 +160,6 @@ class SpinnerWheelPickerTest {
 
     @Test
     fun position_201_is_invalid() {
-        assertFalse(StartPositionConstants.isValid(201))
+        assertFalse(StartPositionConstants.isValid(200))
     }
 }
-

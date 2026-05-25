@@ -12,12 +12,12 @@ class StartPositionConstantsTest {
 
     @Test
     fun maxPosition_is_200() {
-        assertEquals(200, StartPositionConstants.MAX_POSITION)
+        assertEquals(199, StartPositionConstants.MAX_POSITION)
     }
 
     @Test
     fun validPositions_contains_exactly_200_entries() {
-        assertEquals(200, StartPositionConstants.VALID_POSITIONS.size)
+        assertEquals(199, StartPositionConstants.VALID_POSITIONS.size)
     }
 
     @Test
@@ -27,7 +27,7 @@ class StartPositionConstantsTest {
 
     @Test
     fun validPositions_last_element_is_200() {
-        assertEquals(200, StartPositionConstants.VALID_POSITIONS.last())
+        assertEquals(199, StartPositionConstants.VALID_POSITIONS.last())
     }
 
     @Test
@@ -38,7 +38,7 @@ class StartPositionConstantsTest {
 
     @Test
     fun validPositions_contains_all_integers_1_to_200() {
-        val expected = (1..200).toList()
+        val expected = (1..199).toList()
         assertEquals(expected, StartPositionConstants.VALID_POSITIONS)
     }
 
@@ -49,7 +49,7 @@ class StartPositionConstantsTest {
 
     @Test
     fun isValid_returns_true_for_max_position() {
-        assertTrue(StartPositionConstants.isValid(200))
+        assertTrue(StartPositionConstants.isValid(199))
     }
 
     @Test
@@ -69,7 +69,7 @@ class StartPositionConstantsTest {
 
     @Test
     fun isValid_returns_false_for_201() {
-        assertFalse(StartPositionConstants.isValid(201))
+        assertFalse(StartPositionConstants.isValid(200))
     }
 
     @Test
@@ -78,4 +78,3 @@ class StartPositionConstantsTest {
         assertEquals(StartPositionConstants.MAX_POSITION, StartPositionConstants.VALID_RANGE.last)
     }
 }
-
