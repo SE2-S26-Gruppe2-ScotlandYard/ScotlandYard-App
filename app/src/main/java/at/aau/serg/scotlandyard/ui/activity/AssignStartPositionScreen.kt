@@ -61,6 +61,7 @@ private enum class SpinnerScreenState {
     SPINNER_ANIMATING,  // Auto-spin in progress
     SPINNER_DONE,       // Spin complete – result visible, awaiting user confirmation
     CHEAT_ACTIVE,       // Cheat/debug mode: user turns wheel manually
+    WAITING_SERVER,     // Position sent to server – waiting for conflict-free confirmation
 }
 
 // ── Main composable ──────────────────────────────────────────────────────────────────────────
@@ -96,6 +97,8 @@ fun AssignStartPositionScreen(
     var screenState by remember { mutableStateOf(SpinnerScreenState.CONNECTING) }
     var triggerSpin by remember { mutableStateOf(false) }
     var manualPosition by remember { mutableIntStateOf(startPosition ?: StartPositionConstants.MIN_POSITION) }
+    // Stores the position we sent to the server so we can detect a conflict-resolution response
+    var sentPosition by remember { mutableIntStateOf(0) }
 
     // Normal shake detector – triggers the auto-spin (no volume-down needed)
     val shakeDetector = remember(context) { ShakeDetector(context) }
@@ -127,6 +130,23 @@ fun AssignStartPositionScreen(
             screenState = SpinnerScreenState.CHEAT_ACTIVE
         }
     }
+
+    // Server confirmed the start position (same) or resolved a conflict (different).
+    // Only relevant while in WAITING_SERVER – activated once the backend implements
+    // the conflict-check response on /topic/game/{gameId}/player/{playerId}/start-position.
+    LaunchedEffect(startPosition) {
+        if (screenState == SpinnerScreenState.WAITING_SERVER && startPosition != null) {
+            if (startPosition == sentPosition) {
+                onPositionConfirmed()
+            } else {
+                // Server resolved a conflict and assigned a new position – re-animate
+                manualPosition = startPosition ?: manualPosition
+                triggerSpin = true
+                screenState = SpinnerScreenState.SPINNER_ANIMATING
+            }
+        }
+    }
+
 
     // Lifecycle-safe: register volume-key listener + both sensors
     DisposableEffect(shakeDetector, cheatDetector) {
@@ -190,7 +210,11 @@ fun AssignStartPositionScreen(
                         triggerSpin = false
                     },
                     onConfirm = {
+                        sentPosition = startPosition ?: StartPositionConstants.MIN_POSITION
                         gameViewModel.confirmStartPosition(gameId, playerId)
+                        gameViewModel.clearStartPosition()
+                        // Navigate immediately. Once the backend implements the conflict-check
+                        // response, switch screenState to WAITING_SERVER here instead.
                         onPositionConfirmed()
                     }
                 )
@@ -201,11 +225,15 @@ fun AssignStartPositionScreen(
                     onSelectionChanged = { manualPosition = it },
                     onConfirm = {
                         gameViewModel.setCheatStartPosition(manualPosition)
+                        sentPosition = manualPosition
                         gameViewModel.confirmStartPosition(gameId, playerId)
+                        gameViewModel.clearStartPosition()
                         gameViewModel.deactivateCheatMode()
                         onPositionConfirmed()
                     }
                 )
+
+                SpinnerScreenState.WAITING_SERVER -> WaitingServerState()
             }
 
             // Non-blocking error snack
@@ -246,6 +274,20 @@ private fun ConnectingState() {
         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(40.dp))
         Spacer(Modifier.height(16.dp))
         Text("Verbinde mit Server…", color = Color.White, fontSize = 14.sp)
+    }
+}
+
+@Composable
+private fun WaitingServerState() {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(40.dp))
+        Spacer(Modifier.height(16.dp))
+        Text("Position wird bestätigt…", color = Color.White, fontSize = 14.sp)
+        Spacer(Modifier.height(6.dp))
+        Text("Bitte warten", color = Color(0xFFCCCCCC), fontSize = 12.sp)
     }
 }
 

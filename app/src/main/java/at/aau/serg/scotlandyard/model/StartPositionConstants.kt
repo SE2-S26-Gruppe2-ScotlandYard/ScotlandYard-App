@@ -6,11 +6,11 @@ package at.aau.serg.scotlandyard.model
  */
 object StartPositionConstants {
     const val MIN_POSITION = 1
-    const val MAX_POSITION = 200
+    const val MAX_POSITION = 199
 
     val VALID_RANGE = MIN_POSITION..MAX_POSITION
 
-    /** Ordered list of all valid starting positions (1 to 200). */
+    /** Ordered list of all valid starting positions (1 to 199). */
     val VALID_POSITIONS: List<Int> = VALID_RANGE.toList()
 
     /** Returns true if [position] is a valid start position. */

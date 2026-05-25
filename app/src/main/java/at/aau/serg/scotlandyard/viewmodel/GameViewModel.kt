@@ -177,6 +177,14 @@ class GameViewModel : ViewModel(), Callbacks {
         myStomp.requestGameState(gameId)
     }
 
+    /**
+     * Clears the locally stored start position so we can detect when the server
+     * responds with the confirmed (possibly different) position after a conflict check.
+     */
+    fun clearStartPosition() {
+        _startPosition.value = null
+    }
+
     fun resetGameState() {
         _startPosition.value = null
         _isLoading.value = false

@@ -81,6 +81,8 @@ class LobbyViewModel(
 
                 val incomingLobby = response.lobby
                 val currentLobby = _currentLobby.value
+                val isBackToLobby = response.message.contains("returned to lobby", ignoreCase = true)
+                        || response.message == "BACK_TO_LOBBY"
 
                 if (incomingLobby != null) {
                     val isPlayerInLobby = incomingLobby.users?.any { it.id == userId } == true
@@ -88,16 +90,17 @@ class LobbyViewModel(
                     if (isPlayerInLobby) {
                         _currentLobby.value = incomingLobby
                         lobbyService?.subscribeToSpecificLobby(incomingLobby.id)
-                    } else if (currentLobby?.id == incomingLobby.id) {
+                    } else if (currentLobby?.id == incomingLobby.id && !isBackToLobby) {
+                        // Only remove lobby if this is NOT a back-to-lobby transition.
+                        // During BACK_TO_LOBBY the server may send a transient state where
+                        // the player isn't yet in the users list – keep current lobby.
                         _currentLobby.value = null
                         _statusMessage.value = "Du wurdest aus der Lobby entfernt"
                         lobbyService?.unsubscribeSpecificLobby()
                     }
-                } else if (response.lobbyId != null) {
-                    if (currentLobby?.id == response.lobbyId) {
-                        _currentLobby.value = null
-                        lobbyService?.unsubscribeSpecificLobby()
-                    }
+                } else if (response.lobbyId != null && currentLobby?.id == response.lobbyId) {
+                    _currentLobby.value = null
+                    lobbyService?.unsubscribeSpecificLobby()
                 }
 
                 // Navigation (kombiniert aus beiden branches + GAME_STARTED)
@@ -117,8 +120,10 @@ class LobbyViewModel(
                     }
                 }
 
-                if (response.message !in listOf("ROLE_SELECTION_STARTED", "BACK_TO_LOBBY", "GAME_STARTED", "OK", "SUCCESS")) {
-                    if (response.message.isNotBlank()) _statusMessage.value = response.message
+                if (response.message !in listOf("ROLE_SELECTION_STARTED", "BACK_TO_LOBBY", "GAME_STARTED", "OK", "SUCCESS")
+                    && response.message.isNotBlank()
+                ) {
+                    _statusMessage.value = response.message
                 }
 
             }

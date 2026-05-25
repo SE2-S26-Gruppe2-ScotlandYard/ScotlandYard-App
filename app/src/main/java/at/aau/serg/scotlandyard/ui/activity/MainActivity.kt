@@ -329,6 +329,7 @@ private fun GameBoardRoute(
 @Composable
 private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostController) {
     val lobby by lobbyVm.currentLobby.collectAsState()
+
     LaunchedEffect(lobbyVm) {
         lobbyVm.navigateToGame.collect { gameId ->
             val playerId = lobbyVm.userId
@@ -337,6 +338,18 @@ private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostCo
             }
         }
     }
+
+    // Gäste: navigieren zurück wenn Host "Back to Lobby" auslöst.
+    // Route-Guard verhindert doppeltes popBackStack beim Host, der bereits
+    // sofort über den Button navigiert hat.
+    LaunchedEffect("backToLobby", lobbyVm) {
+        lobbyVm.navigateToLobby.collect {
+            if (navController.currentBackStackEntry?.destination?.route == "roleSelection") {
+                navController.popBackStack()
+            }
+        }
+    }
+
     if (lobby != null) {
         RoleSelectionScreen(
             viewModel   = lobbyVm,
