@@ -8,6 +8,7 @@ import at.aau.serg.scotlandyard.Callbacks
 import at.aau.serg.scotlandyard.dtos.GameStateDto
 import at.aau.serg.scotlandyard.dtos.StartPositionResponse
 import at.aau.serg.scotlandyard.model.BoardConnection
+import at.aau.serg.scotlandyard.model.StartPositionConstants
 import at.aau.serg.scotlandyard.model.TicketType
 import at.aau.serg.scotlandyard.network.GameStompService
 import at.aau.serg.scotlandyard.network.MyStomp
@@ -38,6 +39,10 @@ class GameViewModel : ViewModel(), Callbacks {
 
     private val _isConnected = MutableStateFlow(false)
     val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
+
+    /** True while the cheat/debug mode (manual wheel) is active. */
+    private val _cheatModeActive = MutableStateFlow(false)
+    val cheatModeActive: StateFlow<Boolean> = _cheatModeActive.asStateFlow()
 
     private val _gameState = MutableStateFlow<GameStateDto?>(null)
     val gameState: StateFlow<GameStateDto?> = _gameState.asStateFlow()
@@ -97,18 +102,70 @@ class GameViewModel : ViewModel(), Callbacks {
         myStomp.subscribeToStartPosition(gameId, playerId)
     }
 
+    fun unsubscribeFromStartPosition() {
+        myStomp.unsubscribeFromStartPosition()
+    }
+
     fun requestStartPosition(gameId: String, playerId: String) {
+        if (_isLoading.value) {
+            Log.d("GameViewModel", "requestStartPosition skipped – already loading")
+            return
+        }
+        if (_startPosition.value != null) {
+            Log.d("GameViewModel", "requestStartPosition skipped – position already assigned: ${_startPosition.value}")
+            return
+        }
         _isLoading.value = true
         _errorMessage.value = null
         myStomp.requestStartPosition(gameId, playerId)
     }
 
+    /**
+     * Picks a random valid start position (1–200) locally and stores it.
+     * The spinner animation uses this value to know where to decelerate to.
+     */
+    fun generateLocalStartPosition(): Int {
+        val pos = StartPositionConstants.VALID_POSITIONS.random()
+        _startPosition.value = pos
+        Log.d("GameViewModel", "Generated local start position: $pos")
+        return pos
+    }
+
+    /**
+     * Returns the currently stored start position without clearing it.
+     * Useful to initialise the manual-selection position in cheat mode.
+     */
+    fun peekStartPosition(): Int? = _startPosition.value
+
+    /**
+     * Overrides the start position with a player-chosen value (cheat mode).
+     * Validates that the position is within the allowed range.
+     */
+    fun setCheatStartPosition(position: Int) {
+        require(StartPositionConstants.isValid(position)) {
+            "Invalid cheat position: $position (must be ${StartPositionConstants.MIN_POSITION}–${StartPositionConstants.MAX_POSITION})"
+        }
+        _startPosition.value = position
+        Log.d("GameViewModel", "Cheat start position set: $position")
+    }
+
+    /** Activate manual-wheel cheat mode. */
+    fun activateCheatMode() {
+        _cheatModeActive.value = true
+        Log.d("GameViewModel", "Cheat mode activated")
+    }
+
+    /** Deactivate cheat mode (called after confirmation or on screen dispose). */
+    fun deactivateCheatMode() {
+        _cheatModeActive.value = false
+    }
+
     fun confirmStartPosition(gameId: String, playerId: String) {
         val position = _startPosition.value
         if (position != null) {
-            Log.d("GameViewModel", "Start position confirmed: $position")
-            // In real scenario, send confirmation to backend
-            _startPosition.value = null // Reset for next game
+            Log.d("GameViewModel", "Start position confirmed and sent to server: $position (gameId=$gameId, playerId=$playerId)")
+            myStomp.sendConfirmedStartPosition(gameId, playerId, position)
+            requestGameState(gameId)
         }
     }
 
@@ -118,6 +175,14 @@ class GameViewModel : ViewModel(), Callbacks {
 
     fun requestGameState(gameId: String) {
         myStomp.requestGameState(gameId)
+    }
+
+    /**
+     * Clears the locally stored start position so we can detect when the server
+     * responds with the confirmed (possibly different) position after a conflict check.
+     */
+    fun clearStartPosition() {
+        _startPosition.value = null
     }
 
     fun resetGameState() {
@@ -178,6 +243,7 @@ class GameViewModel : ViewModel(), Callbacks {
                 when (response.type) {
                     "START_POSITION_ASSIGNED" -> {
                         _startPosition.value = response.startPosition
+                        _myPosition.value = response.startPosition
                         _isLoading.value = false
                         _errorMessage.value = null
                     }
@@ -197,5 +263,6 @@ class GameViewModel : ViewModel(), Callbacks {
     override fun onCleared() {
         super.onCleared()
         gameStompService.unsubscribe()
+        myStomp.shutdown()   // cancel coroutines + close WebSocket so old VMs don't linger
     }
 }

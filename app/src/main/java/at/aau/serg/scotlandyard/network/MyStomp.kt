@@ -4,6 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import at.aau.serg.scotlandyard.Callbacks
+import at.aau.serg.scotlandyard.network.ServerConfig.DEVICE_URI
 import at.aau.serg.scotlandyard.network.ServerConfig.GLOBAL_URI
 import at.aau.serg.scotlandyard.network.ServerConfig.LOCAL_URI
 import kotlinx.coroutines.*
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import org.hildan.krossbow.stomp.StompClient
 import org.hildan.krossbow.stomp.StompSession
 import org.hildan.krossbow.stomp.sendText
@@ -20,7 +22,10 @@ import org.hildan.krossbow.stomp.subscribeText
 import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
 
-private const val WEBSOCKET_URI = GLOBAL_URI
+//private const val WEBSOCKET_URI = GLOBAL_URI
+//private const val WEBSOCKET_URI = LOCAL_URI   // ← Emulator (10.0.2.2)
+private const val WEBSOCKET_URI = DEVICE_URI    // ← Physisches Gerät (143.205.192.169)
+
 class MyStomp(val callbacks: Callbacks) {
 
     private var client: StompClient? = null
@@ -62,6 +67,7 @@ class MyStomp(val callbacks: Callbacks) {
     val privateMessages: SharedFlow<String> = _privateMessages.asSharedFlow()
 
     private var privateTopicJob: Job? = null
+    private var startPositionJob: Job? = null
 
     fun enablePrivateTopic(userId: String) {
         currentUserId = userId
@@ -189,27 +195,30 @@ class MyStomp(val callbacks: Callbacks) {
     fun connectToGame(gameId: String) {
         currentGameId = gameId
         scope.launch {
-            if (session == null) {
-                client?.let { session = it.connect(WEBSOCKET_URI) }
+            // Wait until the primary connection is ready (up to 15 s)
+            if (!_isConnected.value) {
+                withTimeoutOrNull(15_000L) { _isConnected.first { it } }
             }
-            session?.let { s ->
-                launch {
-                    s.subscribeText("/topic/game/$gameId/movements").collect { msg ->
-                        gameStateCallback?.invoke(msg) ?: callback("movement:$msg")
-                    }
-                }
-                launch {
-                    s.subscribeText("/topic/game/$gameId/move-response").collect { msg ->
-                        movementCallback?.invoke(msg) ?: callback("move-response:$msg")
-                    }
-                }
-                launch {
-                    s.subscribeText("/topic/game/$gameId/over").collect { msg ->
-                        gameOverCallback?.invoke(msg) ?: callback("game-over:$msg")
-                    }
-                }
-                callback("connected to:$gameId")
+            val s = session ?: run {
+                Log.e("MyStomp", "connectToGame: no session after waiting")
+                return@launch
             }
+            launch {
+                s.subscribeText("/topic/game/$gameId/movements").collect { msg ->
+                    gameStateCallback?.invoke(msg) ?: callback("movement:$msg")
+                }
+            }
+            launch {
+                s.subscribeText("/topic/game/$gameId/move-response").collect { msg ->
+                    movementCallback?.invoke(msg) ?: callback("move-response:$msg")
+                }
+            }
+            launch {
+                s.subscribeText("/topic/game/$gameId/over").collect { msg ->
+                    gameOverCallback?.invoke(msg) ?: callback("game-over:$msg")
+                }
+            }
+            callback("connected to:$gameId")
         }
     }
 
@@ -234,7 +243,8 @@ class MyStomp(val callbacks: Callbacks) {
      * Incoming messages are forwarded with prefix "startPosition:"
      */
     fun subscribeToStartPosition(gameId: String, playerId: String) {
-        scope.launch {
+        startPositionJob?.cancel()
+        startPositionJob = scope.launch {
             try {
                 val topic = "/topic/game/$gameId/player/$playerId/start-position"
                 Log.d("MyStomp", "Subscribing to start position topic: $topic")
@@ -247,6 +257,12 @@ class MyStomp(val callbacks: Callbacks) {
                 Log.e("MyStomp", "Start position subscription failed", e)
             }
         }
+    }
+
+    fun unsubscribeFromStartPosition() {
+        startPositionJob?.cancel()
+        startPositionJob = null
+        Log.d("MyStomp", "Unsubscribed from start position topic")
     }
 
     /**
@@ -274,10 +290,36 @@ class MyStomp(val callbacks: Callbacks) {
     fun requestGameState(gameId: String) {
         scope.launch {
             try {
+                // Wait for connection if not ready yet (up to 15 s)
+                if (!_isConnected.value) {
+                    withTimeoutOrNull(15_000L) { _isConnected.first { it } }
+                }
                 session?.sendText("/app/game/$gameId/state", "")
-                    ?: Log.w("MyStomp", "Cannot request game state: not connected")
+                    ?: Log.w("MyStomp", "Cannot request game state: no session after waiting")
             } catch (e: Exception) {
                 Log.e("MyStomp", "requestGameState failed", e)
+            }
+        }
+    }
+
+    /**
+     * Send the confirmed start position to the backend.
+     * Used for both normal mode (auto-generated) and cheat mode (user-selected).
+     * Sends JSON to: /app/game/start-position/confirm
+     */
+    fun sendConfirmedStartPosition(gameId: String, playerId: String, position: Int) {
+        val json = JSONObject().apply {
+            put("gameId", gameId)
+            put("playerId", playerId)
+            put("startPosition", position)
+        }
+        scope.launch {
+            try {
+                Log.d("MyStomp", "Confirming start position=$position for game=$gameId, player=$playerId")
+                session?.sendText("/app/game/start-position/confirm", json.toString())
+                    ?: callback("Error: Not connected")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "sendConfirmedStartPosition failed", e)
             }
         }
     }
