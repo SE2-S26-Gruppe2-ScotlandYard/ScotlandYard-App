@@ -39,4 +39,26 @@
     <string name="button_connect">Connect</string>
     <string name="button_refresh_connection">Refresh Connection</string>
     <string name="button_back">Back</string>
+    <string name="button_cancel">Cancel</string>
+
+    <string name="button_kick">Kick</string>
+    <string name="button_leave">Leave</string>
+    <string name="button_return_main_menu">Return to main menu</string>
+    <string name="title_lobby_selection">LOBBY SELECTION</string>
+    <string name="title_personalised_lobby">%1$s\'S LOBBY</string>
+    <string name="title_lobby">LOBBY</string>
+    <string name="lobby_button_create_lobby">Create</string>
+    <string name="lobby_status_creating">Creating lobby...</string>
+    <string name="lobby_code_description">5-digit code</string>
+    <string name="lobby_status_joining">Joining lobby...</string>
+    <string name="lobby_button_join_lobby">Join</string>
+    <string name="lobby_status_players">%1$d/6 players</string>
+    <string name="title_player">Player</string>
+    <string name="lobby_button_delete">Delete lobby</string>
+    <string name="lobby_button_continue_role_selection">Continue to role selection</string>
+    <string name="lobby_status_min_players">At least 3 players required</string>
+    <string name="description_host">Host</string>
+    <string name="lobby_indicator_you">" (You)"</string>
+    <string name="kick_player_confirm">Kick player?</string>
+    <string name="lobby_button_remove_player">Remove %1$s?</string>
 </resources>
