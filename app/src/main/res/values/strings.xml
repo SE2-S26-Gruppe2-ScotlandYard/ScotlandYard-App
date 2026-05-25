@@ -105,4 +105,7 @@
     <string name="ticket_escooter">E-Scooter</string>
     <string name="ticket_car_sharing">Car Sharing</string>
     <string name="ticket_black">Black</string>
+
+    <string name="button_restart">Restart</string>
+    <string name="button_quit">Quit</string>
 </resources>
