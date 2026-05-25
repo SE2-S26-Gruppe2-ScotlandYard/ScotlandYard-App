@@ -40,6 +40,7 @@
     <string name="button_refresh_connection">Refresh Connection</string>
     <string name="button_back">Back</string>
     <string name="button_cancel">Cancel</string>
+    <string name="button_confirm">Confirm</string>
 
     <string name="button_kick">Kick</string>
     <string name="button_leave">Leave</string>
@@ -73,4 +74,18 @@
     <string name="status_already_taken">Already taken</string>
     <string name="status_selected">✓ Selected</string>
     <string name="button_click_to_select">Click to select</string>
+
+    <string name="status_connecting_to_server">Connecting to server…</string>
+    <string name="status_confirming_position">Confirming position…</string>
+    <string name="text_please_wait">Please wait</string>
+    <string name="assign_start_position_text_shake_device">Shake the device\nto determine your\nstarting position!</string>
+    <string name="button_simulate_shaking">Simulate shaking</string>
+    <string name="button_cheat">Cheat</string>
+    <string name="title_your_start_position">Your start position!</string>
+    <string name="status_rolling_start_position">Roling starting position…</string>
+    <string name="text_station">Station  %1$d</string>
+    <string name="status_cheat_active">Cheat mode active</string>
+    <string name="title_choose_start_position">Choose your starting position</string>
+    <string name="text_spin_and_confirm">Spin the wheel and confirm</string>
+    <string name="button_confirm_station">Confirm station %1$d</string>
 </resources>
