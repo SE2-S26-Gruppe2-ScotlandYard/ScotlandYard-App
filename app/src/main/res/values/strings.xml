@@ -108,4 +108,6 @@
 
     <string name="button_restart">Restart</string>
     <string name="button_quit">Quit</string>
+    <string name="text_mrx_victory">Mr. X vanished into the city.</string>
+    <string name="text_detectives_victory">Mr. X has been caught.</string>
 </resources>

@@ -1,6 +1,7 @@
 package at.aau.serg.scotlandyard.ui.activity
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import com.example.scotlandyard.R
@@ -20,7 +21,7 @@ fun MrXWinScreen(
     onQuit: () -> Unit
 ) {
     BaseWinScreen(
-        messageText = "Mr. X vanished into the City",
+        messageText = stringResource(R.string.text_mrx_victory),
         backgroundImageRes = R.drawable.mrx_win_bg,
         onBackClick = onBackClick,
         onQuit = onQuit
