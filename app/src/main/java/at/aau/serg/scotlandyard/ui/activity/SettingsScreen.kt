@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Map
@@ -448,7 +450,9 @@ private fun ServerSettingsContent(
         "DEVICE" to stringResource(R.string.settings_server_custom)
     )
 
-    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
+    val scrollState = rememberScrollState()
+
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState), verticalArrangement = Arrangement.Top) {
         Text(
             text = stringResource(R.string.title_server),
             fontSize = 26.sp, fontWeight = FontWeight.Bold,
