@@ -1,5 +1,6 @@
 package at.aau.serg.scotlandyard.ui.activity
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -48,20 +50,25 @@ import at.aau.serg.scotlandyard.ui.theme.TextMuted
 import at.aau.serg.scotlandyard.ui.theme.TextPrimary
 import com.example.scotlandyard.R
 import at.aau.serg.scotlandyard.data.getDisplayModePreference
+import at.aau.serg.scotlandyard.data.getLanguagePreference
 import at.aau.serg.scotlandyard.data.saveDisplayModePreference
+import at.aau.serg.scotlandyard.data.saveLanguagePreference
 
-private enum class SettingsCategory(val label: String, val icon: ImageVector) {
-    GAMEBOARD("Gameboard", Icons.Default.Map)
+private enum class SettingsCategory(@StringRes val labelRes: Int, val icon: ImageVector) {
+    GAMEBOARD(R.string.title_gameboard, Icons.Default.Map),
+    LANGUAGE(R.string.title_language, Icons.Default.Language)
 }
 
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
-    onDisplayModeChange: (BoardDisplayMode) -> Unit = {}
+    onDisplayModeChange: (BoardDisplayMode) -> Unit = {},
+    onLanguageChange: (String) -> Unit = {}
 ) {
     val context = LocalContext.current
     var selectedCategory by remember { mutableStateOf(SettingsCategory.GAMEBOARD) }
     var displayMode by remember { mutableStateOf(context.getDisplayModePreference()) }
+    var selectedLanguage by remember { mutableStateOf(context.getLanguagePreference()) }
 
     BaseScreen(onBackClick = onBackClick) { _ ->
         Row(
@@ -87,6 +94,15 @@ fun SettingsScreen(
                             displayMode = mode
                             context.saveDisplayModePreference(mode)
                             onDisplayModeChange(mode)
+                        }
+                    )
+
+                    SettingsCategory.LANGUAGE -> LanguageSettingsContent(
+                        selectedLanguage = selectedLanguage,
+                        onLanguageChange = { lang ->
+                            selectedLanguage = lang
+                            context.saveLanguagePreference(lang)
+                            onLanguageChange(lang)
                         }
                     )
                 }
@@ -126,7 +142,7 @@ private fun SettingsSidebar(
 
         SettingsCategory.entries.forEach { category ->
             SidebarItem(
-                label = category.label,
+                label = stringResource(category.labelRes),
                 icon = category.icon,
                 isSelected = category == selected,
                 onClick = { onSelect(category) }
@@ -236,7 +252,7 @@ private fun DisplayModeOption(
 ) {
     val borderColor = if (isSelected) AccentGlow else SidebarBorder
     val borderWidth = if (isSelected) 2.dp else 1.dp
-    val bgColor = if (isSelected) AccentTeal.copy(alpha = 0.18f) else SidebarBg
+    val bgColor = if (isSelected) AccentTeal.copy(alpha = 0.86f) else SidebarBg
 
     Column(
         modifier = modifier
@@ -305,6 +321,92 @@ private fun DisplayModeOption(
         )
     }
 }
+
+@Composable
+private fun LanguageSettingsContent(
+    selectedLanguage: String,
+    onLanguageChange: (String) -> Unit
+) {
+    val languages = listOf(
+        "en" to "English",
+        "de" to "Deutsch"
+    )
+
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
+        Text(
+            text = stringResource(R.string.title_language),
+            fontSize = 26.sp, fontWeight = FontWeight.Bold,
+            color = Color.White, modifier = Modifier.padding(bottom = 4.dp)
+        )
+
+        Text(
+            text = stringResource(R.string.settings_language_description),
+            fontSize = 12.sp, color = TextMuted,
+            modifier = Modifier.padding(bottom = 20.dp)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            languages.forEach { (code, name) ->
+                LanguageOption(
+                    modifier = Modifier.weight(1f),
+                    languageName = name,
+                    languageCode = code,
+                    isSelected = selectedLanguage == code,
+                    onClick = { onLanguageChange(code) }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = stringResource(R.string.settings_language_restart_hint),
+            fontSize = 11.sp, color = TextMuted
+        )
+    }
+}
+
+@Composable
+private fun LanguageOption(
+    modifier: Modifier = Modifier,
+    languageName: String,
+    languageCode: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val borderColor = if (isSelected) AccentGlow else SidebarBorder
+    val borderWidth = if (isSelected) 2.dp else 1.dp
+    val bgColor = if (isSelected) AccentTeal.copy(alpha = 0.86f) else SidebarBg
+
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(bgColor)
+            .border(borderWidth, borderColor, RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = languageName,
+            fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+            color = if (isSelected) AccentGlow else TextPrimary
+        )
+
+        if (isSelected) {
+            Text(
+                text = stringResource(R.string.checkmark),
+                fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                color = AccentGlow
+            )
+        }
+    }
+}
+
 
 @Preview(showBackground = true, widthDp = 800, heightDp = 400)
 @Composable
