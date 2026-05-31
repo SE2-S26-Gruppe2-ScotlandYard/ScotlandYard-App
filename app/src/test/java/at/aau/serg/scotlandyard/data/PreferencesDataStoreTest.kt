@@ -12,7 +12,7 @@ import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
 import org.mockito.kotlin.whenever
 
-class BoardPreferencesTest {
+class PreferencesTest {
 
     @Mock
     private lateinit var mockSharedPreferences: SharedPreferences
