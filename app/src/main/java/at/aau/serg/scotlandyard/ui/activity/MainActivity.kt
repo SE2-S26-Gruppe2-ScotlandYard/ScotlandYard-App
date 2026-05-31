@@ -37,6 +37,7 @@ import at.aau.serg.scotlandyard.viewmodel.GameViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import androidx.compose.runtime.collectAsState
 import android.util.Log
+import at.aau.serg.scotlandyard.data.*
 import com.example.scotlandyard.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -66,53 +67,62 @@ private fun ScotlandYardApp() {
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .focusRequester(focusRequester)
-            .focusable()
-            .onPreviewKeyEvent { event ->
-                if (event.type == KeyEventType.KeyDown) {
-                    CheatKeyEventRegistry.notify(event.nativeKeyEvent)
+    val context = LocalContext.current
+    var currentLang by remember { mutableStateOf(context.getLanguagePreference()) }
+    val localizedContext = remember(currentLang) { context.applyLanguage(currentLang) }
+
+    CompositionLocalProvider(LocalContext provides localizedContext) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .focusRequester(focusRequester)
+                .focusable()
+                .onPreviewKeyEvent { event ->
+                    if (event.type == KeyEventType.KeyDown) {
+                        CheatKeyEventRegistry.notify(event.nativeKeyEvent)
+                    }
+                    false
                 }
-                false
+        ) {
+            val authViewModel: AuthViewModel = viewModel()
+            val isConnected by authViewModel.isConnected.collectAsState()
+            val currentUser by authViewModel.currentUser.collectAsState()
+            val errorMessage by authViewModel.errorMessage.collectAsState()
+
+            val navController = rememberNavController()
+
+            var sharedLobbyViewModel by remember { mutableStateOf<LobbyViewModel?>(null) }
+
+            val currentBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentRoute = currentBackStackEntry?.destination?.route
+
+            LaunchedEffect(isConnected) {
+                if (!isConnected && currentRoute != null
+                    && currentRoute != "start" && currentRoute != "login") {
+                    Toast.makeText(context,
+                        context.getString(R.string.toast_connection_lost), Toast.LENGTH_LONG).show()
+                    navController.navigate("start") { popUpTo(0) }
+                }
             }
-    ) {
-        val authViewModel: AuthViewModel = viewModel()
-        val isConnected by authViewModel.isConnected.collectAsState()
-        val currentUser by authViewModel.currentUser.collectAsState()
-        val errorMessage by authViewModel.errorMessage.collectAsState()
 
-        val navController = rememberNavController()
-        val context = LocalContext.current
-
-        var sharedLobbyViewModel by remember { mutableStateOf<LobbyViewModel?>(null) }
-
-        val currentBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = currentBackStackEntry?.destination?.route
-
-        LaunchedEffect(isConnected) {
-            if (!isConnected && currentRoute != null
-                && currentRoute != "start" && currentRoute != "login") {
-                Toast.makeText(context,
-                    context.getString(R.string.toast_connection_lost), Toast.LENGTH_LONG).show()
-                navController.navigate("start") { popUpTo(0) }
+            LaunchedEffect(errorMessage) {
+                errorMessage?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
             }
-        }
 
-        LaunchedEffect(errorMessage) {
-            errorMessage?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+            AppNavHost(
+                navController = navController,
+                authViewModel = authViewModel,
+                isConnected = isConnected,
+                currentUser = currentUser,
+                currentRoute = currentRoute,
+                sharedLobbyViewModel = sharedLobbyViewModel,
+                onSharedLobbyViewModelChange = { sharedLobbyViewModel = it },
+                onLanguageChange = { lang ->
+                    context.saveLanguagePreference(lang)
+                    currentLang = lang
+                }
+            )
         }
-
-        AppNavHost(
-            navController = navController,
-            authViewModel = authViewModel,
-            isConnected = isConnected,
-            currentUser = currentUser,
-            currentRoute = currentRoute,
-            sharedLobbyViewModel = sharedLobbyViewModel,
-            onSharedLobbyViewModelChange = { sharedLobbyViewModel = it }
-        )
     }
 }
 
@@ -124,7 +134,8 @@ private fun AppNavHost(
     currentUser: User?,
     currentRoute: String?,
     sharedLobbyViewModel: LobbyViewModel?,
-    onSharedLobbyViewModelChange: (LobbyViewModel) -> Unit
+    onSharedLobbyViewModelChange: (LobbyViewModel) -> Unit,
+    onLanguageChange: (String) -> Unit
 ) {
     NavHost(navController = navController, startDestination = "start") {
         composable("start") {
@@ -184,7 +195,7 @@ private fun AppNavHost(
         }
 
         composable("settings") {
-            SettingsScreen(onBackClick = { navController.popBackStack() })
+            SettingsScreen(onBackClick = { navController.popBackStack() }, onLanguageChange = { lang -> onLanguageChange(lang) })
         }
 
         composable(
