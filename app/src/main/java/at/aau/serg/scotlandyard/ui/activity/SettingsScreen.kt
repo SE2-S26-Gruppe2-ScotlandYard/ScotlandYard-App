@@ -68,6 +68,8 @@ private enum class SettingsCategory(@StringRes val labelRes: Int, val icon: Imag
     SERVER(R.string.title_server, Icons.Default.Wifi)
 }
 
+private val selectedFactor = 0.86f
+
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
@@ -278,7 +280,7 @@ private fun DisplayModeOption(
 ) {
     val borderColor = if (isSelected) AccentGlow else SidebarBorder
     val borderWidth = if (isSelected) 2.dp else 1.dp
-    val bgColor = if (isSelected) AccentTeal.copy(alpha = 0.86f) else SidebarBg
+    val bgColor = if (isSelected) AccentTeal.copy(alpha = selectedFactor) else SidebarBg
 
     Column(
         modifier = modifier
@@ -405,7 +407,7 @@ private fun LanguageOption(
 ) {
     val borderColor = if (isSelected) AccentGlow else SidebarBorder
     val borderWidth = if (isSelected) 2.dp else 1.dp
-    val bgColor = if (isSelected) AccentTeal.copy(alpha = 0.86f) else SidebarBg
+    val bgColor = if (isSelected) AccentTeal.copy(alpha = selectedFactor) else SidebarBg
 
     Row(
         modifier = modifier
@@ -463,7 +465,7 @@ private fun ServerSettingsContent(
             val isSelected = uriType == type
             val borderColor = if (isSelected) AccentGlow else SidebarBorder
             val borderWidth = if (isSelected) 2.dp else 1.dp
-            val bgColor = if (isSelected) AccentTeal.copy(alpha = 0.86f) else SidebarBg
+            val bgColor = if (isSelected) AccentTeal.copy(alpha = selectedFactor) else SidebarBg
 
             Row(
                 modifier = Modifier
