@@ -38,6 +38,7 @@ import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import androidx.compose.runtime.collectAsState
 import android.util.Log
 import at.aau.serg.scotlandyard.data.*
+import at.aau.serg.scotlandyard.network.ServerConfig
 import com.example.scotlandyard.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -47,6 +48,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         BoardConnection.init(this)
+        ServerConfig.init(this)
         enableEdgeToEdge()
 
         window.insetsController?.let { controller ->
