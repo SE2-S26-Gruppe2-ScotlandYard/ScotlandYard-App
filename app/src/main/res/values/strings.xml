@@ -29,7 +29,9 @@
     <string name="settings_gameboard_map">Map</string>
     <string name="settings_gameboard_description_graph">Draw nodes and edges.</string>
     <string name="settings_gameboard_description_map">Map as background.</string>
-    <string name="checkmark" translatable="false">✓</string>
+    <string name="title_language">Language</string>
+    <string name="settings_language_description">Select the app language.</string>
+    <string name="settings_language_restart_hint">Note: The app may have to be restarted to apply the changes.</string>
 
     <string name="status_connected">Connected</string>
     <string name="status_disconnected">Disconnected</string>
@@ -41,6 +43,7 @@
     <string name="button_back">Back</string>
     <string name="button_cancel">Cancel</string>
     <string name="button_confirm">Confirm</string>
+    <string name="checkmark" translatable="false">✓</string>
 
     <string name="button_kick">Kick</string>
     <string name="button_leave">Leave</string>
