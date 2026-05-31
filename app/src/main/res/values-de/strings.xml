@@ -103,4 +103,10 @@
     <string name="title_language">Sprache</string>
     <string name="settings_language_description">Wähle die Sprache der App aus.</string>
     <string name="settings_language_restart_hint">Hinweis: Die App muss womöglich neu gestartet werden, damit die Änderungen vollständig übernommen werden können.</string>
+    <string name="title_server">Server</string>
+    <string name="settings_server_description">Wähle den Server aus, mit dem die Verbindung hergestellt werden soll.</string>
+    <string name="settings_text_custom_uri">Individuelle-URI</string>
+    <string name="settings_server_global">Global (AAU-Server)</string>
+    <string name="settings_server_local">Lokal</string>
+    <string name="settings_server_custom">Individuell</string>
 </resources>

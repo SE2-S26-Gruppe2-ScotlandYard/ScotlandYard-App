@@ -32,6 +32,12 @@
     <string name="title_language">Language</string>
     <string name="settings_language_description">Select the app language.</string>
     <string name="settings_language_restart_hint">Note: The app may have to be restarted to apply the changes.</string>
+    <string name="title_server">Server</string>
+    <string name="settings_server_description">Select a server to connect to.</string>
+    <string name="settings_text_custom_uri">Custom-URI</string>
+    <string name="settings_server_global">Global (AAU-Server)</string>
+    <string name="settings_server_local">Local</string>
+    <string name="settings_server_custom">Custom</string>
 
     <string name="status_connected">Connected</string>
     <string name="status_disconnected">Disconnected</string>
