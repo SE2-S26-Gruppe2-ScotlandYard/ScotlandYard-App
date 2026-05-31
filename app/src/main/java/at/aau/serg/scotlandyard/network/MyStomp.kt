@@ -86,7 +86,7 @@ class MyStomp(val callbacks: Callbacks) {
             while (isActive) {
                 try {
                     Log.d("MyStomp", "Versuche Verbindung zum Server...")
-                    val activeSession = client!!.connect(WEBSOCKET_URI)
+                    val activeSession = client!!.connect(ServerConfig.activeUri)
                     session = activeSession
                     _isConnected.value = true
                     subscribeToServer(activeSession)
