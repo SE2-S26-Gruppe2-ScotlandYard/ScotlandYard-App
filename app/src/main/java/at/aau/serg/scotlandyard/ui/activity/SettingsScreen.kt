@@ -20,7 +20,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults.colors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -51,12 +54,18 @@ import at.aau.serg.scotlandyard.ui.theme.TextPrimary
 import com.example.scotlandyard.R
 import at.aau.serg.scotlandyard.data.getDisplayModePreference
 import at.aau.serg.scotlandyard.data.getLanguagePreference
+import at.aau.serg.scotlandyard.data.getServerUriCustomPreference
+import at.aau.serg.scotlandyard.data.getServerUriTypePreference
 import at.aau.serg.scotlandyard.data.saveDisplayModePreference
 import at.aau.serg.scotlandyard.data.saveLanguagePreference
+import at.aau.serg.scotlandyard.data.saveServerUriCustomPreference
+import at.aau.serg.scotlandyard.data.saveServerUriTypePreference
+import at.aau.serg.scotlandyard.network.ServerConfig
 
 private enum class SettingsCategory(@StringRes val labelRes: Int, val icon: ImageVector) {
     GAMEBOARD(R.string.title_gameboard, Icons.Default.Map),
-    LANGUAGE(R.string.title_language, Icons.Default.Language)
+    LANGUAGE(R.string.title_language, Icons.Default.Language),
+    SERVER(R.string.title_server, Icons.Default.Wifi)
 }
 
 @Composable
@@ -69,6 +78,8 @@ fun SettingsScreen(
     var selectedCategory by remember { mutableStateOf(SettingsCategory.GAMEBOARD) }
     var displayMode by remember { mutableStateOf(context.getDisplayModePreference()) }
     var selectedLanguage by remember { mutableStateOf(context.getLanguagePreference()) }
+    var serverUriType by remember { mutableStateOf(context.getServerUriTypePreference()) }
+    var serverUriCustom by remember { mutableStateOf(context.getServerUriCustomPreference()) }
 
     BaseScreen(onBackClick = onBackClick) { _ ->
         Row(
@@ -103,6 +114,21 @@ fun SettingsScreen(
                             selectedLanguage = lang
                             context.saveLanguagePreference(lang)
                             onLanguageChange(lang)
+                        }
+                    )
+
+                    SettingsCategory.SERVER -> ServerSettingsContent(
+                        uriType = serverUriType,
+                        customUri = serverUriCustom,
+                        onUriTypeChange = { type ->
+                            serverUriType = type
+                            context.saveServerUriTypePreference(type)
+                            ServerConfig.init(context)
+                        },
+                        onCustomUriChange = { uri ->
+                            serverUriCustom = uri
+                            context.saveServerUriCustomPreference(uri)
+                            if (serverUriType == "DEVICE") ServerConfig.init(context)
                         }
                     )
                 }
@@ -402,6 +428,86 @@ private fun LanguageOption(
                 text = stringResource(R.string.checkmark),
                 fontSize = 16.sp, fontWeight = FontWeight.Bold,
                 color = AccentGlow
+            )
+        }
+    }
+}
+
+@Composable
+private fun ServerSettingsContent(
+    uriType: String,
+    customUri: String,
+    onUriTypeChange: (String) -> Unit,
+    onCustomUriChange: (String) -> Unit
+) {
+    val options = listOf(
+        "GLOBAL" to stringResource(R.string.settings_server_global),
+        "LOCAL"  to stringResource(R.string.settings_server_local),
+        "DEVICE" to stringResource(R.string.settings_server_custom)
+    )
+
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
+        Text(
+            text = stringResource(R.string.title_server),
+            fontSize = 26.sp, fontWeight = FontWeight.Bold,
+            color = Color.White, modifier = Modifier.padding(bottom = 4.dp)
+        )
+
+        Text(
+            text = stringResource(R.string.settings_server_description),
+            fontSize = 12.sp, color = TextMuted,
+            modifier = Modifier.padding(bottom = 20.dp)
+        )
+
+        options.forEach { (type, label) ->
+            val isSelected = uriType == type
+            val borderColor = if (isSelected) AccentGlow else SidebarBorder
+            val borderWidth = if (isSelected) 2.dp else 1.dp
+            val bgColor = if (isSelected) AccentTeal.copy(alpha = 0.86f) else SidebarBg
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(bgColor)
+                    .border(borderWidth, borderColor, RoundedCornerShape(12.dp))
+                    .clickable { onUriTypeChange(type) }
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = label,
+                    fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+                    color = if (isSelected) AccentGlow else TextPrimary
+                )
+
+                if (isSelected) {
+                    Text(
+                        text = stringResource(R.string.checkmark),
+                        fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                        color = AccentGlow
+                    )
+                }
+            }
+        }
+
+        if (uriType == "DEVICE") {
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = customUri,
+                onValueChange = onCustomUriChange,
+                label = { Text(stringResource(R.string.settings_text_custom_uri), color = TextMuted) },
+                placeholder = { Text("ws://192.168.x.x:8080/scotlandyard", color = TextMuted) },
+                singleLine = true,
+                colors = colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = AccentGlow,
+                    unfocusedBorderColor = SidebarBorder
+                ),
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
