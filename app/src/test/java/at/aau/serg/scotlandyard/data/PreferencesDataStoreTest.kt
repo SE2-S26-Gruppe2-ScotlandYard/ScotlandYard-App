@@ -170,4 +170,102 @@ class PreferencesDataStoreTest {
 
         assertEquals("de", java.util.Locale.getDefault().language)
     }
+
+    @Test
+    fun getServerUriTypePreference_noPreferenceStored_returnsGlobal() {
+        whenever(mockSharedPreferences.getString(eq("server_uri_type"), any())).thenReturn(null)
+
+        val type = mockContext.getServerUriTypePreference()
+
+        assertEquals("GLOBAL", type)
+    }
+
+    @Test
+    fun getServerUriTypePreference_globalStored_returnsGlobal() {
+        whenever(mockSharedPreferences.getString(eq("server_uri_type"), any())).thenReturn("GLOBAL")
+
+        val type = mockContext.getServerUriTypePreference()
+
+        assertEquals("GLOBAL", type)
+    }
+
+    @Test
+    fun getServerUriTypePreference_localStored_returnsLocal() {
+        whenever(mockSharedPreferences.getString(eq("server_uri_type"), any())).thenReturn("LOCAL")
+
+        val type = mockContext.getServerUriTypePreference()
+
+        assertEquals("LOCAL", type)
+    }
+
+    @Test
+    fun getServerUriTypePreference_deviceStored_returnsDevice() {
+        whenever(mockSharedPreferences.getString(eq("server_uri_type"), any())).thenReturn("DEVICE")
+
+        val type = mockContext.getServerUriTypePreference()
+
+        assertEquals("DEVICE", type)
+    }
+
+    @Test
+    fun saveServerUriTypePreference_savesCorrectKeyAndValue() {
+        mockContext.saveServerUriTypePreference("LOCAL")
+
+        verify(mockSharedPreferences).edit()
+        verify(mockEditor).putString("server_uri_type", "LOCAL")
+        verify(mockEditor).apply()
+    }
+
+    @Test
+    fun saveServerUriTypePreference_overwritesPreviousValue() {
+        mockContext.saveServerUriTypePreference("GLOBAL")
+        mockContext.saveServerUriTypePreference("DEVICE")
+
+        verify(mockEditor, times(2)).putString(eq("server_uri_type"), any())
+        verify(mockEditor).putString("server_uri_type", "DEVICE")
+    }
+
+    @Test
+    fun getServerUriCustomPreference_noPreferenceStored_returnsEmpty() {
+        whenever(mockSharedPreferences.getString(eq("server_uri_custom"), any())).thenReturn(null)
+
+        val uri = mockContext.getServerUriCustomPreference()
+
+        assertEquals("", uri)
+    }
+
+    @Test
+    fun getServerUriCustomPreference_uriStored_returnsUri() {
+        whenever(mockSharedPreferences.getString(eq("server_uri_custom"), any())).thenReturn("ws://192.168.1.2:8080/scotlandyard")
+
+        val uri = mockContext.getServerUriCustomPreference()
+
+        assertEquals("ws://192.168.1.2:8080/scotlandyard", uri)
+    }
+
+    @Test
+    fun saveServerUriCustomPreference_savesCorrectKeyAndValue() {
+        mockContext.saveServerUriCustomPreference("ws://192.168.1.2:8080/scotlandyard")
+
+        verify(mockSharedPreferences).edit()
+        verify(mockEditor).putString("server_uri_custom", "ws://192.168.1.2:8080/scotlandyard")
+        verify(mockEditor).apply()
+    }
+
+    @Test
+    fun saveServerUriCustomPreference_emptyStringStored_savesEmpty() {
+        mockContext.saveServerUriCustomPreference("")
+
+        verify(mockEditor).putString("server_uri_custom", "")
+        verify(mockEditor).apply()
+    }
+
+    @Test
+    fun saveServerUriCustomPreference_overwritesPreviousValue() {
+        mockContext.saveServerUriCustomPreference("ws://old:8080/scotlandyard")
+        mockContext.saveServerUriCustomPreference("ws://new:8080/scotlandyard")
+
+        verify(mockEditor, times(2)).putString(eq("server_uri_custom"), any())
+        verify(mockEditor).putString("server_uri_custom", "ws://new:8080/scotlandyard")
+    }
 }
