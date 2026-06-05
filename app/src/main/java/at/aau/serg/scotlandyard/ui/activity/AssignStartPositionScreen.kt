@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -51,6 +52,7 @@ import at.aau.serg.scotlandyard.model.StartPositionConstants
 import at.aau.serg.scotlandyard.ui.components.SpinnerWheelPicker
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import at.aau.serg.scotlandyard.viewmodel.GameViewModel
+import com.example.scotlandyard.R
 import kotlinx.coroutines.delay
 
 // ── Screen state machine ─────────────────────────────────────────────────────────────────────
@@ -273,7 +275,7 @@ private fun ConnectingState() {
     ) {
         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(40.dp))
         Spacer(Modifier.height(16.dp))
-        Text("Verbinde mit Server…", color = Color.White, fontSize = 14.sp)
+        Text(stringResource(R.string.status_connecting_to_server), color = Color.White, fontSize = 14.sp)
     }
 }
 
@@ -285,9 +287,9 @@ private fun WaitingServerState() {
     ) {
         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(40.dp))
         Spacer(Modifier.height(16.dp))
-        Text("Position wird bestätigt…", color = Color.White, fontSize = 14.sp)
+        Text(stringResource(R.string.status_confirming_position), color = Color.White, fontSize = 14.sp)
         Spacer(Modifier.height(6.dp))
-        Text("Bitte warten", color = Color(0xFFCCCCCC), fontSize = 12.sp)
+        Text(stringResource(R.string.text_please_wait), color = Color(0xFFCCCCCC), fontSize = 12.sp)
     }
 }
 
@@ -305,7 +307,9 @@ private fun WaitingToSpinState(
 
     if (isLandscape) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp, vertical = 12.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 32.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
@@ -318,7 +322,7 @@ private fun WaitingToSpinState(
                 Text(text = "📳", fontSize = 48.sp, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(12.dp))
                 Text(
-                    text = "Schüttle das Gerät\num deine Startposition\nzu bestimmen!",
+                    text = stringResource(R.string.assign_start_position_text_shake_device),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
@@ -327,17 +331,21 @@ private fun WaitingToSpinState(
             }
             // Right: buttons
             Column(
-                modifier = Modifier.weight(1f).padding(start = 24.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
                 Button(
                     onClick = onSimulateShake,
-                    modifier = Modifier.fillMaxWidth(0.85f).height(48.dp),
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .height(48.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
                 ) {
-                    Text("Schütteln simulieren", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text(stringResource(R.string.button_simulate_shaking), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
                 }
                 Spacer(Modifier.height(10.dp))
                 Button(
@@ -345,7 +353,7 @@ private fun WaitingToSpinState(
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A1A00))
                 ) {
-                    Text("🔧 Schummelmodus simulieren", fontSize = 13.sp, color = Color(0xFFFF9944))
+                    Text(stringResource(R.string.button_cheat), fontSize = 13.sp, color = Color(0xFFFF9944))
                 }
             }
         }
@@ -353,12 +361,14 @@ private fun WaitingToSpinState(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 32.dp)
         ) {
             Text(text = "📳", fontSize = 56.sp, textAlign = TextAlign.Center)
             Spacer(Modifier.height(20.dp))
             Text(
-                text = "Schüttle das Gerät\num deine Startposition\nzu bestimmen!",
+                text = stringResource(R.string.assign_start_position_text_shake_device),
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
@@ -367,11 +377,13 @@ private fun WaitingToSpinState(
             Spacer(Modifier.height(40.dp))
             Button(
                 onClick = onSimulateShake,
-                modifier = Modifier.fillMaxWidth(0.75f).height(52.dp),
+                modifier = Modifier
+                    .fillMaxWidth(0.75f)
+                    .height(52.dp),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
             ) {
-                Text("Schütteln simulieren", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                Text(stringResource(R.string.button_simulate_shaking), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
             }
             Spacer(Modifier.height(12.dp))
             Button(
@@ -379,7 +391,7 @@ private fun WaitingToSpinState(
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A1A00))
             ) {
-                Text("🔧 Schummelmodus simulieren", fontSize = 13.sp, color = Color(0xFFFF9944))
+                Text(stringResource(R.string.button_cheat), fontSize = 13.sp, color = Color(0xFFFF9944))
             }
         }
     }
@@ -408,12 +420,16 @@ private fun SpinnerAutoState(
     if (isLandscape) {
         // ── Landscape: wheel left, info + button right ──────────────────────────
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 8.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Left: spinner wheel
             Box(
-                modifier = Modifier.weight(0.4f).fillMaxHeight(),
+                modifier = Modifier
+                    .weight(0.4f)
+                    .fillMaxHeight(),
                 contentAlignment = Alignment.Center
             ) {
                 SpinnerWheelPicker(
@@ -428,12 +444,17 @@ private fun SpinnerAutoState(
             }
             // Right: title, result, button
             Column(
-                modifier = Modifier.weight(0.6f).fillMaxHeight().padding(start = 24.dp),
+                modifier = Modifier
+                    .weight(0.6f)
+                    .fillMaxHeight()
+                    .padding(start = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = if (isSpinComplete) "🎯 Deine Startposition!" else "Startposition wird gewürfelt…",
+                    text = if (isSpinComplete) stringResource(R.string.title_your_start_position) else stringResource(
+                        R.string.status_rolling_start_position
+                    ),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
@@ -442,7 +463,7 @@ private fun SpinnerAutoState(
                 Spacer(Modifier.height(16.dp))
                 if (isSpinComplete) {
                     Text(
-                        text = "Station  $targetPosition",
+                        text = stringResource(R.string.text_station, targetPosition),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFCCCCCC),
@@ -451,11 +472,13 @@ private fun SpinnerAutoState(
                     Spacer(Modifier.height(20.dp))
                     Button(
                         onClick = onConfirm,
-                        modifier = Modifier.fillMaxWidth(0.75f).height(52.dp),
+                        modifier = Modifier
+                            .fillMaxWidth(0.75f)
+                            .height(52.dp),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
                     ) {
-                        Text("Bestätigen", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                        Text(stringResource(R.string.button_confirm), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
                     }
                 } else {
                     CircularProgressIndicator(modifier = Modifier.size(28.dp), color = Color.White, strokeWidth = 2.dp)
@@ -466,14 +489,20 @@ private fun SpinnerAutoState(
         // ── Portrait: content scrollable, button pinned at bottom ───────────────
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
             ) {
                 Text(
-                    text = if (isSpinComplete) "🎯 Deine Startposition!" else "Startposition wird gewürfelt…",
+                    text = if (isSpinComplete) stringResource(R.string.title_your_start_position) else stringResource(
+                        R.string.status_rolling_start_position
+                    ),
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
@@ -491,7 +520,7 @@ private fun SpinnerAutoState(
                 )
                 Spacer(Modifier.height(24.dp))
                 if (isSpinComplete) {
-                    Text(text = "Station  $targetPosition", fontSize = 20.sp, color = Color(0xFFCCCCCC), textAlign = TextAlign.Center)
+                    Text(text = stringResource(R.string.text_station, targetPosition), fontSize = 20.sp, color = Color(0xFFCCCCCC), textAlign = TextAlign.Center)
                 } else {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
                 }
@@ -501,11 +530,13 @@ private fun SpinnerAutoState(
             AnimatedVisibility(visible = isSpinComplete) {
                 Button(
                     onClick = onConfirm,
-                    modifier = Modifier.fillMaxWidth(0.7f).height(52.dp),
+                    modifier = Modifier
+                        .fillMaxWidth(0.7f)
+                        .height(52.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
                 ) {
-                    Text("Bestätigen", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text(stringResource(R.string.button_confirm), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -528,12 +559,16 @@ private fun CheatModeSpinnerState(
     if (isLandscape) {
         // ── Landscape: wheel left, controls right ───────────────────────────────
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 8.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Left: wheel with cheat border
             Box(
-                modifier = Modifier.weight(0.4f).fillMaxHeight(),
+                modifier = Modifier
+                    .weight(0.4f)
+                    .fillMaxHeight(),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
@@ -549,38 +584,49 @@ private fun CheatModeSpinnerState(
                         triggerSpin = false,
                         onSpinComplete = {},
                         onSelectionChanged = onSelectionChanged,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp)
                     )
                 }
             }
             // Right: badge, title, station info, button
             Column(
-                modifier = Modifier.weight(0.6f).fillMaxHeight().padding(start = 24.dp),
+                modifier = Modifier
+                    .weight(0.6f)
+                    .fillMaxHeight()
+                    .padding(start = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
                 Box(
-                    modifier = Modifier.background(Color(0xFFFF6B00), RoundedCornerShape(8.dp)).padding(horizontal = 16.dp, vertical = 6.dp)
+                    modifier = Modifier
+                        .background(Color(0xFFFF6B00), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
                 ) {
-                    Text(text = "🔧  SCHUMMELMODUS AKTIV", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(text = stringResource(R.string.status_cheat_active), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
                 Spacer(Modifier.height(16.dp))
-                Text(text = "Wähle deine Startposition", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
-                Text(text = "Drehe das Rad und bestätige", fontSize = 12.sp, color = Color(0xFFCCCCCC), textAlign = TextAlign.Center)
+                Text(text = stringResource(R.string.title_choose_start_position), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
+                Text(text = stringResource(R.string.text_spin_and_confirm), fontSize = 12.sp, color = Color(0xFFCCCCCC), textAlign = TextAlign.Center)
                 Spacer(Modifier.height(16.dp))
                 Box(
-                    modifier = Modifier.background(Color(0x33FF6B00), RoundedCornerShape(8.dp)).padding(horizontal = 20.dp, vertical = 8.dp)
+                    modifier = Modifier
+                        .background(Color(0x33FF6B00), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 20.dp, vertical = 8.dp)
                 ) {
-                    Text(text = "Station  $selectedPosition", fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text(text = stringResource(R.string.text_station, selectedPosition), fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
                 }
                 Spacer(Modifier.height(20.dp))
                 Button(
                     onClick = onConfirm,
-                    modifier = Modifier.fillMaxWidth(0.85f).height(52.dp),
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .height(52.dp),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
                 ) {
-                    Text("Station $selectedPosition bestätigen", fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text(stringResource(R.string.button_confirm_station, selectedPosition), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
                 }
             }
         }
@@ -588,20 +634,26 @@ private fun CheatModeSpinnerState(
         // ── Portrait: content scrollable, button pinned at bottom ───────────────
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 16.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
+                modifier = Modifier
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
             ) {
                 Box(
-                    modifier = Modifier.background(Color(0xFFFF6B00), RoundedCornerShape(8.dp)).padding(horizontal = 16.dp, vertical = 6.dp)
+                    modifier = Modifier
+                        .background(Color(0xFFFF6B00), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
                 ) {
-                    Text(text = "🔧  SCHUMMELMODUS AKTIV", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text(text = stringResource(R.string.status_cheat_active), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
                 Spacer(Modifier.height(20.dp))
-                Text(text = "Wähle deine Startposition", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
-                Text(text = "Drehe das Rad und bestätige deine Wahl", fontSize = 13.sp, color = Color(0xFFCCCCCC), textAlign = TextAlign.Center)
+                Text(text = stringResource(R.string.title_choose_start_position), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
+                Text(text = stringResource(R.string.text_spin_and_confirm), fontSize = 13.sp, color = Color(0xFFCCCCCC), textAlign = TextAlign.Center)
                 Spacer(Modifier.height(24.dp))
                 Box(
                     modifier = Modifier
@@ -616,25 +668,31 @@ private fun CheatModeSpinnerState(
                         triggerSpin = false,
                         onSpinComplete = {},
                         onSelectionChanged = onSelectionChanged,
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 4.dp)
                     )
                 }
                 Spacer(Modifier.height(24.dp))
                 Box(
-                    modifier = Modifier.background(Color(0x33FF6B00), RoundedCornerShape(8.dp)).padding(horizontal = 24.dp, vertical = 8.dp)
+                    modifier = Modifier
+                        .background(Color(0x33FF6B00), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 24.dp, vertical = 8.dp)
                 ) {
-                    Text(text = "Station  $selectedPosition  ausgewählt", fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text(text = stringResource(R.string.button_confirm_station, selectedPosition), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
                 }
                 Spacer(Modifier.height(16.dp))
             }
             Spacer(Modifier.height(12.dp))
             Button(
                 onClick = onConfirm,
-                modifier = Modifier.fillMaxWidth(0.75f).height(52.dp),
+                modifier = Modifier
+                    .fillMaxWidth(0.75f)
+                    .height(52.dp),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
             ) {
-                Text("Station $selectedPosition bestätigen", fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                Text(stringResource(R.string.button_confirm_station, selectedPosition), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
             }
             Spacer(Modifier.height(8.dp))
         }

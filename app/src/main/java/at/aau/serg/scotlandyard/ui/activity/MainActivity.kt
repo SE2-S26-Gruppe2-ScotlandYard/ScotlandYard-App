@@ -1,11 +1,11 @@
 package at.aau.serg.scotlandyard.ui.activity
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.focusable
@@ -37,18 +37,20 @@ import at.aau.serg.scotlandyard.viewmodel.GameViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import androidx.compose.runtime.collectAsState
 import android.util.Log
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
+import at.aau.serg.scotlandyard.data.*
+import at.aau.serg.scotlandyard.network.ServerConfig
+import com.example.scotlandyard.R
+import androidx.activity.compose.BackHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : ComponentActivity() {
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         BoardConnection.init(this)
+        ServerConfig.init(this)
         enableEdgeToEdge()
 
         window.insetsController?.let { controller ->
@@ -58,69 +60,79 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            ScotlandYardTheme { ScotlandYardApp(activity = this) }
+            ScotlandYardTheme { ScotlandYardApp() }
         }
     }
 }
 
+@SuppressLint("LocalContextGetResourceValueCall")
 @Composable
-private fun ScotlandYardApp(activity: MainActivity) {
+private fun ScotlandYardApp() {
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .focusRequester(focusRequester)
-            .focusable()
-            .onPreviewKeyEvent { event ->
-                // Block hardware back button (KEYCODE_BACK = 4)
-                if (event.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_BACK) {
-                    return@onPreviewKeyEvent true  // Consume the event
+    val context = LocalContext.current
+    var currentLang by remember { mutableStateOf(context.getLanguagePreference()) }
+    val localizedContext = remember(currentLang) { context.applyLanguage(currentLang) }
+
+    CompositionLocalProvider(LocalContext provides localizedContext) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .focusRequester(focusRequester)
+                .focusable()
+                .onPreviewKeyEvent { event ->
+                    if (event.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_BACK) {
+                        return@onPreviewKeyEvent true
+                    }
+                    if (event.type == KeyEventType.KeyDown) {
+                        CheatKeyEventRegistry.notify(event.nativeKeyEvent)
+                    }
+                    false
                 }
-                if (event.type == KeyEventType.KeyDown) {
-                    CheatKeyEventRegistry.notify(event.nativeKeyEvent)
+        ) {
+            val authViewModel: AuthViewModel = viewModel()
+            val isConnected by authViewModel.isConnected.collectAsState()
+            val currentUser by authViewModel.currentUser.collectAsState()
+            val errorMessage by authViewModel.errorMessage.collectAsState()
+
+            val navController = rememberNavController()
+
+            var sharedLobbyViewModel by remember { mutableStateOf<LobbyViewModel?>(null) }
+
+            val currentBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentRoute = currentBackStackEntry?.destination?.route
+
+            LaunchedEffect(isConnected) {
+                if (!isConnected && currentRoute != null
+                    && currentRoute != "start" && currentRoute != "login"
+                    && currentRoute != "settings") {
+                    Toast.makeText(context,
+                        context.getString(R.string.toast_connection_lost), Toast.LENGTH_LONG).show()
+                    navController.navigate("start") { popUpTo(0) }
                 }
-                false
             }
-    ) {
-        val authViewModel: AuthViewModel = viewModel()
-        val isConnected by authViewModel.isConnected.collectAsState()
-        val currentUser by authViewModel.currentUser.collectAsState()
-        val errorMessage by authViewModel.errorMessage.collectAsState()
 
-        val navController = rememberNavController()
-        val context = LocalContext.current
-
-        var sharedLobbyViewModel by remember { mutableStateOf<LobbyViewModel?>(null) }
-
-        val currentBackStackEntry by navController.currentBackStackEntryAsState()
-        val currentRoute = currentBackStackEntry?.destination?.route
-
-        LaunchedEffect(isConnected) {
-            if (!isConnected && currentRoute != null
-                && currentRoute != "start" && currentRoute != "login") {
-                Toast.makeText(context, "Verbindung verloren!", Toast.LENGTH_LONG).show()
-                navController.navigate("start") { popUpTo(0) }
+            LaunchedEffect(errorMessage) {
+                errorMessage?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
             }
+
+            AppNavHost(
+                navController = navController,
+                authViewModel = authViewModel,
+                isConnected = isConnected,
+                currentUser = currentUser,
+                currentRoute = currentRoute,
+                sharedLobbyViewModel = sharedLobbyViewModel,
+                onSharedLobbyViewModelChange = { sharedLobbyViewModel = it },
+                onLanguageChange = { lang ->
+                    context.saveLanguagePreference(lang)
+                    currentLang = lang
+                }
+            )
+            // Registered after NavHost so it wins in LIFO order — blocks all hardware back presses.
+            BackHandler(enabled = true) {}
         }
-
-        LaunchedEffect(errorMessage) {
-            errorMessage?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
-        }
-
-        AppNavHost(
-            navController = navController,
-            authViewModel = authViewModel,
-            isConnected = isConnected,
-            currentUser = currentUser,
-            currentRoute = currentRoute,
-            sharedLobbyViewModel = sharedLobbyViewModel,
-            onSharedLobbyViewModelChange = { sharedLobbyViewModel = it }
-        )
-
-        // Registered after NavHost so it wins in LIFO order — blocks all hardware back presses.
-        BackHandler(enabled = true) {}
     }
 }
 
@@ -132,20 +144,27 @@ private fun AppNavHost(
     currentUser: User?,
     currentRoute: String?,
     sharedLobbyViewModel: LobbyViewModel?,
-    onSharedLobbyViewModelChange: (LobbyViewModel) -> Unit
+    onSharedLobbyViewModelChange: (LobbyViewModel) -> Unit,
+    onLanguageChange: (String) -> Unit
 ) {
     NavHost(navController = navController, startDestination = "start") {
         composable("start") {
+            val isNavigating = remember { mutableStateOf(false) }
+            LaunchedEffect(isNavigating.value) {
+                if (isNavigating.value) { delay(500.milliseconds); isNavigating.value = false }
+            }
             StartScreen(
-                onStartGame = { navController.navigate("login") },
-                onRules     = { navController.navigate("rules") },
-                onSettings  = { navController.navigate("settings") }
+                onStartGame = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("login") } },
+                onRules     = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("rules") } },
+                onSettings  = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("settings") } }
             )
         }
 
         composable("login") {
             val isNavigating = remember { mutableStateOf(false) }
-
+            LaunchedEffect(isNavigating.value) {
+                if (isNavigating.value) { delay(500.milliseconds); isNavigating.value = false }
+            }
             LaunchedEffect(currentUser) {
                 if (currentUser != null) {
                     navController.navigate("lobby") {
@@ -153,14 +172,6 @@ private fun AppNavHost(
                     }
                 }
             }
-
-            LaunchedEffect(isNavigating.value) {
-                if (isNavigating.value) {
-                    delay(500.milliseconds)
-                    isNavigating.value = false
-                }
-            }
-
             LoginScreen(
                 onConnectClick      = { nickname -> authViewModel.connectUser(nickname) },
                 onBackClick         = {
@@ -176,14 +187,9 @@ private fun AppNavHost(
 
         composable("rules") {
             val isNavigating = remember { mutableStateOf(false) }
-
             LaunchedEffect(isNavigating.value) {
-                if (isNavigating.value) {
-                    delay(500.milliseconds)
-                    isNavigating.value = false
-                }
+                if (isNavigating.value) { delay(500.milliseconds); isNavigating.value = false }
             }
-
             RulesScreen(onBackClick = {
                 if (!isNavigating.value && navController.previousBackStackEntry != null) {
                     isNavigating.value = true
@@ -194,15 +200,10 @@ private fun AppNavHost(
 
         composable("lobby") {
             val isNavigating = remember { mutableStateOf(false) }
-            val user = currentUser
-
             LaunchedEffect(isNavigating.value) {
-                if (isNavigating.value) {
-                    delay(500.milliseconds)
-                    isNavigating.value = false
-                }
+                if (isNavigating.value) { delay(500.milliseconds); isNavigating.value = false }
             }
-
+            val user = currentUser
             if (user != null) {
                 LobbyScreen(
                     authViewModel = authViewModel,
@@ -236,20 +237,19 @@ private fun AppNavHost(
 
         composable("settings") {
             val isNavigating = remember { mutableStateOf(false) }
-
             LaunchedEffect(isNavigating.value) {
-                if (isNavigating.value) {
-                    delay(500.milliseconds)
-                    isNavigating.value = false
-                }
+                if (isNavigating.value) { delay(500.milliseconds); isNavigating.value = false }
             }
-
-            SettingsScreen(onBackClick = {
-                if (!isNavigating.value && navController.previousBackStackEntry != null) {
-                    isNavigating.value = true
-                    navController.popBackStack()
-                }
-            })
+            SettingsScreen(
+                onBackClick = {
+                    if (!isNavigating.value && navController.previousBackStackEntry != null) {
+                        isNavigating.value = true
+                        navController.popBackStack()
+                    }
+                },
+                onLanguageChange = { lang -> onLanguageChange(lang) },
+                onServerChange = { authViewModel.reconnect() }
+            )
         }
 
         composable(
@@ -260,17 +260,12 @@ private fun AppNavHost(
             )
         ) { backStackEntry ->
             val isNavigating = remember { mutableStateOf(false) }
+            LaunchedEffect(isNavigating.value) {
+                if (isNavigating.value) { delay(500.milliseconds); isNavigating.value = false }
+            }
             val gameId   = backStackEntry.arguments?.getString("gameId")   ?: ""
             val playerId = backStackEntry.arguments?.getString("playerId") ?: ""
             val lobbyVm  = sharedLobbyViewModel
-
-            LaunchedEffect(isNavigating.value) {
-                if (isNavigating.value) {
-                    delay(500.milliseconds)
-                    isNavigating.value = false
-                }
-            }
-
             AssignStartPositionScreen(
                 gameId   = gameId,
                 playerId = playerId,
@@ -339,9 +334,9 @@ private fun GameBoardRoute(
     LaunchedEffect(gameId) {
         gameViewModel.gameStompService.subscribe(gameId)
         gameViewModel.isConnected.first { it }
-        delay(600.milliseconds)
+        delay(600)
         gameViewModel.requestGameState(gameId)
-        delay(3.seconds)
+        delay(3_000)
         if (gameViewModel.gameState.value == null) {
             Log.d("MainActivity", "GameState still null after 3 s – retrying requestGameState")
             gameViewModel.requestGameState(gameId)
@@ -411,15 +406,7 @@ private fun GameBoardRoute(
 
 @Composable
 private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostController) {
-    val isNavigating = remember { mutableStateOf(false) }
     val lobby by lobbyVm.currentLobby.collectAsState()
-
-    LaunchedEffect(isNavigating.value) {
-        if (isNavigating.value) {
-            delay(500.milliseconds)
-            isNavigating.value = false
-        }
-    }
 
     LaunchedEffect(lobbyVm) {
         lobbyVm.navigateToGame.collect { gameId ->
@@ -439,6 +426,11 @@ private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostCo
                 navController.popBackStack()
             }
         }
+    }
+
+    val isNavigating = remember { mutableStateOf(false) }
+    LaunchedEffect(isNavigating.value) {
+        if (isNavigating.value) { delay(500.milliseconds); isNavigating.value = false }
     }
 
     if (lobby != null) {

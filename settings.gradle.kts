@@ -22,5 +22,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "WebSocketBrokerApp"
+rootProject.name = "ScotlandYardApp"
 include(":app")

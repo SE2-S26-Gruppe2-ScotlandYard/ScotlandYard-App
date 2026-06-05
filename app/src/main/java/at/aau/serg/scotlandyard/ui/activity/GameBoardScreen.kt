@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -73,6 +74,7 @@ import at.aau.serg.scotlandyard.ui.components.BOARD_WIDTH_DP
 import at.aau.serg.scotlandyard.ui.components.GameBoardCanvas
 import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
+import com.example.scotlandyard.R
 import kotlin.math.abs
 
 /**
@@ -152,7 +154,7 @@ fun GameBoardScreen(
                     .padding(horizontal = 16.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "Double Move active – tap a station to use",
+                    text = stringResource(R.string.banner_double_move_hint),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = AccentGlow,
@@ -172,7 +174,10 @@ fun GameBoardScreen(
                     .padding(horizontal = 16.dp, vertical = 6.dp)
             ) {
                 Text(
-                    text = "Mr. X was spotted at station $currentRevealPosition!",
+                    text = stringResource(
+                        R.string.banner_mrx_position_reveal,
+                        currentRevealPosition
+                    ),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
@@ -261,7 +266,7 @@ private fun MenuCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Menu",
+                    text = stringResource(R.string.title_menu),
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 3.sp,
@@ -276,7 +281,7 @@ private fun MenuCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Close menu",
+                        contentDescription = stringResource(R.string.button_close),
                         tint = TextPrimary,
                         modifier = Modifier.size(18.dp)
                     )
@@ -294,7 +299,7 @@ private fun MenuCard(
             // Menu entries
             MenuItem(
                 icon = Icons.Default.Settings,
-                label = "Settings",
+                label = stringResource(R.string.title_settings),
                 onClick = onNavigateToSettings
             )
 
@@ -395,7 +400,7 @@ private fun MrXHistoryCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Mr. X Moves",
+                    text = stringResource(R.string.title_mrx_moves),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 2.sp,
@@ -409,7 +414,7 @@ private fun MrXHistoryCard(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Close",
+                        contentDescription = stringResource(R.string.button_close),
                         tint = TextPrimary,
                         modifier = Modifier.size(18.dp)
                     )
@@ -426,7 +431,7 @@ private fun MrXHistoryCard(
 
             if (moveHistory.isEmpty()) {
                 Text(
-                    text = "No moves yet",
+                    text = stringResource(R.string.text_no_moves_yet),
                     fontSize = 13.sp,
                     color = TextMuted,
                     textAlign = TextAlign.Center,
@@ -437,7 +442,7 @@ private fun MrXHistoryCard(
                 val rows = displayedMoves.chunked(3)
 
                 Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState()),  // ← scrollable
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     rows.forEachIndexed { rowIndex, rowItems ->
@@ -497,10 +502,10 @@ private fun MrXHistoryTicketChip(
     modifier: Modifier = Modifier
 ) {
     val (color, label) = when (ticket) {
-        "WALKING" -> Pair(WalkingColor, "Walking")
-        "ESCOOTER" -> Pair(EScooterColor, "E-Scooter")
-        "CARSHARING" -> Pair(CarSharingColor,"Car Sharing")
-        "BLACK" -> Pair(BlackColor, "Black")
+        "WALKING" -> Pair(WalkingColor, stringResource(R.string.ticket_walking))
+        "ESCOOTER" -> Pair(EScooterColor, stringResource(R.string.ticket_escooter))
+        "CARSHARING" -> Pair(CarSharingColor, stringResource(R.string.ticket_car_sharing))
+        "BLACK" -> Pair(BlackColor, stringResource(R.string.ticket_black))
         else -> Pair(Color.Gray, ticket)
     }
 
@@ -588,7 +593,7 @@ private fun SidePanel(
 
         // Role label
         Text(
-            text = if (isMrX) "MR. X" else "DETECTIVE",
+            text = if (isMrX) stringResource(R.string.role_mrx) else stringResource(R.string.role_detective),
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 2.sp,
@@ -634,7 +639,7 @@ private fun SidePanel(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "Mr. X Moves",
+                    text = stringResource(R.string.title_mrx_moves),
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFFF090F5),
@@ -647,7 +652,7 @@ private fun SidePanel(
         if (selectedTicket != null) {
             val style = TicketStyleProvider.fromType(selectedTicket)
             Text(
-                text = "${style.label}\nselected",
+                text = stringResource(R.string.hint_ticket_selected, style.label),
                 fontSize = 10.sp,
                 color = AccentGlow,
                 textAlign = TextAlign.Center,
@@ -666,7 +671,7 @@ private fun MenuButton(onClick: () -> Unit) {
     ) {
         Icon(
             imageVector = Icons.Default.Menu,
-            contentDescription = "Menu",
+            contentDescription = stringResource(R.string.title_menu),
             tint = TextPrimary,
             modifier = Modifier.size(22.dp)
         )
@@ -684,7 +689,7 @@ private fun RoundCounter(current: Int, total: Int) {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = "ROUND",
+                text = stringResource(R.string.title_round),
                 fontSize = 8.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.5.sp,
@@ -769,7 +774,7 @@ private fun SidePanelTicketButton(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = if (count == Int.MAX_VALUE) "∞" else count.toString(),
+                    text = if (count == Int.MAX_VALUE) stringResource(R.string.char_unlimited) else count.toString(),
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace,
@@ -873,7 +878,7 @@ private fun BoardArea(
 
         // Usability hint
         Text(
-            text = "Pinch to zoom - Drag to pan",
+            text = stringResource(R.string.hint_usability),
             fontSize = 10.sp,
             color = TextMuted.copy(alpha = 0.5f),
             modifier = Modifier

@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -83,7 +84,7 @@ fun LoginScreen(
             IconButton(onClick = onBackClick) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.button_back),
                     tint = Color.White
                 )
             }
@@ -106,7 +107,7 @@ fun LoginScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (isConnectedToServer) "Connected" else "Disconnected",
+                        text = if (isConnectedToServer) stringResource(R.string.status_connected) else stringResource(R.string.status_disconnected),
                         color = Color.White,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
@@ -119,7 +120,7 @@ fun LoginScreen(
                 IconButton(onClick = onRefreshClick) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
-                        contentDescription = "Refresh Connection",
+                        contentDescription = stringResource(R.string.button_refresh_connection),
                         tint = Color.White
                     )
                 }
@@ -135,7 +136,7 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "NICKNAME",
+                text = stringResource(R.string.title_nickname),
                 fontSize = 40.sp,
                 fontWeight = FontWeight.Bold,
                 fontFamily = FontFamily.Serif,
@@ -149,7 +150,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = nickname,
                 onValueChange = { nickname = it },
-                label = { Text("Choose your Nickname", color = Color.LightGray) },
+                label = { Text(stringResource(R.string.description_nickname), color = Color.LightGray) },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.White,
                     unfocusedBorderColor = Color.LightGray,
@@ -184,7 +185,7 @@ fun LoginScreen(
                 enabled = nickname.isNotBlank() && isConnectedToServer // <-- Fix here
             ) {
                 Text(
-                    text = "Connect",
+                    text = stringResource(R.string.button_connect),
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = if (nickname.isNotBlank() && isConnectedToServer) Color.White else Color.LightGray // <-- Fix here

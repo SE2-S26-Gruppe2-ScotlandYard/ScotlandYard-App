@@ -16,12 +16,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 private val NavigationIconTint = Color(0xFFE0E0E0)
 private val ActionButtonColor = Color(0xFF1A4A3A)
@@ -36,20 +37,16 @@ fun AppBackButton(
 ) {
     val isEnabled = remember { mutableStateOf(true) }
     val scope = rememberCoroutineScope()
-
     IconButton(
         onClick = {
             if (isEnabled.value) {
                 isEnabled.value = false
                 onClick()
-                scope.launch {
-                    delay(500) // Debounce delay
-                    isEnabled.value = true
-                }
+                scope.launch { delay(500.milliseconds); isEnabled.value = true }
             }
         },
-        modifier = modifier,
-        enabled = isEnabled.value
+        enabled = isEnabled.value,
+        modifier = modifier.then(Modifier.then(Modifier))
     ) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -66,8 +63,17 @@ fun AppSettingsButton(
     modifier: Modifier = Modifier,
     contentDescription: String = "Settings"
 ) {
+    val isEnabled = remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
     IconButton(
-        onClick = onClick,
+        onClick = {
+            if (isEnabled.value) {
+                isEnabled.value = false
+                onClick()
+                scope.launch { delay(500.milliseconds); isEnabled.value = true }
+            }
+        },
+        enabled = isEnabled.value,
         modifier = modifier
     ) {
         Icon(
@@ -114,8 +120,16 @@ private fun AppStyledActionButton(
     modifier: Modifier = Modifier,
     containerColor: Color
 ) {
+    val isEnabled = remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
     Button(
-        onClick = onClick,
+        onClick = {
+            if (isEnabled.value) {
+                isEnabled.value = false
+                onClick()
+                scope.launch { delay(500.milliseconds); isEnabled.value = true }
+            }
+        },
         modifier = modifier
             .height(52.dp)
             .border(

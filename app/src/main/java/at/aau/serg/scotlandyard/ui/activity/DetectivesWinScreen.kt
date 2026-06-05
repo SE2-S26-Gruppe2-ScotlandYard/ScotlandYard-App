@@ -1,6 +1,7 @@
 package at.aau.serg.scotlandyard.ui.activity
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import com.example.scotlandyard.R
@@ -20,7 +21,7 @@ fun DetectivesWinScreen(
     onQuit: () -> Unit
 ) {
     BaseWinScreen(
-        messageText = "Mr. X has been caught",
+        messageText = stringResource(R.string.text_detectives_victory),
         backgroundImageRes = R.drawable.detectives_win_bg,
         onBackClick = onBackClick,
         onQuit = onQuit

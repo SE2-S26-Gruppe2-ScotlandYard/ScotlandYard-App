@@ -1,5 +1,6 @@
 package at.aau.serg.scotlandyard.ui.activity
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,10 +16,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults.colors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,11 +41,21 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import at.aau.serg.scotlandyard.data.getDisplayModePreference
+import at.aau.serg.scotlandyard.data.getLanguagePreference
+import at.aau.serg.scotlandyard.data.getServerUriCustomPreference
+import at.aau.serg.scotlandyard.data.getServerUriTypePreference
+import at.aau.serg.scotlandyard.data.saveDisplayModePreference
+import at.aau.serg.scotlandyard.data.saveLanguagePreference
+import at.aau.serg.scotlandyard.data.saveServerUriCustomPreference
+import at.aau.serg.scotlandyard.data.saveServerUriTypePreference
 import at.aau.serg.scotlandyard.model.BoardDisplayMode
+import at.aau.serg.scotlandyard.network.ServerConfig
 import at.aau.serg.scotlandyard.ui.theme.AccentGlow
 import at.aau.serg.scotlandyard.ui.theme.AccentTeal
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
@@ -46,28 +64,31 @@ import at.aau.serg.scotlandyard.ui.theme.SidebarBorder
 import at.aau.serg.scotlandyard.ui.theme.TextMuted
 import at.aau.serg.scotlandyard.ui.theme.TextPrimary
 import com.example.scotlandyard.R
-import at.aau.serg.scotlandyard.data.getDisplayModePreference
-import at.aau.serg.scotlandyard.data.saveDisplayModePreference
 
-private enum class SettingsCategory(val label: String, val icon: ImageVector) {
-    GAMEBOARD("Gameboard", Icons.Default.Map)
+private enum class SettingsCategory(@StringRes val labelRes: Int, val icon: ImageVector) {
+    GAMEBOARD(R.string.title_gameboard, Icons.Default.Map),
+    LANGUAGE(R.string.title_language, Icons.Default.Language),
+    SERVER(R.string.title_server, Icons.Default.Wifi)
 }
+
+private val selectedFactor = 0.86f
 
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
-    onDisplayModeChange: (BoardDisplayMode) -> Unit = {}
+    onDisplayModeChange: (BoardDisplayMode) -> Unit = {},
+    onLanguageChange: (String) -> Unit = {},
+    onServerChange: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var selectedCategory by remember { mutableStateOf(SettingsCategory.GAMEBOARD) }
     var displayMode by remember { mutableStateOf(context.getDisplayModePreference()) }
+    var selectedLanguage by remember { mutableStateOf(context.getLanguagePreference()) }
+    var serverUriType by remember { mutableStateOf(context.getServerUriTypePreference()) }
+    var serverUriCustom by remember { mutableStateOf(context.getServerUriCustomPreference()) }
 
-    BaseScreen(onBackClick = onBackClick) { _ ->
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 8.dp)
-        ) {
+    BaseScreen(onBackClick = onBackClick, title = stringResource(R.string.title_settings)) { _ ->
+        Row(modifier = Modifier.fillMaxSize()) {
             SettingsSidebar(
                 selected = selectedCategory,
                 onSelect = { selectedCategory = it }
@@ -77,7 +98,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .padding(start = 24.dp, end = 16.dp, top = 8.dp, bottom = 16.dp)
+                    .padding(start = 24.dp, end = 16.dp, top = 4.dp, bottom = 8.dp)
             ) {
                 when (selectedCategory) {
                     SettingsCategory.GAMEBOARD -> GameboardSettingsContent(
@@ -86,6 +107,31 @@ fun SettingsScreen(
                             displayMode = mode
                             context.saveDisplayModePreference(mode)
                             onDisplayModeChange(mode)
+                        }
+                    )
+
+                    SettingsCategory.LANGUAGE -> LanguageSettingsContent(
+                        selectedLanguage = selectedLanguage,
+                        onLanguageChange = { lang ->
+                            selectedLanguage = lang
+                            context.saveLanguagePreference(lang)
+                            onLanguageChange(lang)
+                        }
+                    )
+
+                    SettingsCategory.SERVER -> ServerSettingsContent(
+                        uriType = serverUriType,
+                        customUri = serverUriCustom,
+                        onUriTypeChange = { type ->
+                            serverUriType = type
+                            context.saveServerUriTypePreference(type)
+                            ServerConfig.init(context)
+                            onServerChange()
+                        },
+                        onCustomUriChange = { uri ->
+                            serverUriCustom = uri
+                            context.saveServerUriCustomPreference(uri)
+                            if (serverUriType == "DEVICE") ServerConfig.init(context)
                         }
                     )
                 }
@@ -103,17 +149,14 @@ private fun SettingsSidebar(
         modifier = Modifier
             .width(160.dp)
             .fillMaxHeight()
-            .background(SidebarBg)
-            .border(
-                width = 1.dp,
-                color = SidebarBorder,
-                shape = RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)
-            )
-            .padding(vertical = 16.dp, horizontal = 8.dp),
+            .padding(bottom = 8.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SidebarBg.copy(alpha = 0.82f))
+            .padding(top = 16.dp, bottom = 16.dp, start = 8.dp, end = 8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
-            text = "SETTINGS",
+            text = stringResource(R.string.title_settings),
             fontSize = 9.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 1.5.sp,
@@ -125,7 +168,7 @@ private fun SettingsSidebar(
 
         SettingsCategory.entries.forEach { category ->
             SidebarItem(
-                label = category.label,
+                label = stringResource(category.labelRes),
                 icon = category.icon,
                 isSelected = category == selected,
                 onClick = { onSelect(category) }
@@ -152,11 +195,17 @@ private fun SidebarItem(
             .clip(RoundedCornerShape(8.dp))
             .background(bgColor)
             .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp),
+            .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
+        Box(
+            modifier = Modifier
+                .width(3.dp)
+                .fillMaxHeight()
+                .background(if (isSelected) AccentGlow else Color.Transparent)
+        )
+        Spacer(modifier = Modifier.width(9.dp))
         Icon(
             imageVector = icon,
             contentDescription = null,
@@ -174,6 +223,29 @@ private fun SidebarItem(
 }
 
 @Composable
+private fun SettingsSectionHeader(icon: ImageVector, title: String, subtitle: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .background(AccentTeal.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                .border(1.dp, AccentGlow.copy(alpha = 0.4f), RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = AccentGlow, modifier = Modifier.size(22.dp))
+        }
+        Spacer(modifier = Modifier.width(14.dp))
+        Column {
+            Text(text = title, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(text = subtitle, fontSize = 12.sp, color = TextMuted)
+        }
+    }
+    Spacer(modifier = Modifier.height(12.dp))
+    HorizontalDivider(color = AccentGlow.copy(alpha = 0.25f), thickness = 1.dp)
+    Spacer(modifier = Modifier.height(20.dp))
+}
+
+@Composable
 private fun GameboardSettingsContent(
     displayMode: BoardDisplayMode,
     onModeChange: (BoardDisplayMode) -> Unit
@@ -182,21 +254,10 @@ private fun GameboardSettingsContent(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Top
     ) {
-
-        // Titel
-        Text(
-            text = "Gameboard",
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
-
-        Text(
-            text = "Select a gameboard display option.",
-            fontSize = 12.sp,
-            color = TextMuted,
-            modifier = Modifier.padding(bottom = 20.dp)
+        SettingsSectionHeader(
+            icon = Icons.Default.Map,
+            title = stringResource(R.string.title_gameboard),
+            subtitle = stringResource(R.string.settings_description_display_option)
         )
 
         Row(
@@ -205,8 +266,8 @@ private fun GameboardSettingsContent(
         ) {
             DisplayModeOption(
                 modifier = Modifier.weight(1f),
-                title = "Graph",
-                description = "Draw nodes and edges",
+                title = stringResource(R.string.settings_gameboard_graph),
+                description = stringResource(R.string.settings_gameboard_description_graph),
                 previewImageRes = R.drawable.graph_preview,
                 isSelected = displayMode == BoardDisplayMode.GRAPH,
                 onClick = { onModeChange(BoardDisplayMode.GRAPH) }
@@ -214,8 +275,8 @@ private fun GameboardSettingsContent(
 
             DisplayModeOption(
                 modifier = Modifier.weight(1f),
-                title = "Map",
-                description = "Map as background",
+                title = stringResource(R.string.settings_gameboard_map),
+                description = stringResource(R.string.settings_gameboard_description_map),
                 previewImageRes = R.drawable.map,
                 isSelected = displayMode == BoardDisplayMode.MAP,
                 onClick = { onModeChange(BoardDisplayMode.MAP) }
@@ -235,7 +296,7 @@ private fun DisplayModeOption(
 ) {
     val borderColor = if (isSelected) AccentGlow else SidebarBorder
     val borderWidth = if (isSelected) 2.dp else 1.dp
-    val bgColor = if (isSelected) AccentTeal.copy(alpha = 0.18f) else SidebarBg
+    val bgColor = if (isSelected) AccentTeal.copy(alpha = selectedFactor) else SidebarBg
 
     Column(
         modifier = modifier
@@ -277,7 +338,7 @@ private fun DisplayModeOption(
                         .background(AccentGlow, RoundedCornerShape(50))
                 ) {
                     Text(
-                        text = "✓",
+                        text = stringResource(R.string.checkmark),
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
@@ -304,6 +365,186 @@ private fun DisplayModeOption(
         )
     }
 }
+
+@Composable
+private fun LanguageSettingsContent(
+    selectedLanguage: String,
+    onLanguageChange: (String) -> Unit
+) {
+    val languages = listOf(
+        "en" to "English",
+        "de" to "Deutsch"
+    )
+
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
+        SettingsSectionHeader(
+            icon = Icons.Default.Language,
+            title = stringResource(R.string.title_language),
+            subtitle = stringResource(R.string.settings_language_description)
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            languages.forEach { (code, name) ->
+                LanguageOption(
+                    modifier = Modifier.weight(1f),
+                    languageName = name,
+                    languageCode = code,
+                    isSelected = selectedLanguage == code,
+                    onClick = { onLanguageChange(code) }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = stringResource(R.string.settings_language_restart_hint),
+            fontSize = 11.sp, color = TextMuted
+        )
+    }
+}
+
+@Composable
+private fun LanguageOption(
+    modifier: Modifier = Modifier,
+    languageName: String,
+    languageCode: String,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val borderColor = if (isSelected) AccentGlow else SidebarBorder
+    val borderWidth = if (isSelected) 2.dp else 1.dp
+    val bgColor = if (isSelected) AccentTeal.copy(alpha = selectedFactor) else SidebarBg
+
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(bgColor)
+            .border(borderWidth, borderColor, RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            text = languageName,
+            fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+            color = if (isSelected) AccentGlow else TextPrimary
+        )
+
+        if (isSelected) {
+            Text(
+                text = stringResource(R.string.checkmark),
+                fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                color = AccentGlow
+            )
+        }
+    }
+}
+
+@Composable
+private fun ServerSettingsContent(
+    uriType: String,
+    customUri: String,
+    onUriTypeChange: (String) -> Unit,
+    onCustomUriChange: (String) -> Unit
+) {
+    val options = listOf(
+        "GLOBAL" to stringResource(R.string.settings_server_global),
+        "LOCAL" to stringResource(R.string.settings_server_local),
+        "DEVICE" to stringResource(R.string.settings_server_custom)
+    )
+
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState),
+        verticalArrangement = Arrangement.Top
+    ) {
+        SettingsSectionHeader(
+            icon = Icons.Default.Wifi,
+            title = stringResource(R.string.title_server),
+            subtitle = stringResource(R.string.settings_server_description)
+        )
+
+        options.forEach { (type, label) ->
+            val isSelected = uriType == type
+            val borderColor = if (isSelected) AccentGlow else SidebarBorder
+            val borderWidth = if (isSelected) 2.dp else 1.dp
+            val bgColor = if (isSelected) AccentTeal.copy(alpha = selectedFactor) else SidebarBg
+            val uriHint = when (type) {
+                "GLOBAL" -> ServerConfig.GLOBAL_URI
+                "LOCAL" -> ServerConfig.LOCAL_URI
+                else -> customUri.takeIf { it.isNotBlank() } ?: ServerConfig.DEVICE_URI
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(bgColor)
+                    .border(borderWidth, borderColor, RoundedCornerShape(12.dp))
+                    .clickable { onUriTypeChange(type) }
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = label,
+                    fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+                    color = if (isSelected) AccentGlow else TextPrimary
+                )
+
+                Text(
+                    text = uriHint,
+                    fontSize = 11.sp,
+                    color = TextMuted
+                )
+
+                if (isSelected) {
+                    Text(
+                        text = stringResource(R.string.checkmark),
+                        fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                        color = AccentGlow
+                    )
+                }
+            }
+        }
+
+        if (uriType == "DEVICE") {
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = customUri,
+                onValueChange = onCustomUriChange,
+                label = {
+                    Text(
+                        stringResource(R.string.settings_text_custom_uri),
+                        color = TextMuted
+                    )
+                },
+                placeholder = { Text("ws://192.168.x.x:8080/scotlandyard", color = TextMuted) },
+                singleLine = true,
+                colors = colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = AccentGlow,
+                    unfocusedBorderColor = TextMuted,
+                    focusedLabelColor = AccentGlow,
+                    unfocusedLabelColor = TextMuted,
+                    cursorColor = AccentGlow
+                ),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
+}
+
 
 @Preview(showBackground = true, widthDp = 800, heightDp = 400)
 @Composable
