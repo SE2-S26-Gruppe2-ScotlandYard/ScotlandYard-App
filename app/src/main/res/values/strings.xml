@@ -8,19 +8,29 @@
 
     <string name="title_scotland_yard_rules">Scotland Yard – Rules</string>
     <string name="rules_title_objective">Objective</string>
-    <string name="rules_description_objective">• Mr. X tries to flee the detectives pursuit.\n• The detectives try to find and catch Mr. X.\n• The detectives win, if they move to the same station as Mr. X.\n• Mr. X wins, if he does not get caught until final round.</string>
+    <string name="rules_description_objective">• Mr. X must evade the detectives and stay hidden.\n• The detectives must track down and catch Mr. X.\n• Detectives win by moving onto Mr. X\'s station.\n• Mr. X wins by surviving until the final round.</string>
     <string name="rules_title_roles">Roles</string>
-    <string name="rules_description_roles">"Detectives\n• Team of up to 5 players.\n• Moves on the gameboard are visible to all players.\n• Try to surround and catch Mr. X.\n\nMr. X\n• One player.\n• Position only visible for himself (most of the time).</string>
+    <string name="rules_description_roles">Detectives\n• Up to 5 players working as a team.\n• All moves are visible to everyone.\n• Collaborate to corner and catch Mr. X.\n\nMr. X\n• A single hidden player.\n• Position is only revealed at certain rounds.</string>
     <string name="rules_title_movement">Movement</string>
     <string name="rules_description_movement">Players can traverse the gameboard trough:\n• Walking → short distance, widespread\n• E-Scooter → medium distance\n• Car-Sharing → long distance, limited availability\nEach station on the board has at least one transport option assigned, trough which they can be reached.</string>
     <string name="rules_title_gameplay">Gameplay</string>
-    <string name="rules_description_gameplay">1. Mr. X\'s turn:\n• Consumes tickets (Black and Double, others are unlimited).\n• Selects station to which he wants to move.\n• Which ticket was used will be shown to the detectives.\n• Position stays mostly hidden.\nIn predetermined rounds, Mr. X\'s position gets revealed to the detectives.\n\n2. Detective\'s turn:\n• Can move concurrently.\n• Expend tickets (Walking, E-Scooter, Car-Sharing)\n• Can view the ticket use history of Mr. X.</string>
+    <string name="rules_description_gameplay">1. Mr. X\'s turn:\n• Chooses a station to move to.\n• Plays a ticket — the type is visible to detectives, but not the destination.\n• Black tickets hide even the ticket type.\n• In reveal rounds, Mr. X\'s position is shown to all.\n\n2. Detectives\' turns:\n• All detectives move in any order.\n• Spend tickets to travel between stations.\n• Track Mr. X using his ticket history.</string>
     <string name="rules_title_tickets">Tickets</string>
     <string name="rules_description_tickets">Each player has the following tickets:\n• Walking\n• E-Scooter\n• Car-Sharing\n\nSpecial tickets of Mr. X:\n• Black Ticket → transport option stays hidden\n• Double Move → take two turns in one round</string>
     <string name="rules_title_important_rules">Important Rules</string>
     <string name="rules_description_important_rules">• Detectives have no special tickets.\n• A move is only possible, if the correct ticket is available.\n</string>
     <string name="rules_title_game_over">Game Over</string>
-    <string name="rules_description_game_over">A game ends, if:\n• A detective catches Mr. X → detectives win.\n• Mr. X evades capture → Mr. X wins.\n• No detective can move → Mr. X wins.</string>
+    <string name="rules_description_game_over">A game ends, if:\n• A detective catches Mr. X → detectives win.\n• Mr. X is not caught by the final round → Mr. X wins.</string>
+
+    <string name="rules_movement_walking_detail">Short distance, widespread network</string>
+    <string name="rules_movement_escooter_detail">Medium distance connections</string>
+    <string name="rules_movement_carsharing_detail">Long distance, limited availability</string>
+    <string name="rules_movement_station_note">Each station has at least one transport option assigned, through which it can be reached.</string>
+    <string name="rules_tickets_standard_header">Standard Tickets — All Players</string>
+    <string name="rules_tickets_special_header">Special Tickets — Mr. X Only</string>
+    <string name="rules_ticket_black_detail">Transport type stays hidden from detectives</string>
+    <string name="rules_ticket_double">Double Move</string>
+    <string name="rules_ticket_double_detail">Take two turns in a single round</string>
 
     <string name="title_settings">Settings</string>
     <string name="title_gameboard">Gameboard</string>

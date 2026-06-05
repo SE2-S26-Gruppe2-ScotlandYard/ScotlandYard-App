@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults.colors
@@ -86,12 +87,8 @@ fun SettingsScreen(
     var serverUriType by remember { mutableStateOf(context.getServerUriTypePreference()) }
     var serverUriCustom by remember { mutableStateOf(context.getServerUriCustomPreference()) }
 
-    BaseScreen(onBackClick = onBackClick) { _ ->
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 8.dp)
-        ) {
+    BaseScreen(onBackClick = onBackClick, title = stringResource(R.string.title_settings)) { _ ->
+        Row(modifier = Modifier.fillMaxSize()) {
             SettingsSidebar(
                 selected = selectedCategory,
                 onSelect = { selectedCategory = it }
@@ -101,7 +98,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .padding(start = 24.dp, end = 16.dp, top = 8.dp, bottom = 16.dp)
+                    .padding(start = 24.dp, end = 16.dp, top = 4.dp, bottom = 8.dp)
             ) {
                 when (selectedCategory) {
                     SettingsCategory.GAMEBOARD -> GameboardSettingsContent(
@@ -152,13 +149,10 @@ private fun SettingsSidebar(
         modifier = Modifier
             .width(160.dp)
             .fillMaxHeight()
-            .background(SidebarBg)
-            .border(
-                width = 1.dp,
-                color = SidebarBorder,
-                shape = RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)
-            )
-            .padding(vertical = 16.dp, horizontal = 8.dp),
+            .padding(bottom = 8.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SidebarBg.copy(alpha = 0.82f))
+            .padding(top = 16.dp, bottom = 16.dp, start = 8.dp, end = 8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
@@ -201,11 +195,17 @@ private fun SidebarItem(
             .clip(RoundedCornerShape(8.dp))
             .background(bgColor)
             .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp),
+            .clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
     ) {
+        Box(
+            modifier = Modifier
+                .width(3.dp)
+                .fillMaxHeight()
+                .background(if (isSelected) AccentGlow else Color.Transparent)
+        )
+        Spacer(modifier = Modifier.width(9.dp))
         Icon(
             imageVector = icon,
             contentDescription = null,
@@ -223,6 +223,29 @@ private fun SidebarItem(
 }
 
 @Composable
+private fun SettingsSectionHeader(icon: ImageVector, title: String, subtitle: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            modifier = Modifier
+                .size(42.dp)
+                .background(AccentTeal.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
+                .border(1.dp, AccentGlow.copy(alpha = 0.4f), RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = AccentGlow, modifier = Modifier.size(22.dp))
+        }
+        Spacer(modifier = Modifier.width(14.dp))
+        Column {
+            Text(text = title, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
+            Text(text = subtitle, fontSize = 12.sp, color = TextMuted)
+        }
+    }
+    Spacer(modifier = Modifier.height(12.dp))
+    HorizontalDivider(color = AccentGlow.copy(alpha = 0.25f), thickness = 1.dp)
+    Spacer(modifier = Modifier.height(20.dp))
+}
+
+@Composable
 private fun GameboardSettingsContent(
     displayMode: BoardDisplayMode,
     onModeChange: (BoardDisplayMode) -> Unit
@@ -231,21 +254,10 @@ private fun GameboardSettingsContent(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Top
     ) {
-
-        // Titel
-        Text(
-            text = stringResource(R.string.title_gameboard),
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
-
-        Text(
-            text = stringResource(R.string.settings_description_display_option),
-            fontSize = 12.sp,
-            color = TextMuted,
-            modifier = Modifier.padding(bottom = 20.dp)
+        SettingsSectionHeader(
+            icon = Icons.Default.Map,
+            title = stringResource(R.string.title_gameboard),
+            subtitle = stringResource(R.string.settings_description_display_option)
         )
 
         Row(
@@ -365,16 +377,10 @@ private fun LanguageSettingsContent(
     )
 
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
-        Text(
-            text = stringResource(R.string.title_language),
-            fontSize = 26.sp, fontWeight = FontWeight.Bold,
-            color = Color.White, modifier = Modifier.padding(bottom = 4.dp)
-        )
-
-        Text(
-            text = stringResource(R.string.settings_language_description),
-            fontSize = 12.sp, color = TextMuted,
-            modifier = Modifier.padding(bottom = 20.dp)
+        SettingsSectionHeader(
+            icon = Icons.Default.Language,
+            title = stringResource(R.string.title_language),
+            subtitle = stringResource(R.string.settings_language_description)
         )
 
         Row(
@@ -460,16 +466,10 @@ private fun ServerSettingsContent(
             .verticalScroll(scrollState),
         verticalArrangement = Arrangement.Top
     ) {
-        Text(
-            text = stringResource(R.string.title_server),
-            fontSize = 26.sp, fontWeight = FontWeight.Bold,
-            color = Color.White, modifier = Modifier.padding(bottom = 4.dp)
-        )
-
-        Text(
-            text = stringResource(R.string.settings_server_description),
-            fontSize = 12.sp, color = TextMuted,
-            modifier = Modifier.padding(bottom = 20.dp)
+        SettingsSectionHeader(
+            icon = Icons.Default.Wifi,
+            title = stringResource(R.string.title_server),
+            subtitle = stringResource(R.string.settings_server_description)
         )
 
         options.forEach { (type, label) ->
@@ -534,7 +534,10 @@ private fun ServerSettingsContent(
                     focusedTextColor = Color.White,
                     unfocusedTextColor = Color.White,
                     focusedBorderColor = AccentGlow,
-                    unfocusedBorderColor = SidebarBorder
+                    unfocusedBorderColor = TextMuted,
+                    focusedLabelColor = AccentGlow,
+                    unfocusedLabelColor = TextMuted,
+                    cursorColor = AccentGlow
                 ),
                 modifier = Modifier.fillMaxWidth()
             )
