@@ -149,10 +149,14 @@ private fun AppNavHost(
 ) {
     NavHost(navController = navController, startDestination = "start") {
         composable("start") {
+            val isNavigating = remember { mutableStateOf(false) }
+            LaunchedEffect(isNavigating.value) {
+                if (isNavigating.value) { delay(500.milliseconds); isNavigating.value = false }
+            }
             StartScreen(
-                onStartGame = { navController.navigate("login") },
-                onRules     = { navController.navigate("rules") },
-                onSettings  = { navController.navigate("settings") }
+                onStartGame = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("login") } },
+                onRules     = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("rules") } },
+                onSettings  = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("settings") } }
             )
         }
 

@@ -63,8 +63,17 @@ fun AppSettingsButton(
     modifier: Modifier = Modifier,
     contentDescription: String = "Settings"
 ) {
+    val isEnabled = remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
     IconButton(
-        onClick = onClick,
+        onClick = {
+            if (isEnabled.value) {
+                isEnabled.value = false
+                onClick()
+                scope.launch { delay(500.milliseconds); isEnabled.value = true }
+            }
+        },
+        enabled = isEnabled.value,
         modifier = modifier
     ) {
         Icon(
@@ -111,8 +120,16 @@ private fun AppStyledActionButton(
     modifier: Modifier = Modifier,
     containerColor: Color
 ) {
+    val isEnabled = remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
     Button(
-        onClick = onClick,
+        onClick = {
+            if (isEnabled.value) {
+                isEnabled.value = false
+                onClick()
+                scope.launch { delay(500.milliseconds); isEnabled.value = true }
+            }
+        },
         modifier = modifier
             .height(52.dp)
             .border(
