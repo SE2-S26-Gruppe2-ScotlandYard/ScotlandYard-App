@@ -25,8 +25,6 @@ import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,7 +44,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.aau.serg.scotlandyard.ui.theme.AccentGlow
-import at.aau.serg.scotlandyard.ui.theme.AccentTeal
 import at.aau.serg.scotlandyard.ui.theme.BlackColor
 import at.aau.serg.scotlandyard.ui.theme.CarSharingColor
 import at.aau.serg.scotlandyard.ui.theme.EScooterColor
@@ -113,7 +110,7 @@ private fun RulesSidebar(selected: RulesSection, onSelect: (RulesSection) -> Uni
         )
         Spacer(modifier = Modifier.height(4.dp))
         RulesSection.entries.forEach { section ->
-            RulesSidebarItem(
+            SidebarItem(
                 label = stringResource(section.labelRes),
                 icon = section.icon,
                 isSelected = section == selected,
@@ -123,49 +120,6 @@ private fun RulesSidebar(selected: RulesSection, onSelect: (RulesSection) -> Uni
     }
 }
 
-@Composable
-private fun RulesSidebarItem(
-    label: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val bgColor = if (isSelected) AccentTeal.copy(alpha = 0.35f) else Color.Transparent
-    val textColor = if (isSelected) AccentGlow else TextPrimary
-    val borderColor = if (isSelected) AccentGlow.copy(alpha = 0.5f) else Color.Transparent
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(bgColor)
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            modifier = Modifier
-                .width(3.dp)
-                .fillMaxHeight()
-                .background(if (isSelected) AccentGlow else Color.Transparent)
-        )
-        Spacer(modifier = Modifier.width(9.dp))
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = textColor,
-            modifier = Modifier.size(18.dp)
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = label,
-            fontSize = 13.sp,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            color = textColor
-        )
-    }
-}
 
 @Composable
 private fun RulesSectionContent(section: RulesSection) {
@@ -185,25 +139,6 @@ private fun RulesSectionContent(section: RulesSection) {
     }
 }
 
-@Composable
-private fun SectionHeader(icon: ImageVector, title: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .size(42.dp)
-                .background(AccentTeal.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
-                .border(1.dp, AccentGlow.copy(alpha = 0.4f), RoundedCornerShape(10.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(imageVector = icon, contentDescription = null, tint = AccentGlow, modifier = Modifier.size(22.dp))
-        }
-        Spacer(modifier = Modifier.width(14.dp))
-        Text(text = title, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
-    }
-    Spacer(modifier = Modifier.height(12.dp))
-    HorizontalDivider(color = AccentGlow.copy(alpha = 0.25f), thickness = 1.dp)
-    Spacer(modifier = Modifier.height(16.dp))
-}
 
 @Composable
 private fun GameboardContent() {
