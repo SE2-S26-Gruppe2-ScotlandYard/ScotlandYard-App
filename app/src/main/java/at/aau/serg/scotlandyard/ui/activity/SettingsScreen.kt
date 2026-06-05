@@ -76,7 +76,8 @@ private val selectedFactor = 0.86f
 fun SettingsScreen(
     onBackClick: () -> Unit,
     onDisplayModeChange: (BoardDisplayMode) -> Unit = {},
-    onLanguageChange: (String) -> Unit = {}
+    onLanguageChange: (String) -> Unit = {},
+    onServerChange: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var selectedCategory by remember { mutableStateOf(SettingsCategory.GAMEBOARD) }
@@ -128,6 +129,7 @@ fun SettingsScreen(
                             serverUriType = type
                             context.saveServerUriTypePreference(type)
                             ServerConfig.init(context)
+                            onServerChange()
                         },
                         onCustomUriChange = { uri ->
                             serverUriCustom = uri

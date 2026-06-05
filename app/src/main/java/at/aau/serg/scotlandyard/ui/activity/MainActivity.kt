@@ -105,7 +105,8 @@ private fun ScotlandYardApp() {
 
             LaunchedEffect(isConnected) {
                 if (!isConnected && currentRoute != null
-                    && currentRoute != "start" && currentRoute != "login") {
+                    && currentRoute != "start" && currentRoute != "login"
+                    && currentRoute != "settings") {
                     Toast.makeText(context,
                         context.getString(R.string.toast_connection_lost), Toast.LENGTH_LONG).show()
                     navController.navigate("start") { popUpTo(0) }
@@ -242,7 +243,8 @@ private fun AppNavHost(
                         navController.popBackStack()
                     }
                 },
-                onLanguageChange = { lang -> onLanguageChange(lang) }
+                onLanguageChange = { lang -> onLanguageChange(lang) },
+                onServerChange = { authViewModel.reconnect() }
             )
         }
 
