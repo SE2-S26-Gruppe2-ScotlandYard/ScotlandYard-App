@@ -5,7 +5,7 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.activity.OnBackPressedCallback
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.focusable
@@ -44,8 +44,10 @@ import kotlinx.coroutines.flow.first
 
 class MainActivity : ComponentActivity() {
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         BoardConnection.init(this)
         enableEdgeToEdge()
 
@@ -56,13 +58,13 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            ScotlandYardTheme { ScotlandYardApp() }
+            ScotlandYardTheme { ScotlandYardApp(activity = this) }
         }
     }
 }
 
 @Composable
-private fun ScotlandYardApp() {
+private fun ScotlandYardApp(activity: MainActivity) {
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
 
@@ -72,6 +74,10 @@ private fun ScotlandYardApp() {
             .focusRequester(focusRequester)
             .focusable()
             .onPreviewKeyEvent { event ->
+                // Block hardware back button (KEYCODE_BACK = 4)
+                if (event.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_BACK) {
+                    return@onPreviewKeyEvent true  // Consume the event
+                }
                 if (event.type == KeyEventType.KeyDown) {
                     CheatKeyEventRegistry.notify(event.nativeKeyEvent)
                 }
@@ -90,31 +96,6 @@ private fun ScotlandYardApp() {
 
         val currentBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = currentBackStackEntry?.destination?.route
-
-        // Handle hardware back button based on current route
-        DisposableEffect(context, currentRoute) {
-            val activity = context as? ComponentActivity
-            val callback = object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    // Block back button for game-critical screens
-                    val isBlockedRoute = currentRoute in listOf(
-                        "gameboard",
-                        "roleSelection",
-                        "assignstartposition"
-                    )
-
-                    if (!isBlockedRoute) {
-                        isEnabled = false
-                        if (navController.previousBackStackEntry != null) {
-                            navController.popBackStack()
-                        }
-                        isEnabled = true
-                    }
-                }
-            }
-            activity?.onBackPressedDispatcher?.addCallback(callback)
-            onDispose { callback.remove() }
-        }
 
         LaunchedEffect(isConnected) {
             if (!isConnected && currentRoute != null
@@ -137,6 +118,9 @@ private fun ScotlandYardApp() {
             sharedLobbyViewModel = sharedLobbyViewModel,
             onSharedLobbyViewModelChange = { sharedLobbyViewModel = it }
         )
+
+        // Registered after NavHost so it wins in LIFO order — blocks all hardware back presses.
+        BackHandler(enabled = true) {}
     }
 }
 
