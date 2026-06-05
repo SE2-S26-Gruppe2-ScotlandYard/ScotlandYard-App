@@ -45,15 +45,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import at.aau.serg.scotlandyard.model.BoardDisplayMode
-import at.aau.serg.scotlandyard.ui.theme.AccentGlow
-import at.aau.serg.scotlandyard.ui.theme.AccentTeal
-import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
-import at.aau.serg.scotlandyard.ui.theme.SidebarBg
-import at.aau.serg.scotlandyard.ui.theme.SidebarBorder
-import at.aau.serg.scotlandyard.ui.theme.TextMuted
-import at.aau.serg.scotlandyard.ui.theme.TextPrimary
-import com.example.scotlandyard.R
 import at.aau.serg.scotlandyard.data.getDisplayModePreference
 import at.aau.serg.scotlandyard.data.getLanguagePreference
 import at.aau.serg.scotlandyard.data.getServerUriCustomPreference
@@ -62,7 +53,16 @@ import at.aau.serg.scotlandyard.data.saveDisplayModePreference
 import at.aau.serg.scotlandyard.data.saveLanguagePreference
 import at.aau.serg.scotlandyard.data.saveServerUriCustomPreference
 import at.aau.serg.scotlandyard.data.saveServerUriTypePreference
+import at.aau.serg.scotlandyard.model.BoardDisplayMode
 import at.aau.serg.scotlandyard.network.ServerConfig
+import at.aau.serg.scotlandyard.ui.theme.AccentGlow
+import at.aau.serg.scotlandyard.ui.theme.AccentTeal
+import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
+import at.aau.serg.scotlandyard.ui.theme.SidebarBg
+import at.aau.serg.scotlandyard.ui.theme.SidebarBorder
+import at.aau.serg.scotlandyard.ui.theme.TextMuted
+import at.aau.serg.scotlandyard.ui.theme.TextPrimary
+import com.example.scotlandyard.R
 
 private enum class SettingsCategory(@StringRes val labelRes: Int, val icon: ImageVector) {
     GAMEBOARD(R.string.title_gameboard, Icons.Default.Map),
@@ -446,13 +446,18 @@ private fun ServerSettingsContent(
 ) {
     val options = listOf(
         "GLOBAL" to stringResource(R.string.settings_server_global),
-        "LOCAL"  to stringResource(R.string.settings_server_local),
+        "LOCAL" to stringResource(R.string.settings_server_local),
         "DEVICE" to stringResource(R.string.settings_server_custom)
     )
 
     val scrollState = rememberScrollState()
 
-    Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState), verticalArrangement = Arrangement.Top) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState),
+        verticalArrangement = Arrangement.Top
+    ) {
         Text(
             text = stringResource(R.string.title_server),
             fontSize = 26.sp, fontWeight = FontWeight.Bold,
@@ -470,6 +475,11 @@ private fun ServerSettingsContent(
             val borderColor = if (isSelected) AccentGlow else SidebarBorder
             val borderWidth = if (isSelected) 2.dp else 1.dp
             val bgColor = if (isSelected) AccentTeal.copy(alpha = selectedFactor) else SidebarBg
+            val uriHint = when (type) {
+                "GLOBAL" -> ServerConfig.GLOBAL_URI
+                "LOCAL" -> ServerConfig.LOCAL_URI
+                else -> customUri.takeIf { it.isNotBlank() } ?: ServerConfig.DEVICE_URI
+            }
 
             Row(
                 modifier = Modifier
@@ -489,6 +499,12 @@ private fun ServerSettingsContent(
                     color = if (isSelected) AccentGlow else TextPrimary
                 )
 
+                Text(
+                    text = uriHint,
+                    fontSize = 11.sp,
+                    color = TextMuted
+                )
+
                 if (isSelected) {
                     Text(
                         text = stringResource(R.string.checkmark),
@@ -504,7 +520,12 @@ private fun ServerSettingsContent(
             OutlinedTextField(
                 value = customUri,
                 onValueChange = onCustomUriChange,
-                label = { Text(stringResource(R.string.settings_text_custom_uri), color = TextMuted) },
+                label = {
+                    Text(
+                        stringResource(R.string.settings_text_custom_uri),
+                        color = TextMuted
+                    )
+                },
                 placeholder = { Text("ws://192.168.x.x:8080/scotlandyard", color = TextMuted) },
                 singleLine = true,
                 colors = colors(
