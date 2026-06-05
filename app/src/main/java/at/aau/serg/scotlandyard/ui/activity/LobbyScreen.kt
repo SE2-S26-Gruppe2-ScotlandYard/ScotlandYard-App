@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -97,13 +98,13 @@ fun LobbyScreen(
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
+                        contentDescription = stringResource(R.string.button_back),
                         tint = TextSecondary,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Return to main menu",
+                        text = stringResource(R.string.button_return_main_menu),
                         color = TextSecondary,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold
@@ -112,10 +113,13 @@ fun LobbyScreen(
             }
 
             val titleText = if (currentLobby == null) {
-                "LOBBY SELECTION"
+                stringResource(R.string.title_lobby_selection)
             } else {
                 val host = currentLobby!!.users.find { it.id == currentLobby!!.hostId }
-                if (host != null) "${host.name.uppercase()}'S LOBBY" else "LOBBY"
+                if (host != null) stringResource(
+                    R.string.title_personalised_lobby,
+                    host.name.uppercase()
+                ) else stringResource(R.string.title_lobby)
             }
 
             Text(
@@ -173,7 +177,7 @@ private fun ConnectionBadge(isConnected: Boolean) {
                 .background(if (isConnected) Color.Green else AccentRed, CircleShape))
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = if (isConnected) "Verbunden" else "Getrennt",
+                text = if (isConnected) stringResource(R.string.status_connected) else stringResource(R.string.status_disconnected),
                 color = TextPrimary, fontSize = 11.sp
             )
         }
@@ -188,9 +192,9 @@ private fun LobbyBrowserView(
 ) {
     var lobbyCode by remember { mutableStateOf("") }
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        LobbyCard(title = "Neue Lobby erstellen") {
+        LobbyCard(title = stringResource(R.string.lobby_button_create_lobby)) {
             LobbyActionButton(
-                text    = if (isLoading) "Wird erstellt..." else "Lobby erstellen",
+                text    = if (isLoading) stringResource(R.string.lobby_status_creating) else stringResource(R.string.lobby_button_create_lobby),
                 enabled = !isLoading, color = GreenButton, onClick = onCreateLobby
             )
         }
@@ -198,7 +202,7 @@ private fun LobbyBrowserView(
             OutlinedTextField(
                 value         = lobbyCode,
                 onValueChange = { if (it.length <= 5) lobbyCode = it.uppercase() },
-                label         = { Text("5-stelliger Code", color = TextSecondary) },
+                label         = { Text(stringResource(R.string.lobby_code_description), color = TextSecondary) },
                 singleLine    = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
                 colors        = lobbyTextFieldColors(),
@@ -206,7 +210,9 @@ private fun LobbyBrowserView(
             )
             Spacer(modifier = Modifier.height(8.dp))
             LobbyActionButton(
-                text    = if (isLoading) "Wird beigetreten..." else "Beitreten",
+                text    = if (isLoading) stringResource(R.string.lobby_status_joining) else stringResource(
+                    R.string.lobby_button_join_lobby
+                ),
                 enabled = !isLoading && lobbyCode.length == 5,
                 color   = DarkButton,
                 onClick = { onJoinLobby(lobbyCode) }
@@ -228,7 +234,10 @@ private fun InLobbyView(
 ) {
     // Dynamischen Lobbynamen basierend auf dem aktuellen Host berechnen
     val currentHost = lobby.users.find { it.id == lobby.hostId }
-    val lobbyDisplayName = if (currentHost != null) "${currentHost.name}'s Lobby" else lobby.name
+    val lobbyDisplayName = if (currentHost != null) stringResource(
+        R.string.title_personalised_lobby,
+        currentHost.name.uppercase()
+    ) else lobby.name
 
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         LobbyCard(title = lobbyDisplayName) {
@@ -236,12 +245,14 @@ private fun InLobbyView(
                 text = lobby.id, color = AccentGold, fontSize = 36.sp,
                 fontWeight = FontWeight.Bold, letterSpacing = 8.sp,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
             )
-            Text(text = "${lobby.users.size}/6 Spieler", color = TextSecondary, fontSize = 12.sp)
+            Text(text = stringResource(R.string.lobby_status_players, lobby.users.size), color = TextSecondary, fontSize = 12.sp)
         }
 
-        LobbyCard(title = "Spieler") {
+        LobbyCard(title = stringResource(R.string.title_player)) {
             Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 lobby.users.forEach { user ->
                     PlayerRow(
@@ -257,12 +268,12 @@ private fun InLobbyView(
 
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             LobbyActionButton(
-                text = "Verlassen", enabled = !isLoading, color = AccentRed,
+                text = stringResource(R.string.button_leave), enabled = !isLoading, color = AccentRed,
                 onClick = onLeave, modifier = Modifier.weight(1f)
             )
             if (isHost) {
                 LobbyActionButton(
-                    text = "Lobby loeschen", enabled = !isLoading,
+                    text = stringResource(R.string.lobby_button_delete), enabled = !isLoading,
                     color = Color(0xFF7B1FA2), onClick = onDelete,
                     modifier = Modifier.weight(1f)
                 )
@@ -272,7 +283,9 @@ private fun InLobbyView(
         if (isHost) {
             val canProceed = lobby.users.size >= 3
             LobbyActionButton(
-                text    = if (canProceed) "Weiter zur Rollenwahl →" else "Mind. 3 Spieler erforderlich",
+                text    = if (canProceed) stringResource(R.string.lobby_button_continue_role_selection) else stringResource(
+                    R.string.lobby_status_min_players
+                ),
                 enabled = canProceed && !isLoading,
                 color    = GreenButton,
                 onClick = onStartRoleSelection
@@ -306,14 +319,14 @@ private fun PlayerRow(
             )
             if (isLobbyHost) {
                 Icon(
-                    imageVector = Icons.Default.Star, contentDescription = "Host",
+                    imageVector = Icons.Default.Star, contentDescription = stringResource(R.string.description_host),
                     tint = AccentGold, modifier = Modifier.size(12.dp)
                 )
             }
         }
         Spacer(modifier = Modifier.width(8.dp))
         Text(
-            text = user.name + if (isLocalUser) " (Du)" else "",
+            text = user.name + if (isLocalUser) stringResource(R.string.lobby_indicator_you) else "",
             color = TextPrimary,
             fontWeight = if (isLocalUser) FontWeight.Bold else FontWeight.Normal,
             fontSize = 14.sp,
@@ -322,7 +335,7 @@ private fun PlayerRow(
         if (showKickButton) {
             IconButton(onClick = { showKickConfirm = true }, modifier = Modifier.size(28.dp)) {
                 Icon(
-                    imageVector = Icons.Default.Close, contentDescription = "Kicken",
+                    imageVector = Icons.Default.Close, contentDescription = stringResource(R.string.button_kick),
                     tint = AccentRed, modifier = Modifier.size(18.dp)
                 )
             }
@@ -337,16 +350,16 @@ private fun PlayerRow(
         AlertDialog(
             onDismissRequest = { showKickConfirm = false },
             containerColor   = CardBg,
-            title  = { Text("Spieler kicken?", color = TextPrimary) },
-            text   = { Text("${user.name} entfernen?", color = TextSecondary) },
+            title  = { Text(stringResource(R.string.kick_player_confirm), color = TextPrimary) },
+            text   = { Text(stringResource(R.string.lobby_button_remove_player, user.name), color = TextSecondary) },
             confirmButton = {
                 TextButton(onClick = { onKick(); showKickConfirm = false }) {
-                    Text("Kicken", color = AccentRed, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.button_kick), color = AccentRed, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showKickConfirm = false }) {
-                    Text("Abbrechen", color = TextSecondary)
+                    Text(stringResource(R.string.button_cancel), color = TextSecondary)
                 }
             }
         )

@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -26,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.aau.serg.scotlandyard.ui.components.AppActionButton
 import at.aau.serg.scotlandyard.ui.components.AppDarkActionButton
+import com.example.scotlandyard.R
 
 /**
  * Generic win screen composable used for both Detectives and Mr. X win scenarios.
@@ -91,7 +93,7 @@ fun BaseWinScreen(
             ) {
                 // Restart Button
                 AppActionButton(
-                    text = "Restart",
+                    text = stringResource(R.string.button_restart),
                     onClick = onBackClick,
                     modifier = Modifier.width(140.dp)
                 )
@@ -100,7 +102,7 @@ fun BaseWinScreen(
 
                 // Quit Button
                 AppDarkActionButton(
-                    text = "Quit",
+                    text = stringResource(R.string.button_quit),
                     onClick = onQuit,
                     modifier = Modifier.width(140.dp)
                 )

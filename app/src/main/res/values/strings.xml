@@ -1,6 +1,118 @@
 <resources>
     <string name="app_name">Scotland Yard</string>
-    <string name="title_activity_connection_view">ConnectionView</string>
-    <string name="title_activity_view">view</string>
-    <string name="title_activity_main2">MainActivity2</string>
+
+    <string name="button_start_game">Start Game</string>
+    <string name="title_rules">Rules</string>
+    <string name="title_main_scotland_yard">SCOTLAND YARD</string>
+    <string name="subtitle_hunt_mrx">Hunt Mr. X ecofriendly</string>
+
+    <string name="title_scotland_yard_rules">Scotland Yard – Rules</string>
+    <string name="rules_title_objective">Objective</string>
+    <string name="rules_description_objective">• Mr. X tries to flee the detectives pursuit.\n• The detectives try to find and catch Mr. X.\n• The detectives win, if they move to the same station as Mr. X.\n• Mr. X wins, if he does not get caught until final round.</string>
+    <string name="rules_title_roles">Roles</string>
+    <string name="rules_description_roles">"Detectives\n• Team of up to 5 players.\n• Moves on the gameboard are visible to all players.\n• Try to surround and catch Mr. X.\n\nMr. X\n• One player.\n• Position only visible for himself (most of the time).</string>
+    <string name="rules_title_movement">Movement</string>
+    <string name="rules_description_movement">Players can traverse the gameboard trough:\n• Walking → short distance, widespread\n• E-Scooter → medium distance\n• Car-Sharing → long distance, limited availability\nEach station on the board has at least one transport option assigned, trough which they can be reached.</string>
+    <string name="rules_title_gameplay">Gameplay</string>
+    <string name="rules_description_gameplay">1. Mr. X\'s turn:\n• Consumes tickets (Black and Double, others are unlimited).\n• Selects station to which he wants to move.\n• Which ticket was used will be shown to the detectives.\n• Position stays mostly hidden.\nIn predetermined rounds, Mr. X\'s position gets revealed to the detectives.\n\n2. Detective\'s turn:\n• Can move concurrently.\n• Expend tickets (Walking, E-Scooter, Car-Sharing)\n• Can view the ticket use history of Mr. X.</string>
+    <string name="rules_title_tickets">Tickets</string>
+    <string name="rules_description_tickets">Each player has the following tickets:\n• Walking\n• E-Scooter\n• Car-Sharing\n\nSpecial tickets of Mr. X:\n• Black Ticket → transport option stays hidden\n• Double Move → take two turns in one round</string>
+    <string name="rules_title_important_rules">Important Rules</string>
+    <string name="rules_description_important_rules">• Detectives have no special tickets.\n• A move is only possible, if the correct ticket is available.\n</string>
+    <string name="rules_title_game_over">Game Over</string>
+    <string name="rules_description_game_over">A game ends, if:\n• A detective catches Mr. X → detectives win.\n• Mr. X evades capture → Mr. X wins.\n• No detective can move → Mr. X wins.</string>
+
+    <string name="title_settings">Settings</string>
+    <string name="title_gameboard">Gameboard</string>
+    <string name="settings_description_display_option">Select a gameboard display option.</string>
+    <string name="settings_gameboard_graph">Graph</string>
+    <string name="settings_gameboard_map">Map</string>
+    <string name="settings_gameboard_description_graph">Draw nodes and edges.</string>
+    <string name="settings_gameboard_description_map">Map as background.</string>
+    <string name="title_language">Language</string>
+    <string name="settings_language_description">Select the app language.</string>
+    <string name="settings_language_restart_hint">Note: The app may have to be restarted to apply the changes.</string>
+
+    <string name="status_connected">Connected</string>
+    <string name="status_disconnected">Disconnected</string>
+
+    <string name="title_nickname">NICKNAME</string>
+    <string name="description_nickname">Choose your Nickname</string>
+    <string name="button_connect">Connect</string>
+    <string name="button_refresh_connection">Refresh Connection</string>
+    <string name="button_back">Back</string>
+    <string name="button_cancel">Cancel</string>
+    <string name="button_confirm">Confirm</string>
+    <string name="checkmark" translatable="false">✓</string>
+
+    <string name="button_kick">Kick</string>
+    <string name="button_leave">Leave</string>
+    <string name="button_return_main_menu">Return to main menu</string>
+    <string name="title_lobby_selection">LOBBY SELECTION</string>
+    <string name="title_personalised_lobby">%1$s\'S LOBBY</string>
+    <string name="title_lobby">LOBBY</string>
+    <string name="lobby_button_create_lobby">Create</string>
+    <string name="lobby_status_creating">Creating lobby...</string>
+    <string name="lobby_code_description">5-digit code</string>
+    <string name="lobby_status_joining">Joining lobby...</string>
+    <string name="lobby_button_join_lobby">Join</string>
+    <string name="lobby_status_players">%1$d/6 players</string>
+    <string name="title_player">Player</string>
+    <string name="lobby_button_delete">Delete lobby</string>
+    <string name="lobby_button_continue_role_selection">Continue to role selection</string>
+    <string name="lobby_status_min_players">At least 3 players required</string>
+    <string name="description_host">Host</string>
+    <string name="lobby_indicator_you">" (You)"</string>
+    <string name="kick_player_confirm">Kick player?</string>
+    <string name="lobby_button_remove_player">Remove %1$s?</string>
+
+    <string name="title_choose_your_side">Choose your side:</string>
+    <string name="role_selection_title_detective">Play as Detective</string>
+    <string name="role_selection_description_detective">Hunt Mr. X together</string>
+    <string name="role_selection_title_mrx">Play as Mr. X</string>
+    <string name="role_selection_description_mrx">Outsmart the detectives</string>
+    <string name="button_back_to_lobby">Back to Lobby</string>
+    <string name="button_start_position">Start Position</string>
+    <string name="status_waiting_for_host">Waiting for host...</string>
+    <string name="status_already_taken">Already taken</string>
+    <string name="status_selected">✓ Selected</string>
+    <string name="button_click_to_select">Click to select</string>
+
+    <string name="status_connecting_to_server">Connecting to server…</string>
+    <string name="status_confirming_position">Confirming position…</string>
+    <string name="text_please_wait">Please wait</string>
+    <string name="assign_start_position_text_shake_device">Shake the device to determine your starting position!</string>
+    <string name="button_simulate_shaking">Simulate shaking</string>
+    <string name="button_cheat">Cheat</string>
+    <string name="title_your_start_position">Your start position!</string>
+    <string name="status_rolling_start_position">Rolling starting position…</string>
+    <string name="text_station">Station  %1$d</string>
+    <string name="status_cheat_active">Cheat mode active</string>
+    <string name="title_choose_start_position">Choose your starting position</string>
+    <string name="text_spin_and_confirm">Spin the wheel and confirm</string>
+    <string name="button_confirm_station">Confirm station %1$d</string>
+
+    <string name="banner_double_move_hint">Double Move active – tap a station to use</string>
+    <string name="banner_mrx_position_reveal">Mr. X was spotted at station %1$d!</string>
+    <string name="title_menu">Menu</string>
+    <string name="title_mrx_moves">Mr. X Moves</string>
+    <string name="button_close">Close</string>
+    <string name="text_no_moves_yet">No moves yet</string>
+    <string name="role_mrx">MR. X</string>
+    <string name="role_detective">DETECTIVE</string>
+    <string name="hint_ticket_selected">%1$s selected</string>
+    <string name="title_round">ROUND</string>
+    <string name="char_unlimited" translatable="false">∞</string>
+    <string name="hint_usability">Pinch to zoom - Drag to pan</string>
+    <string name="ticket_walking">Walking</string>
+    <string name="ticket_escooter">E-Scooter</string>
+    <string name="ticket_car_sharing">Car Sharing</string>
+    <string name="ticket_black">Black</string>
+
+    <string name="button_restart">Restart</string>
+    <string name="button_quit">Quit</string>
+    <string name="text_mrx_victory">Mr. X vanished into the city.</string>
+    <string name="text_detectives_victory">Mr. X has been caught.</string>
+
+    <string name="toast_connection_lost">Connection lost!</string>
 </resources>

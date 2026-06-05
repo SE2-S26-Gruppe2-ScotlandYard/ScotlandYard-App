@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -36,8 +37,8 @@ fun StartScreen(
     onStartGame: () -> Unit,
     onRules: () -> Unit,
     onSettings: () -> Unit,
-    startGameButtonText: String = "Start Game",
-    rulesButtonText: String = "Rules"
+    startGameButtonText: String = stringResource(R.string.button_start_game),
+    rulesButtonText: String = stringResource(R.string.title_rules)
 ) {
     // Box stapelt alles übereinander: Hintergrundbild → Inhalt
     Box(modifier = Modifier.fillMaxSize()) {
@@ -88,7 +89,7 @@ fun StartScreen(
 
                 // Großer Titel "SCOTLAND YARD"
                 Text(
-                    text = "SCOTLAND\nYARD",
+                    text = stringResource(R.string.title_main_scotland_yard),
                     fontSize = 56.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif,   // Serifenschrift wie im Bild
@@ -109,7 +110,7 @@ fun StartScreen(
 
                 // Untertitel
                 Text(
-                    text = "Hunt Mr. X ecofriendly",
+                    text = stringResource(R.string.subtitle_hunt_mrx),
                     fontSize = 16.sp,
                     color = Color(0xFFCCCCCC) // helles Grau
                 )
