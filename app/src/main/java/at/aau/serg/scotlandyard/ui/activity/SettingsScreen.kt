@@ -23,8 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Wifi
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults.colors
 import androidx.compose.material3.Text
@@ -177,73 +175,7 @@ private fun SettingsSidebar(
     }
 }
 
-@Composable
-private fun SidebarItem(
-    label: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val bgColor = if (isSelected) AccentTeal.copy(alpha = 0.35f) else Color.Transparent
-    val textColor = if (isSelected) AccentGlow else TextPrimary
-    val borderColor = if (isSelected) AccentGlow.copy(alpha = 0.5f) else Color.Transparent
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(bgColor)
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
-    ) {
-        Box(
-            modifier = Modifier
-                .width(3.dp)
-                .fillMaxHeight()
-                .background(if (isSelected) AccentGlow else Color.Transparent)
-        )
-        Spacer(modifier = Modifier.width(9.dp))
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = textColor,
-            modifier = Modifier.size(18.dp)
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = label,
-            fontSize = 13.sp,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            color = textColor
-        )
-    }
-}
-
-@Composable
-private fun SettingsSectionHeader(icon: ImageVector, title: String, subtitle: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            modifier = Modifier
-                .size(42.dp)
-                .background(AccentTeal.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
-                .border(1.dp, AccentGlow.copy(alpha = 0.4f), RoundedCornerShape(10.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(imageVector = icon, contentDescription = null, tint = AccentGlow, modifier = Modifier.size(22.dp))
-        }
-        Spacer(modifier = Modifier.width(14.dp))
-        Column {
-            Text(text = title, fontSize = 26.sp, fontWeight = FontWeight.Bold, color = Color.White)
-            Text(text = subtitle, fontSize = 12.sp, color = TextMuted)
-        }
-    }
-    Spacer(modifier = Modifier.height(12.dp))
-    HorizontalDivider(color = AccentGlow.copy(alpha = 0.25f), thickness = 1.dp)
-    Spacer(modifier = Modifier.height(20.dp))
-}
 
 @Composable
 private fun GameboardSettingsContent(
@@ -254,10 +186,11 @@ private fun GameboardSettingsContent(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Top
     ) {
-        SettingsSectionHeader(
+        SectionHeader(
             icon = Icons.Default.Map,
             title = stringResource(R.string.title_gameboard),
-            subtitle = stringResource(R.string.settings_description_display_option)
+            subtitle = stringResource(R.string.settings_description_display_option),
+            bottomSpacing = 20.dp
         )
 
         Row(
@@ -377,10 +310,11 @@ private fun LanguageSettingsContent(
     )
 
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
-        SettingsSectionHeader(
+        SectionHeader(
             icon = Icons.Default.Language,
             title = stringResource(R.string.title_language),
-            subtitle = stringResource(R.string.settings_language_description)
+            subtitle = stringResource(R.string.settings_language_description),
+            bottomSpacing = 20.dp
         )
 
         Row(
@@ -466,10 +400,11 @@ private fun ServerSettingsContent(
             .verticalScroll(scrollState),
         verticalArrangement = Arrangement.Top
     ) {
-        SettingsSectionHeader(
+        SectionHeader(
             icon = Icons.Default.Wifi,
             title = stringResource(R.string.title_server),
-            subtitle = stringResource(R.string.settings_server_description)
+            subtitle = stringResource(R.string.settings_server_description),
+            bottomSpacing = 20.dp
         )
 
         options.forEach { (type, label) ->
