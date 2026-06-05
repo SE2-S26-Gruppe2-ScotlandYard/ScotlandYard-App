@@ -12,11 +12,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private val NavigationIconTint = Color(0xFFE0E0E0)
 private val ActionButtonColor = Color(0xFF1A4A3A)
@@ -29,9 +34,22 @@ fun AppBackButton(
     modifier: Modifier = Modifier,
     contentDescription: String = "Zurueck"
 ) {
+    val isEnabled = remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+
     IconButton(
-        onClick = onClick,
-        modifier = modifier.then(Modifier.then(Modifier))
+        onClick = {
+            if (isEnabled.value) {
+                isEnabled.value = false
+                onClick()
+                scope.launch {
+                    delay(500) // Debounce delay
+                    isEnabled.value = true
+                }
+            }
+        },
+        modifier = modifier,
+        enabled = isEnabled.value
     ) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,

@@ -24,6 +24,8 @@ import at.aau.serg.scotlandyard.model.LobbyData
 import at.aau.serg.scotlandyard.model.LobbyUserData
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import com.example.scotlandyard.R
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
  * Rollenauswahl-Screen
@@ -136,6 +138,10 @@ private fun RoleSelectionTopBar(
     onBackClick: () -> Unit,
     onGameStart: () -> Unit
 ) {
+    val backButtonEnabled = remember { mutableStateOf(true) }
+    val startButtonEnabled = remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = 16.dp, start = 16.dp, end = 16.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -143,7 +149,17 @@ private fun RoleSelectionTopBar(
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             if (isHost) {
                 TextButton(
-                    onClick = onBackClick,
+                    onClick = {
+                        if (backButtonEnabled.value) {
+                            backButtonEnabled.value = false
+                            onBackClick()
+                            scope.launch {
+                                delay(500)
+                                backButtonEnabled.value = true
+                            }
+                        }
+                    },
+                    enabled = backButtonEnabled.value,
                     colors = ButtonDefaults.textButtonColors(contentColor = Color.White),
                     modifier = Modifier.wrapContentSize()
                 ) {
@@ -156,8 +172,17 @@ private fun RoleSelectionTopBar(
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
             if (isHost) {
                 TextButton(
-                    onClick = onGameStart,
-                    enabled = allRolesSet,
+                    onClick = {
+                        if (startButtonEnabled.value && allRolesSet) {
+                            startButtonEnabled.value = false
+                            onGameStart()
+                            scope.launch {
+                                delay(500)
+                                startButtonEnabled.value = true
+                            }
+                        }
+                    },
+                    enabled = allRolesSet && startButtonEnabled.value,
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = Color.White,
                         disabledContentColor = Color(0x44FFFFFF)

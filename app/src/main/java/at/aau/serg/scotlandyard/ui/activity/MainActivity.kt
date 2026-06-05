@@ -5,6 +5,7 @@ import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.focusable
@@ -36,6 +37,8 @@ import at.aau.serg.scotlandyard.viewmodel.GameViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import androidx.compose.runtime.collectAsState
 import android.util.Log
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 
@@ -88,6 +91,31 @@ private fun ScotlandYardApp() {
         val currentBackStackEntry by navController.currentBackStackEntryAsState()
         val currentRoute = currentBackStackEntry?.destination?.route
 
+        // Handle hardware back button based on current route
+        DisposableEffect(context, currentRoute) {
+            val activity = context as? ComponentActivity
+            val callback = object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    // Block back button for game-critical screens
+                    val isBlockedRoute = currentRoute in listOf(
+                        "gameboard",
+                        "roleSelection",
+                        "assignstartposition"
+                    )
+
+                    if (!isBlockedRoute) {
+                        isEnabled = false
+                        if (navController.previousBackStackEntry != null) {
+                            navController.popBackStack()
+                        }
+                        isEnabled = true
+                    }
+                }
+            }
+            activity?.onBackPressedDispatcher?.addCallback(callback)
+            onDispose { callback.remove() }
+        }
+
         LaunchedEffect(isConnected) {
             if (!isConnected && currentRoute != null
                 && currentRoute != "start" && currentRoute != "login") {
@@ -132,6 +160,8 @@ private fun AppNavHost(
         }
 
         composable("login") {
+            val isNavigating = remember { mutableStateOf(false) }
+
             LaunchedEffect(currentUser) {
                 if (currentUser != null) {
                     navController.navigate("lobby") {
@@ -139,24 +169,65 @@ private fun AppNavHost(
                     }
                 }
             }
+
+            LaunchedEffect(isNavigating.value) {
+                if (isNavigating.value) {
+                    delay(500.milliseconds)
+                    isNavigating.value = false
+                }
+            }
+
             LoginScreen(
                 onConnectClick      = { nickname -> authViewModel.connectUser(nickname) },
-                onBackClick         = { navController.popBackStack() },
+                onBackClick         = {
+                    if (!isNavigating.value && navController.previousBackStackEntry != null) {
+                        isNavigating.value = true
+                        navController.popBackStack()
+                    }
+                },
                 onRefreshClick      = { authViewModel.reconnect() },
                 isConnectedToServer = isConnected
             )
         }
 
         composable("rules") {
-            RulesScreen(onBackClick = { navController.popBackStack() })
+            val isNavigating = remember { mutableStateOf(false) }
+
+            LaunchedEffect(isNavigating.value) {
+                if (isNavigating.value) {
+                    delay(500.milliseconds)
+                    isNavigating.value = false
+                }
+            }
+
+            RulesScreen(onBackClick = {
+                if (!isNavigating.value && navController.previousBackStackEntry != null) {
+                    isNavigating.value = true
+                    navController.popBackStack()
+                }
+            })
         }
 
         composable("lobby") {
+            val isNavigating = remember { mutableStateOf(false) }
             val user = currentUser
+
+            LaunchedEffect(isNavigating.value) {
+                if (isNavigating.value) {
+                    delay(500.milliseconds)
+                    isNavigating.value = false
+                }
+            }
+
             if (user != null) {
                 LobbyScreen(
                     authViewModel = authViewModel,
-                    onBackClick   = { navController.popBackStack() },
+                    onBackClick   = {
+                        if (!isNavigating.value && navController.previousBackStackEntry != null) {
+                            isNavigating.value = true
+                            navController.popBackStack()
+                        }
+                    },
                     onProceedToRoles = { lobbyViewModel ->
                         onSharedLobbyViewModelChange(lobbyViewModel)
                         lobbyViewModel.startRoleSelection()
@@ -180,7 +251,21 @@ private fun AppNavHost(
         }
 
         composable("settings") {
-            SettingsScreen(onBackClick = { navController.popBackStack() })
+            val isNavigating = remember { mutableStateOf(false) }
+
+            LaunchedEffect(isNavigating.value) {
+                if (isNavigating.value) {
+                    delay(500.milliseconds)
+                    isNavigating.value = false
+                }
+            }
+
+            SettingsScreen(onBackClick = {
+                if (!isNavigating.value && navController.previousBackStackEntry != null) {
+                    isNavigating.value = true
+                    navController.popBackStack()
+                }
+            })
         }
 
         composable(
@@ -190,13 +275,27 @@ private fun AppNavHost(
                 navArgument("playerId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
+            val isNavigating = remember { mutableStateOf(false) }
             val gameId   = backStackEntry.arguments?.getString("gameId")   ?: ""
             val playerId = backStackEntry.arguments?.getString("playerId") ?: ""
             val lobbyVm  = sharedLobbyViewModel
+
+            LaunchedEffect(isNavigating.value) {
+                if (isNavigating.value) {
+                    delay(500.milliseconds)
+                    isNavigating.value = false
+                }
+            }
+
             AssignStartPositionScreen(
                 gameId   = gameId,
                 playerId = playerId,
-                onBackClick = { navController.popBackStack() },
+                onBackClick = {
+                    if (!isNavigating.value && navController.previousBackStackEntry != null) {
+                        isNavigating.value = true
+                        navController.popBackStack()
+                    }
+                },
                 onPositionConfirmed = {
                     val selectedRoles = lobbyVm?.currentLobby?.value?.selectedRoles
                     val isMrX = selectedRoles?.get(playerId) == "MRX"
@@ -256,9 +355,9 @@ private fun GameBoardRoute(
     LaunchedEffect(gameId) {
         gameViewModel.gameStompService.subscribe(gameId)
         gameViewModel.isConnected.first { it }
-        delay(600)
+        delay(600.milliseconds)
         gameViewModel.requestGameState(gameId)
-        delay(3_000)
+        delay(3.seconds)
         if (gameViewModel.gameState.value == null) {
             Log.d("MainActivity", "GameState still null after 3 s – retrying requestGameState")
             gameViewModel.requestGameState(gameId)
@@ -328,7 +427,15 @@ private fun GameBoardRoute(
 
 @Composable
 private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostController) {
+    val isNavigating = remember { mutableStateOf(false) }
     val lobby by lobbyVm.currentLobby.collectAsState()
+
+    LaunchedEffect(isNavigating.value) {
+        if (isNavigating.value) {
+            delay(500.milliseconds)
+            isNavigating.value = false
+        }
+    }
 
     LaunchedEffect(lobbyVm) {
         lobbyVm.navigateToGame.collect { gameId ->
@@ -354,7 +461,12 @@ private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostCo
         RoleSelectionScreen(
             viewModel   = lobbyVm,
             lobby       = lobby!!,
-            onBackClick = { navController.popBackStack() },
+            onBackClick = {
+                if (!isNavigating.value && navController.previousBackStackEntry != null) {
+                    isNavigating.value = true
+                    navController.popBackStack()
+                }
+            },
             onGameStart = { lobbyVm.startGame() }
         )
     }
