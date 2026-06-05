@@ -9,6 +9,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -142,6 +145,10 @@ private fun RoleSelectionTopBar(
     onBackClick: () -> Unit,
     onGameStart: () -> Unit
 ) {
+    val backButtonEnabled = remember { mutableStateOf(true) }
+    val startButtonEnabled = remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -151,7 +158,14 @@ private fun RoleSelectionTopBar(
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
             if (isHost) {
                 TextButton(
-                    onClick = onBackClick,
+                    onClick = {
+                        if (backButtonEnabled.value) {
+                            backButtonEnabled.value = false
+                            onBackClick()
+                            scope.launch { delay(500.milliseconds); backButtonEnabled.value = true }
+                        }
+                    },
+                    enabled = backButtonEnabled.value,
                     colors = ButtonDefaults.textButtonColors(contentColor = Color.White),
                     modifier = Modifier.wrapContentSize()
                 ) {
@@ -164,8 +178,14 @@ private fun RoleSelectionTopBar(
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
             if (isHost) {
                 TextButton(
-                    onClick = onGameStart,
-                    enabled = allRolesSet,
+                    onClick = {
+                        if (startButtonEnabled.value) {
+                            startButtonEnabled.value = false
+                            onGameStart()
+                            scope.launch { delay(500.milliseconds); startButtonEnabled.value = true }
+                        }
+                    },
+                    enabled = allRolesSet && startButtonEnabled.value,
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = Color.White,
                         disabledContentColor = Color(0x44FFFFFF)

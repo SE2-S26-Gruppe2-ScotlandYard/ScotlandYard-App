@@ -12,7 +12,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -29,8 +35,17 @@ fun AppBackButton(
     modifier: Modifier = Modifier,
     contentDescription: String = "Zurueck"
 ) {
+    val isEnabled = remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
     IconButton(
-        onClick = onClick,
+        onClick = {
+            if (isEnabled.value) {
+                isEnabled.value = false
+                onClick()
+                scope.launch { delay(500.milliseconds); isEnabled.value = true }
+            }
+        },
+        enabled = isEnabled.value,
         modifier = modifier.then(Modifier.then(Modifier))
     ) {
         Icon(

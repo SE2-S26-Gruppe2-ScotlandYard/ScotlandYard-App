@@ -10,6 +10,9 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,6 +21,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.scotlandyard.R
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Reusable base screen composable with common layout (back button + title area + content).
@@ -31,6 +37,9 @@ fun BaseScreen(
     onBackClick: () -> Unit,
     content: @Composable (modifier: Modifier) -> Unit
 ) {
+    val isEnabled = remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -49,7 +58,14 @@ fun BaseScreen(
         ) {
             // Zurück-Button
             IconButton(
-                onClick = onBackClick,
+                onClick = {
+                    if (isEnabled.value) {
+                        isEnabled.value = false
+                        onBackClick()
+                        scope.launch { delay(500.milliseconds); isEnabled.value = true }
+                    }
+                },
+                enabled = isEnabled.value,
                 modifier = Modifier
                     .align(Alignment.Start)
                     .padding(bottom = 16.dp)
