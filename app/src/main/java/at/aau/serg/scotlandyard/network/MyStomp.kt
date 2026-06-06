@@ -23,8 +23,8 @@ import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
 
 //private const val WEBSOCKET_URI = GLOBAL_URI
-//private const val WEBSOCKET_URI = LOCAL_URI   // ← Emulator (10.0.2.2)
-private const val WEBSOCKET_URI = DEVICE_URI    // ← Physisches Gerät (143.205.192.169)
+private const val WEBSOCKET_URI = LOCAL_URI   // ← Emulator (10.0.2.2)
+//private const val WEBSOCKET_URI = DEVICE_URI    // ← Physisches Gerät (143.205.192.169)
 
 class MyStomp(val callbacks: Callbacks) {
 

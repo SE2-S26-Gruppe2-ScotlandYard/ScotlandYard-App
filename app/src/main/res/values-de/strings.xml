@@ -9,7 +9,7 @@
     <string name="rules_title_objective">Ziel des Spiels</string>
     <string name="rules_description_objective">• Mr. X versucht den Detektiven zu entkommen.\n• Die Detektive versuchen Mr. X zu stellen.\n• Die Detektive gewinnen, wenn sich einer auf das Spielfeld bewegt, wo sich Mr. X gerade befindet.\n• Mr. X gewinnt, falls er es schafft bis zum Ende der letzten Runde nicht gefasst zu werden.</string>
     <string name="rules_title_roles">Rollen</string>
-    <string name="rules_description_roles">" Detektive\n• Spielen zusammen mit bis zu 5 Spielern.\n• Ihre Bewegungen auf dem Spielbrett sind für alle sichtbar.\n• Versuchen Mr. X zu fangen.\n\nMr. X\n• Ein einzelner Spieler.\n• Seine Position ist nur für sich selbst ersichtlich.</string>
+    <string name="rules_description_roles">Detektive\n• Bis zu 5 Spieler als Team.\n• Alle Bewegungen sind für jeden sichtbar.\n• Gemeinsam Mr. X einkreisen und fangen.\n\nMr. X\n• Ein einzelner verborgener Spieler.\n• Position wird nur in bestimmten Runden enthüllt.</string>
     <string name="rules_title_movement">Fortbewegung</string>
     <string name="rules_description_movement">Spieler können sich folgendermaßen über das Spielfeld bewegen:\n• Spazieren → kurze Reichweite, weitverbreitet\n• E-Scooter → mittlere Reichweite\n• Fahrgemeinschaft → hohe Reichweite, begrenzte Verwendungsmöglichkeiten\nJede Station hat mindestens eine Transportmöglichkeit (Ticket) zugeteilt, mit der sie erreichbar ist.</string>
     <string name="rules_title_gameplay">Spielablauf</string>
@@ -17,9 +17,20 @@
     <string name="rules_title_tickets">Fahrkarten</string>
     <string name="rules_description_tickets">Jeder Spieler hat die folgenden Fahrkarten:\n• Spazieren\n• E-Scooter\n• Fahrgemeinschaft\n\nSpezialtickets von Mr. X:\n• Schwarzes Ticket → Die Detektive können nicht genau wissen, welcher Weg verwendet wurde.\n• Doppel Bewegung → Tätige zwei Züge in einer Runde.</string>
     <string name="rules_title_important_rules">Wichtige Regeln</string>
-    <string name="rules_description_important_rules">• Detektive haben keine Spezialtickets.\n• Man kann sich nur bewegen, wenn man noch eine passende Fahrkerte hat.</string>
+    <string name="rules_description_important_rules">• Detektive haben keine Spezialtickets.\n• Man kann sich nur bewegen, wenn man noch eine passende Fahrkarte hat.</string>
     <string name="rules_title_game_over">Spielende</string>
-    <string name="rules_description_game_over">Ein Spiel endet falls:\n• Ein Detektiv Mr. X fängt → Detektive gewinnen.\n• Mr. X sich der Fahndung entzieht → Mr. X gewinnt.\n• Kein Detektiv sich mehr bewegen kann → Mr. X gewinnt.</string>
+    <string name="rules_description_game_over">Ein Spiel endet falls:\n• Ein Detektiv Mr. X fängt → Detektive gewinnen.\n• Mr. X wird bis zur letzten Runde nicht gefasst → Mr. X gewinnt.</string>
+
+    <string name="rules_movement_walking_detail">Kurze Reichweite, weitverbreitetes Netz</string>
+    <string name="rules_movement_escooter_detail">Mittlere Reichweite</string>
+    <string name="rules_movement_carsharing_detail">Hohe Reichweite, begrenzte Verfügbarkeit</string>
+    <string name="rules_movement_station_note">Jede Station hat mindestens eine Transportmöglichkeit zugeteilt, mit der sie erreichbar ist.</string>
+    <string name="rules_tickets_standard_header">Standard-Tickets — Alle Spieler</string>
+    <string name="rules_tickets_special_header">Spezialtickets — Nur Mr. X</string>
+    <string name="rules_ticket_black_detail">Transportmittel bleibt für Detektive verborgen</string>
+    <string name="rules_ticket_double">Doppel-Zug</string>
+    <string name="rules_ticket_double_detail">Tätige zwei Züge in einer Runde</string>
+
     <string name="title_settings">Einstellungen</string>
     <string name="title_gameboard">Spielbrett</string>
     <string name="settings_description_display_option">Wähle eine Darstellung des Spielbretts aus.</string>

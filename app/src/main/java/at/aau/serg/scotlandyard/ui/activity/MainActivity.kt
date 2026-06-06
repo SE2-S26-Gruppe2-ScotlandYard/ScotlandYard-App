@@ -40,8 +40,10 @@ import android.util.Log
 import at.aau.serg.scotlandyard.data.*
 import at.aau.serg.scotlandyard.network.ServerConfig
 import com.example.scotlandyard.R
+import androidx.activity.compose.BackHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : ComponentActivity() {
 
@@ -80,6 +82,9 @@ private fun ScotlandYardApp() {
                 .focusRequester(focusRequester)
                 .focusable()
                 .onPreviewKeyEvent { event ->
+                    if (event.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_BACK) {
+                        return@onPreviewKeyEvent true
+                    }
                     if (event.type == KeyEventType.KeyDown) {
                         CheatKeyEventRegistry.notify(event.nativeKeyEvent)
                     }
@@ -100,7 +105,8 @@ private fun ScotlandYardApp() {
 
             LaunchedEffect(isConnected) {
                 if (!isConnected && currentRoute != null
-                    && currentRoute != "start" && currentRoute != "login") {
+                    && currentRoute != "start" && currentRoute != "login"
+                    && currentRoute != "settings") {
                     Toast.makeText(context,
                         context.getString(R.string.toast_connection_lost), Toast.LENGTH_LONG).show()
                     navController.navigate("start") { popUpTo(0) }
@@ -124,8 +130,19 @@ private fun ScotlandYardApp() {
                     currentLang = lang
                 }
             )
+            // Registered after NavHost so it wins in LIFO order — blocks all hardware back presses.
+            BackHandler(enabled = true) {}
         }
     }
+}
+
+@Composable
+private fun rememberIsNavigating(): androidx.compose.runtime.MutableState<Boolean> {
+    val state = remember { mutableStateOf(false) }
+    LaunchedEffect(state.value) {
+        if (state.value) { delay(500.milliseconds); state.value = false }
+    }
+    return state
 }
 
 @Composable
@@ -140,66 +157,16 @@ private fun AppNavHost(
     onLanguageChange: (String) -> Unit
 ) {
     NavHost(navController = navController, startDestination = "start") {
-        composable("start") {
-            StartScreen(
-                onStartGame = { navController.navigate("login") },
-                onRules     = { navController.navigate("rules") },
-                onSettings  = { navController.navigate("settings") }
-            )
-        }
-
-        composable("login") {
-            LaunchedEffect(currentUser) {
-                if (currentUser != null) {
-                    navController.navigate("lobby") {
-                        popUpTo("login") { inclusive = true }
-                    }
-                }
-            }
-            LoginScreen(
-                onConnectClick      = { nickname -> authViewModel.connectUser(nickname) },
-                onBackClick         = { navController.popBackStack() },
-                onRefreshClick      = { authViewModel.reconnect() },
-                isConnectedToServer = isConnected
-            )
-        }
-
-        composable("rules") {
-            RulesScreen(onBackClick = { navController.popBackStack() })
-        }
-
+        composable("start") { StartRoute(navController) }
+        composable("login") { LoginRoute(navController, currentUser, authViewModel, isConnected) }
+        composable("rules") { RulesRoute(navController) }
         composable("lobby") {
-            val user = currentUser
-            if (user != null) {
-                LobbyScreen(
-                    authViewModel = authViewModel,
-                    onBackClick   = { navController.popBackStack() },
-                    onProceedToRoles = { lobbyViewModel ->
-                        onSharedLobbyViewModelChange(lobbyViewModel)
-                        lobbyViewModel.startRoleSelection()
-                        navController.navigate("roleSelection")
-                    },
-                    onNavigateToRoleSelection = { lobbyViewModel ->
-                        onSharedLobbyViewModelChange(lobbyViewModel)
-                        if (currentRoute != "roleSelection") navController.navigate("roleSelection")
-                    },
-                    userId   = user.id,
-                    userName = user.nickName
-                )
-            }
+            LobbyRoute(navController, currentUser, authViewModel, currentRoute, sharedLobbyViewModel, onSharedLobbyViewModelChange)
         }
-
         composable("roleSelection") {
-            val lobbyVm = sharedLobbyViewModel
-            if (lobbyVm != null) {
-                RoleSelectionRoute(lobbyVm = lobbyVm, navController = navController)
-            }
+            sharedLobbyViewModel?.let { RoleSelectionRoute(lobbyVm = it, navController = navController) }
         }
-
-        composable("settings") {
-            SettingsScreen(onBackClick = { navController.popBackStack() }, onLanguageChange = { lang -> onLanguageChange(lang) })
-        }
-
+        composable("settings") { SettingsRoute(navController, authViewModel, onLanguageChange) }
         composable(
             route = "assignstartposition/{gameId}/{playerId}",
             arguments = listOf(
@@ -207,23 +174,13 @@ private fun AppNavHost(
                 navArgument("playerId") { type = NavType.StringType }
             )
         ) { backStackEntry ->
-            val gameId   = backStackEntry.arguments?.getString("gameId")   ?: ""
-            val playerId = backStackEntry.arguments?.getString("playerId") ?: ""
-            val lobbyVm  = sharedLobbyViewModel
-            AssignStartPositionScreen(
-                gameId   = gameId,
-                playerId = playerId,
-                onBackClick = { navController.popBackStack() },
-                onPositionConfirmed = {
-                    val selectedRoles = lobbyVm?.currentLobby?.value?.selectedRoles
-                    val isMrX = selectedRoles?.get(playerId) == "MRX"
-                    navController.navigate("gameboard/$gameId/$playerId/$isMrX") {
-                        popUpTo("assignstartposition/$gameId/$playerId") { inclusive = true }
-                    }
-                }
+            AssignStartPositionRoute(
+                navController        = navController,
+                sharedLobbyViewModel = sharedLobbyViewModel,
+                gameId               = backStackEntry.arguments?.getString("gameId")   ?: "",
+                playerId             = backStackEntry.arguments?.getString("playerId") ?: ""
             )
         }
-
         composable(
             route = "gameboard/{gameId}/{playerId}/{isMrX}",
             arguments = listOf(
@@ -232,24 +189,19 @@ private fun AppNavHost(
                 navArgument("isMrX")   { type = NavType.BoolType }
             )
         ) { backStackEntry ->
-            val gameId   = backStackEntry.arguments?.getString("gameId")   ?: ""
-            val playerId = backStackEntry.arguments?.getString("playerId") ?: ""
-            val isMrX    = backStackEntry.arguments?.getBoolean("isMrX")  ?: false
             GameBoardRoute(
-                gameId       = gameId,
-                playerId     = playerId,
-                isMrX        = isMrX,
+                gameId        = backStackEntry.arguments?.getString("gameId")   ?: "",
+                playerId      = backStackEntry.arguments?.getString("playerId") ?: "",
+                isMrX         = backStackEntry.arguments?.getBoolean("isMrX")  ?: false,
                 navController = navController
             )
         }
-
         composable("mrxwin") {
             MrXWinScreen(
                 onBackClick = { navController.navigate("start") },
                 onQuit = { (navController.context as? android.app.Activity)?.finish() }
             )
         }
-
         composable("detectiveswin") {
             DetectivesWinScreen(
                 onBackClick = { navController.navigate("start") },
@@ -257,6 +209,127 @@ private fun AppNavHost(
             )
         }
     }
+}
+
+@Composable
+private fun StartRoute(navController: NavHostController) {
+    val isNavigating = rememberIsNavigating()
+    StartScreen(
+        onStartGame = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("login") } },
+        onRules     = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("rules") } },
+        onSettings  = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("settings") } }
+    )
+}
+
+@Composable
+private fun LoginRoute(
+    navController: NavHostController,
+    currentUser: User?,
+    authViewModel: AuthViewModel,
+    isConnected: Boolean
+) {
+    val isNavigating = rememberIsNavigating()
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) {
+            navController.navigate("lobby") { popUpTo("login") { inclusive = true } }
+        }
+    }
+    LoginScreen(
+        onConnectClick      = { nickname -> authViewModel.connectUser(nickname) },
+        onBackClick         = {
+            if (!isNavigating.value && navController.previousBackStackEntry != null) {
+                isNavigating.value = true; navController.popBackStack()
+            }
+        },
+        onRefreshClick      = { authViewModel.reconnect() },
+        isConnectedToServer = isConnected
+    )
+}
+
+@Composable
+private fun RulesRoute(navController: NavHostController) {
+    val isNavigating = rememberIsNavigating()
+    RulesScreen(onBackClick = {
+        if (!isNavigating.value && navController.previousBackStackEntry != null) {
+            isNavigating.value = true; navController.popBackStack()
+        }
+    })
+}
+
+@Composable
+private fun LobbyRoute(
+    navController: NavHostController,
+    currentUser: User?,
+    authViewModel: AuthViewModel,
+    currentRoute: String?,
+    sharedLobbyViewModel: LobbyViewModel?,
+    onSharedLobbyViewModelChange: (LobbyViewModel) -> Unit
+) {
+    val isNavigating = rememberIsNavigating()
+    val user = currentUser ?: return
+    LobbyScreen(
+        authViewModel = authViewModel,
+        onBackClick   = {
+            if (!isNavigating.value && navController.previousBackStackEntry != null) {
+                isNavigating.value = true; navController.popBackStack()
+            }
+        },
+        onProceedToRoles = { lobbyViewModel ->
+            onSharedLobbyViewModelChange(lobbyViewModel)
+            lobbyViewModel.startRoleSelection()
+            navController.navigate("roleSelection")
+        },
+        onNavigateToRoleSelection = { lobbyViewModel ->
+            onSharedLobbyViewModelChange(lobbyViewModel)
+            if (currentRoute != "roleSelection") navController.navigate("roleSelection")
+        },
+        userId   = user.id,
+        userName = user.nickName
+    )
+}
+
+@Composable
+private fun SettingsRoute(
+    navController: NavHostController,
+    authViewModel: AuthViewModel,
+    onLanguageChange: (String) -> Unit
+) {
+    val isNavigating = rememberIsNavigating()
+    SettingsScreen(
+        onBackClick = {
+            if (!isNavigating.value && navController.previousBackStackEntry != null) {
+                isNavigating.value = true; navController.popBackStack()
+            }
+        },
+        onLanguageChange = onLanguageChange,
+        onServerChange   = { authViewModel.reconnect() }
+    )
+}
+
+@Composable
+private fun AssignStartPositionRoute(
+    navController: NavHostController,
+    sharedLobbyViewModel: LobbyViewModel?,
+    gameId: String,
+    playerId: String
+) {
+    val isNavigating = rememberIsNavigating()
+    AssignStartPositionScreen(
+        gameId   = gameId,
+        playerId = playerId,
+        onBackClick = {
+            if (!isNavigating.value && navController.previousBackStackEntry != null) {
+                isNavigating.value = true; navController.popBackStack()
+            }
+        },
+        onPositionConfirmed = {
+            val selectedRoles = sharedLobbyViewModel?.currentLobby?.value?.selectedRoles
+            val isMrX = selectedRoles?.get(playerId) == "MRX"
+            navController.navigate("gameboard/$gameId/$playerId/$isMrX") {
+                popUpTo("assignstartposition/$gameId/$playerId") { inclusive = true }
+            }
+        }
+    )
 }
 
 @Composable
@@ -367,11 +440,21 @@ private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostCo
         }
     }
 
+    val isNavigating = remember { mutableStateOf(false) }
+    LaunchedEffect(isNavigating.value) {
+        if (isNavigating.value) { delay(500.milliseconds); isNavigating.value = false }
+    }
+
     if (lobby != null) {
         RoleSelectionScreen(
             viewModel   = lobbyVm,
             lobby       = lobby!!,
-            onBackClick = { navController.popBackStack() },
+            onBackClick = {
+                if (!isNavigating.value && navController.previousBackStackEntry != null) {
+                    isNavigating.value = true
+                    navController.popBackStack()
+                }
+            },
             onGameStart = { lobbyVm.startGame() }
         )
     }
