@@ -29,6 +29,12 @@ import at.aau.serg.scotlandyard.model.LobbyUserData
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import com.example.scotlandyard.R
 
+private fun LobbyData.playersInRole(role: String): List<LobbyUserData> =
+    users.filter { (selectedRoles[it.id] ?: "NONE") == role }
+
+private fun LobbyData.allRolesAssigned(): Boolean =
+    users.isNotEmpty() && users.all { (selectedRoles[it.id] ?: "NONE") != "NONE" }
+
 /**
  * Rollenauswahl-Screen
  *
@@ -70,9 +76,7 @@ fun RoleSelectionContent(
 ) {
     val myRole = lobby.selectedRoles[localUserId] ?: "NONE"
     val mrXTaken = lobby.selectedRoles.values.contains("MRX")
-    val allRolesSet = lobby.users.isNotEmpty() && lobby.users.all { user ->
-        (lobby.selectedRoles[user.id] ?: "NONE") != "NONE"
-    }
+    val allRolesSet = lobby.allRolesAssigned()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -115,12 +119,13 @@ fun RoleSelectionContent(
                     backgroundColor = Color(0xFF142B20),
                     isSelected = myRole == "DETECTIVE",
                     isDisabled = false,
-                    players = lobby.users.filter { (lobby.selectedRoles[it.id] ?: "NONE") == "DETECTIVE" },
+                    players = lobby.playersInRole("DETECTIVE"),
                     hostId = lobby.hostId
                 ),
                 onClick = { onRoleSelect("DETECTIVE") }
             )
 
+            val mrXSelectable = !mrXTaken || myRole == "MRX"
             RoleSelectionColumn(
                 modifier = Modifier.weight(1f),
                 config = RoleColumnConfig(
@@ -128,11 +133,11 @@ fun RoleSelectionContent(
                     subtitle = stringResource(R.string.role_selection_description_mrx),
                     backgroundColor = if (mrXTaken) Color(0xFF1D1D1D) else Color(0xFF142B20),
                     isSelected = myRole == "MRX",
-                    isDisabled = mrXTaken && myRole != "MRX",
-                    players = lobby.users.filter { (lobby.selectedRoles[it.id] ?: "NONE") == "MRX" },
+                    isDisabled = !mrXSelectable,
+                    players = lobby.playersInRole("MRX"),
                     hostId = lobby.hostId
                 ),
-                onClick = { if (!mrXTaken || myRole == "MRX") onRoleSelect("MRX") }
+                onClick = { if (mrXSelectable) onRoleSelect("MRX") }
             )
         }
     }
@@ -145,10 +150,6 @@ private fun RoleSelectionTopBar(
     onBackClick: () -> Unit,
     onGameStart: () -> Unit
 ) {
-    val backButtonEnabled = remember { mutableStateOf(true) }
-    val startButtonEnabled = remember { mutableStateOf(true) }
-    val scope = rememberCoroutineScope()
-
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -156,44 +157,11 @@ private fun RoleSelectionTopBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
-            if (isHost) {
-                TextButton(
-                    onClick = {
-                        if (backButtonEnabled.value) {
-                            backButtonEnabled.value = false
-                            onBackClick()
-                            scope.launch { delay(500.milliseconds); backButtonEnabled.value = true }
-                        }
-                    },
-                    enabled = backButtonEnabled.value,
-                    colors = ButtonDefaults.textButtonColors(contentColor = Color.White),
-                    modifier = Modifier.wrapContentSize()
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.button_back), modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.button_back_to_lobby), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Serif)
-                }
-            }
+            if (isHost) { BackToLobbyButton(onBackClick) }
         }
         Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
             if (isHost) {
-                TextButton(
-                    onClick = {
-                        if (startButtonEnabled.value) {
-                            startButtonEnabled.value = false
-                            onGameStart()
-                            scope.launch { delay(500.milliseconds); startButtonEnabled.value = true }
-                        }
-                    },
-                    enabled = allRolesSet && startButtonEnabled.value,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color.White,
-                        disabledContentColor = Color(0x44FFFFFF)
-                    ),
-                    modifier = Modifier.wrapContentSize()
-                ) {
-                    Text(stringResource(R.string.button_start_position), fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
-                }
+                StartGameButton(allRolesSet, onGameStart)
             } else {
                 Text(
                     text = stringResource(R.string.status_waiting_for_host),
@@ -205,6 +173,51 @@ private fun RoleSelectionTopBar(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun BackToLobbyButton(onBackClick: () -> Unit) {
+    val enabled = remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+    TextButton(
+        onClick = {
+            if (enabled.value) {
+                enabled.value = false
+                onBackClick()
+                scope.launch { delay(500.milliseconds); enabled.value = true }
+            }
+        },
+        enabled = enabled.value,
+        colors = ButtonDefaults.textButtonColors(contentColor = Color.White),
+        modifier = Modifier.wrapContentSize()
+    ) {
+        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.button_back), modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(stringResource(R.string.button_back_to_lobby), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, fontFamily = FontFamily.Serif)
+    }
+}
+
+@Composable
+private fun StartGameButton(allRolesSet: Boolean, onGameStart: () -> Unit) {
+    val enabled = remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+    TextButton(
+        onClick = {
+            if (enabled.value) {
+                enabled.value = false
+                onGameStart()
+                scope.launch { delay(500.milliseconds); enabled.value = true }
+            }
+        },
+        enabled = allRolesSet && enabled.value,
+        colors = ButtonDefaults.textButtonColors(
+            contentColor = Color.White,
+            disabledContentColor = Color(0x44FFFFFF)
+        ),
+        modifier = Modifier.wrapContentSize()
+    ) {
+        Text(stringResource(R.string.button_start_position), fontSize = 20.sp, fontWeight = FontWeight.Bold, fontFamily = FontFamily.Serif)
     }
 }
 
