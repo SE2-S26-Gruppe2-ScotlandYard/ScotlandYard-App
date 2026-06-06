@@ -54,6 +54,8 @@ import at.aau.serg.scotlandyard.data.saveServerUriCustomPreference
 import at.aau.serg.scotlandyard.data.saveServerUriTypePreference
 import at.aau.serg.scotlandyard.model.BoardDisplayMode
 import at.aau.serg.scotlandyard.network.ServerConfig
+import at.aau.serg.scotlandyard.ui.components.SectionHeader
+import at.aau.serg.scotlandyard.ui.components.SidebarItem
 import at.aau.serg.scotlandyard.ui.theme.AccentGlow
 import at.aau.serg.scotlandyard.ui.theme.AccentTeal
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme

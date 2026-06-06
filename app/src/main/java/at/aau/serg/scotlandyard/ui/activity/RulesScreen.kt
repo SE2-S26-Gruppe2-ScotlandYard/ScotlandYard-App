@@ -2,7 +2,6 @@ package at.aau.serg.scotlandyard.ui.activity
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +42,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import at.aau.serg.scotlandyard.ui.components.SectionHeader
+import at.aau.serg.scotlandyard.ui.components.SidebarItem
 import at.aau.serg.scotlandyard.ui.theme.AccentGlow
 import at.aau.serg.scotlandyard.ui.theme.BlackColor
 import at.aau.serg.scotlandyard.ui.theme.CarSharingColor
