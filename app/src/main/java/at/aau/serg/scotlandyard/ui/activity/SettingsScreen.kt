@@ -16,11 +16,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Map
-import androidx.compose.material3.Icon
+import androidx.compose.material.icons.filled.Wifi
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults.colors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -40,7 +44,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import at.aau.serg.scotlandyard.data.getDisplayModePreference
+import at.aau.serg.scotlandyard.data.getLanguagePreference
+import at.aau.serg.scotlandyard.data.getServerUriCustomPreference
+import at.aau.serg.scotlandyard.data.getServerUriTypePreference
+import at.aau.serg.scotlandyard.data.saveDisplayModePreference
+import at.aau.serg.scotlandyard.data.saveLanguagePreference
+import at.aau.serg.scotlandyard.data.saveServerUriCustomPreference
+import at.aau.serg.scotlandyard.data.saveServerUriTypePreference
 import at.aau.serg.scotlandyard.model.BoardDisplayMode
+import at.aau.serg.scotlandyard.network.ServerConfig
+import at.aau.serg.scotlandyard.ui.components.SectionHeader
+import at.aau.serg.scotlandyard.ui.components.SidebarItem
 import at.aau.serg.scotlandyard.ui.theme.AccentGlow
 import at.aau.serg.scotlandyard.ui.theme.AccentTeal
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
@@ -49,33 +64,31 @@ import at.aau.serg.scotlandyard.ui.theme.SidebarBorder
 import at.aau.serg.scotlandyard.ui.theme.TextMuted
 import at.aau.serg.scotlandyard.ui.theme.TextPrimary
 import com.example.scotlandyard.R
-import at.aau.serg.scotlandyard.data.getDisplayModePreference
-import at.aau.serg.scotlandyard.data.getLanguagePreference
-import at.aau.serg.scotlandyard.data.saveDisplayModePreference
-import at.aau.serg.scotlandyard.data.saveLanguagePreference
 
 private enum class SettingsCategory(@StringRes val labelRes: Int, val icon: ImageVector) {
     GAMEBOARD(R.string.title_gameboard, Icons.Default.Map),
-    LANGUAGE(R.string.title_language, Icons.Default.Language)
+    LANGUAGE(R.string.title_language, Icons.Default.Language),
+    SERVER(R.string.title_server, Icons.Default.Wifi)
 }
+
+private val selectedFactor = 0.86f
 
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
     onDisplayModeChange: (BoardDisplayMode) -> Unit = {},
-    onLanguageChange: (String) -> Unit = {}
+    onLanguageChange: (String) -> Unit = {},
+    onServerChange: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var selectedCategory by remember { mutableStateOf(SettingsCategory.GAMEBOARD) }
     var displayMode by remember { mutableStateOf(context.getDisplayModePreference()) }
     var selectedLanguage by remember { mutableStateOf(context.getLanguagePreference()) }
+    var serverUriType by remember { mutableStateOf(context.getServerUriTypePreference()) }
+    var serverUriCustom by remember { mutableStateOf(context.getServerUriCustomPreference()) }
 
-    BaseScreen(onBackClick = onBackClick) { _ ->
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = 8.dp)
-        ) {
+    BaseScreen(onBackClick = onBackClick, title = stringResource(R.string.title_settings)) { _ ->
+        Row(modifier = Modifier.fillMaxSize()) {
             SettingsSidebar(
                 selected = selectedCategory,
                 onSelect = { selectedCategory = it }
@@ -85,7 +98,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .padding(start = 24.dp, end = 16.dp, top = 8.dp, bottom = 16.dp)
+                    .padding(start = 24.dp, end = 16.dp, top = 4.dp, bottom = 8.dp)
             ) {
                 when (selectedCategory) {
                     SettingsCategory.GAMEBOARD -> GameboardSettingsContent(
@@ -105,6 +118,22 @@ fun SettingsScreen(
                             onLanguageChange(lang)
                         }
                     )
+
+                    SettingsCategory.SERVER -> ServerSettingsContent(
+                        uriType = serverUriType,
+                        customUri = serverUriCustom,
+                        onUriTypeChange = { type ->
+                            serverUriType = type
+                            context.saveServerUriTypePreference(type)
+                            ServerConfig.init(context)
+                            onServerChange()
+                        },
+                        onCustomUriChange = { uri ->
+                            serverUriCustom = uri
+                            context.saveServerUriCustomPreference(uri)
+                            if (serverUriType == "DEVICE") ServerConfig.init(context)
+                        }
+                    )
                 }
             }
         }
@@ -120,13 +149,10 @@ private fun SettingsSidebar(
         modifier = Modifier
             .width(160.dp)
             .fillMaxHeight()
-            .background(SidebarBg)
-            .border(
-                width = 1.dp,
-                color = SidebarBorder,
-                shape = RoundedCornerShape(topEnd = 12.dp, bottomEnd = 12.dp)
-            )
-            .padding(vertical = 16.dp, horizontal = 8.dp),
+            .padding(bottom = 8.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SidebarBg.copy(alpha = 0.82f))
+            .padding(top = 16.dp, bottom = 16.dp, start = 8.dp, end = 8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
@@ -151,44 +177,7 @@ private fun SettingsSidebar(
     }
 }
 
-@Composable
-private fun SidebarItem(
-    label: String,
-    icon: ImageVector,
-    isSelected: Boolean,
-    onClick: () -> Unit
-) {
-    val bgColor = if (isSelected) AccentTeal.copy(alpha = 0.35f) else Color.Transparent
-    val textColor = if (isSelected) AccentGlow else TextPrimary
-    val borderColor = if (isSelected) AccentGlow.copy(alpha = 0.5f) else Color.Transparent
 
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(44.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(bgColor)
-            .border(1.dp, borderColor, RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = textColor,
-            modifier = Modifier.size(18.dp)
-        )
-        Spacer(modifier = Modifier.width(10.dp))
-        Text(
-            text = label,
-            fontSize = 13.sp,
-            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-            color = textColor
-        )
-    }
-}
 
 @Composable
 private fun GameboardSettingsContent(
@@ -199,21 +188,11 @@ private fun GameboardSettingsContent(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Top
     ) {
-
-        // Titel
-        Text(
-            text = stringResource(R.string.title_gameboard),
-            fontSize = 26.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
-
-        Text(
-            text = stringResource(R.string.settings_description_display_option),
-            fontSize = 12.sp,
-            color = TextMuted,
-            modifier = Modifier.padding(bottom = 20.dp)
+        SectionHeader(
+            icon = Icons.Default.Map,
+            title = stringResource(R.string.title_gameboard),
+            subtitle = stringResource(R.string.settings_description_display_option),
+            bottomSpacing = 20.dp
         )
 
         Row(
@@ -252,7 +231,7 @@ private fun DisplayModeOption(
 ) {
     val borderColor = if (isSelected) AccentGlow else SidebarBorder
     val borderWidth = if (isSelected) 2.dp else 1.dp
-    val bgColor = if (isSelected) AccentTeal.copy(alpha = 0.86f) else SidebarBg
+    val bgColor = if (isSelected) AccentTeal.copy(alpha = selectedFactor) else SidebarBg
 
     Column(
         modifier = modifier
@@ -333,16 +312,11 @@ private fun LanguageSettingsContent(
     )
 
     Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
-        Text(
-            text = stringResource(R.string.title_language),
-            fontSize = 26.sp, fontWeight = FontWeight.Bold,
-            color = Color.White, modifier = Modifier.padding(bottom = 4.dp)
-        )
-
-        Text(
-            text = stringResource(R.string.settings_language_description),
-            fontSize = 12.sp, color = TextMuted,
-            modifier = Modifier.padding(bottom = 20.dp)
+        SectionHeader(
+            icon = Icons.Default.Language,
+            title = stringResource(R.string.title_language),
+            subtitle = stringResource(R.string.settings_language_description),
+            bottomSpacing = 20.dp
         )
 
         Row(
@@ -379,7 +353,7 @@ private fun LanguageOption(
 ) {
     val borderColor = if (isSelected) AccentGlow else SidebarBorder
     val borderWidth = if (isSelected) 2.dp else 1.dp
-    val bgColor = if (isSelected) AccentTeal.copy(alpha = 0.86f) else SidebarBg
+    val bgColor = if (isSelected) AccentTeal.copy(alpha = selectedFactor) else SidebarBg
 
     Row(
         modifier = modifier
@@ -402,6 +376,107 @@ private fun LanguageOption(
                 text = stringResource(R.string.checkmark),
                 fontSize = 16.sp, fontWeight = FontWeight.Bold,
                 color = AccentGlow
+            )
+        }
+    }
+}
+
+@Composable
+private fun ServerSettingsContent(
+    uriType: String,
+    customUri: String,
+    onUriTypeChange: (String) -> Unit,
+    onCustomUriChange: (String) -> Unit
+) {
+    val options = listOf(
+        "GLOBAL" to stringResource(R.string.settings_server_global),
+        "LOCAL" to stringResource(R.string.settings_server_local),
+        "DEVICE" to stringResource(R.string.settings_server_custom)
+    )
+
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState),
+        verticalArrangement = Arrangement.Top
+    ) {
+        SectionHeader(
+            icon = Icons.Default.Wifi,
+            title = stringResource(R.string.title_server),
+            subtitle = stringResource(R.string.settings_server_description),
+            bottomSpacing = 20.dp
+        )
+
+        options.forEach { (type, label) ->
+            val isSelected = uriType == type
+            val borderColor = if (isSelected) AccentGlow else SidebarBorder
+            val borderWidth = if (isSelected) 2.dp else 1.dp
+            val bgColor = if (isSelected) AccentTeal.copy(alpha = selectedFactor) else SidebarBg
+            val uriHint = when (type) {
+                "GLOBAL" -> ServerConfig.GLOBAL_URI
+                "LOCAL" -> ServerConfig.LOCAL_URI
+                else -> customUri.takeIf { it.isNotBlank() } ?: ServerConfig.DEVICE_URI
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 8.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(bgColor)
+                    .border(borderWidth, borderColor, RoundedCornerShape(12.dp))
+                    .clickable { onUriTypeChange(type) }
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = label,
+                    fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
+                    color = if (isSelected) AccentGlow else TextPrimary
+                )
+
+                Text(
+                    text = uriHint,
+                    fontSize = 11.sp,
+                    color = TextMuted
+                )
+
+                if (isSelected) {
+                    Text(
+                        text = stringResource(R.string.checkmark),
+                        fontSize = 16.sp, fontWeight = FontWeight.Bold,
+                        color = AccentGlow
+                    )
+                }
+            }
+        }
+
+        if (uriType == "DEVICE") {
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = customUri,
+                onValueChange = onCustomUriChange,
+                label = {
+                    Text(
+                        stringResource(R.string.settings_text_custom_uri),
+                        color = TextMuted
+                    )
+                },
+                placeholder = { Text("ws://192.168.x.x:8080/scotlandyard", color = TextMuted) },
+                singleLine = true,
+                colors = colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = AccentGlow,
+                    unfocusedBorderColor = TextMuted,
+                    focusedLabelColor = AccentGlow,
+                    unfocusedLabelColor = TextMuted,
+                    cursorColor = AccentGlow
+                ),
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }
