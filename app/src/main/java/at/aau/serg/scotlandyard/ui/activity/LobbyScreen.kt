@@ -79,7 +79,7 @@ fun LobbyScreen(
         if (statusMessage.isNotBlank()) {
             val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
             statusLog.add(0, "[$time] $statusMessage")
-            if (statusLog.size > 30) statusLog.removeLast()
+            if (statusLog.size > 30) statusLog.removeAt(statusLog.lastIndex)
         }
     }
 
@@ -241,7 +241,7 @@ private fun LobbyConsole(messages: List<String>, userName: String) {
         ) {
             if (messages.isEmpty()) {
                 Text(
-                    text = "No activity yet",
+                    text = stringResource(R.string.lobby_no_activity),
                     color = TextMuted.copy(alpha = 0.35f),
                     fontSize = 10.sp,
                     modifier = Modifier
@@ -270,7 +270,7 @@ private fun LobbyConsole(messages: List<String>, userName: String) {
         }
         Spacer(modifier = Modifier.height(1.dp))
         Text(
-            text = "nickname: $userName",
+            text = stringResource(R.string.lobby_nickname_label, userName),
             color = Color.White.copy(alpha = 0.65f),
             fontSize = 10.sp,
             maxLines = 1,
@@ -324,7 +324,7 @@ private fun LobbyBrowserView(
                                 color = Color.White
                             )
                             Text(
-                                text = "Start a new game room for your friends",
+                                text = stringResource(R.string.lobby_create_subtitle),
                                 fontSize = 12.sp,
                                 color = TextMuted
                             )
@@ -347,8 +347,8 @@ private fun LobbyBrowserView(
         Column(modifier = Modifier.fillMaxWidth()) {
             SectionHeader(
                 icon     = Icons.Default.Search,
-                title    = "Join Lobby",
-                subtitle = "Enter a 5-character code to join",
+                title    = stringResource(R.string.lobby_join_title),
+                subtitle = stringResource(R.string.lobby_join_subtitle),
                 bottomSpacing = 12.dp
             )
             Column(
@@ -496,7 +496,7 @@ private fun LobbyCodeCard(lobby: LobbyData, modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Text(
-            text          = "LOBBY CODE",
+            text          = stringResource(R.string.lobby_code_label),
             fontSize      = 10.sp,
             fontWeight    = FontWeight.Bold,
             letterSpacing = 2.sp,
@@ -518,7 +518,7 @@ private fun LobbyCodeCard(lobby: LobbyData, modifier: Modifier = Modifier) {
             modifier  = Modifier.padding(top = 4.dp, bottom = 2.dp)
         )
         Text(
-            text      = "Share this code with your friends",
+            text      = stringResource(R.string.lobby_code_share),
             fontSize  = 12.sp,
             color     = TextMuted,
             textAlign = TextAlign.Center
@@ -613,7 +613,7 @@ private fun EmptyPlayerSlot() {
                 .border(1.dp, SidebarBorder, CircleShape)
         )
         Spacer(modifier = Modifier.width(12.dp))
-        Text(text = "Waiting…", color = TextMuted.copy(alpha = 0.4f), fontSize = 13.sp)
+        Text(text = stringResource(R.string.lobby_waiting), color = TextMuted.copy(alpha = 0.4f), fontSize = 13.sp)
     }
 }
 
