@@ -477,8 +477,11 @@ private fun GameBoardRoute(
 
 @Composable
 private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostController) {
-    val lobby by lobbyVm.currentLobby.collectAsState()
+    val lobby       by lobbyVm.currentLobby.collectAsState()
+    val isConnected by lobbyVm.isConnected.collectAsState()
+    val context = LocalContext.current
 
+    // Spiel startet → zur Startpositions-Auswahl
     LaunchedEffect(lobbyVm) {
         lobbyVm.navigateToGame.collect { gameId ->
             val playerId = lobbyVm.userId
@@ -489,12 +492,31 @@ private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostCo
     }
 
     // Gäste: navigieren zurück wenn Host "Back to Lobby" auslöst.
-    // Route-Guard verhindert doppeltes popBackStack beim Host, der bereits
-    // sofort über den Button navigiert hat.
     LaunchedEffect("backToLobby", lobbyVm) {
         lobbyVm.navigateToLobby.collect {
             if (navController.currentBackStackEntry?.destination?.route == "roleSelection") {
                 navController.popBackStack()
+            }
+        }
+    }
+
+    // Server-Fehler als Toast anzeigen (MrX Race Condition, startGame reject, etc.)
+    LaunchedEffect(lobbyVm) {
+        lobbyVm.errorEvent.collect { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Lobby wird null → Spieler wurde gekickt oder Lobby gelöscht
+    LaunchedEffect(lobbyVm) {
+        var hadLobby = false
+        lobbyVm.currentLobby.collect { l ->
+            if (l != null) {
+                hadLobby = true
+            } else if (hadLobby) {
+                if (navController.currentBackStackEntry?.destination?.route == "roleSelection") {
+                    navController.popBackStack()
+                }
             }
         }
     }
@@ -508,6 +530,7 @@ private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostCo
         RoleSelectionScreen(
             viewModel   = lobbyVm,
             lobby       = lobby!!,
+            isConnected = isConnected,
             onBackClick = {
                 if (!isNavigating.value && navController.previousBackStackEntry != null) {
                     isNavigating.value = true

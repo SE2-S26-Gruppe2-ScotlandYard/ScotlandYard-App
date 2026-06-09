@@ -42,6 +42,10 @@ class LobbyViewModel(
     private val _navigateToGame = MutableSharedFlow<String>() // emits gameId
     val navigateToGame: SharedFlow<String> = _navigateToGame.asSharedFlow()
 
+    // One-shot error events für UI-Screens (z.B. RoleSelection)
+    private val _errorEvent = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val errorEvent: SharedFlow<String> = _errorEvent.asSharedFlow()
+
     init {
         // Verbindungsstatus direkt aus MyStomp beziehen
         viewModelScope.launch {
@@ -69,6 +73,11 @@ class LobbyViewModel(
         lobbyService = LobbyStompService(session, userId, myStomp)
         lobbyService!!.subscribe()
 
+        // Netzwerk-Sendefehler aus dem Service weiterleiten
+        viewModelScope.launch {
+            lobbyService!!.sendError.collect { msg -> _errorEvent.tryEmit(msg) }
+        }
+
         viewModelScope.launch {
             lobbyService!!.lobbyResponse.collect { response ->
                 response ?: return@collect
@@ -76,6 +85,7 @@ class LobbyViewModel(
 
                 if (!response.success) {
                     _statusMessage.value = "⚠️ ${response.message}"
+                    _errorEvent.tryEmit(response.message)
                     return@collect
                 }
 
@@ -190,6 +200,7 @@ class LobbyViewModel(
                 myStomp.getSession()?.sendText("/app/lobby/backToLobby", payload.toString())
             } catch (e: Exception) {
                 _statusMessage.value = "⚠️ Fehler bei der Rückkehr zur Lobby."
+                _errorEvent.tryEmit("Fehler bei der Rückkehr zur Lobby.")
             }
         }
     }

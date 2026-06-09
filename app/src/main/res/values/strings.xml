@@ -104,6 +104,7 @@
     <string name="status_selected">✓ Selected</string>
     <string name="button_click_to_select">Click to select</string>
     <string name="status_no_selection_header">No role yet:</string>
+    <string name="status_role_screen_disconnected">No server connection – your selection won\'t be saved</string>
 
     <string name="status_connecting_to_server">Connecting to server…</string>
     <string name="status_confirming_position">Confirming position…</string>

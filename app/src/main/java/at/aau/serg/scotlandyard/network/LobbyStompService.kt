@@ -6,8 +6,11 @@ import at.aau.serg.scotlandyard.model.toLobbyResponse
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.hildan.krossbow.stomp.StompSession
@@ -27,6 +30,9 @@ class LobbyStompService(
 
     private val _lobbyResponse = MutableStateFlow<LobbyResponse?>(null)
     val lobbyResponse: StateFlow<LobbyResponse?> = _lobbyResponse.asStateFlow()
+
+    private val _sendError = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val sendError: SharedFlow<String> = _sendError.asSharedFlow()
 
     private var specificLobbyJob: Job? = null
     private var privateCollectJob: Job? = null
@@ -149,6 +155,7 @@ class LobbyStompService(
                 session.sendText(destination, json.toString())
             } catch (e: Exception) {
                 Log.e(TAG, "Send failed to $destination", e)
+                _sendError.tryEmit("Send failed: connection error")
             }
         }
     }

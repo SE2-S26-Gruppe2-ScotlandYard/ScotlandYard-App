@@ -53,12 +53,14 @@ private fun LobbyData.allRolesAssigned(): Boolean =
 fun RoleSelectionScreen(
     viewModel: LobbyViewModel,
     lobby: LobbyData,
+    isConnected: Boolean = true,
     onBackClick: () -> Unit,
     onGameStart: () -> Unit
 ) {
     RoleSelectionContent(
         localUserId = viewModel.userId,
         isHost = viewModel.isLocalUserHost(),
+        isConnected = isConnected,
         lobby = lobby,
         onRoleSelect = { role -> viewModel.setRole(viewModel.userId, role) },
         onBackClick = {
@@ -73,6 +75,7 @@ fun RoleSelectionScreen(
 fun RoleSelectionContent(
     localUserId: String,
     isHost: Boolean,
+    isConnected: Boolean = true,
     lobby: LobbyData,
     onRoleSelect: (String) -> Unit,
     onBackClick: () -> Unit,
@@ -120,7 +123,7 @@ fun RoleSelectionContent(
                 modifier = Modifier
                     .weight(detectiveWeight)
                     .fillMaxHeight()
-                    .clickable { onRoleSelect("DETECTIVE") }
+                    .clickable(enabled = isConnected) { onRoleSelect("DETECTIVE") }
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.chooserole_bg_detective_side),
@@ -157,7 +160,7 @@ fun RoleSelectionContent(
                 modifier = Modifier
                     .weight(1f - detectiveWeight)
                     .fillMaxHeight()
-                    .clickable(enabled = mrXSelectable) { onRoleSelect("MRX") }
+                    .clickable(enabled = mrXSelectable && isConnected) { onRoleSelect("MRX") }
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.chooserole_bg_mrx_side),
@@ -211,6 +214,27 @@ fun RoleSelectionContent(
             onBackClick = onBackClick,
             onGameStart = onGameStart
         )
+
+        // Disconnected-Banner – deckt alles ab, inkl. TopBar
+        if (!isConnected) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .align(Alignment.TopCenter)
+                    .background(Color(0xCC991111))
+                    .padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = stringResource(R.string.status_role_screen_disconnected),
+                    color = Color.White,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
 
         // Spieler ohne Rollenauswahl – Mitte oben
         val pendingPlayers = lobby.users.filter { (lobby.selectedRoles[it.id] ?: "NONE") == "NONE" }
