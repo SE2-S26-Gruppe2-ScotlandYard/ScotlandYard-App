@@ -55,6 +55,7 @@ fun LoginScreen(
     isConnectedToServer: Boolean = false
 ) {
     var nickname by remember { mutableStateOf("") }
+    var touched by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Background Image
@@ -149,13 +150,32 @@ fun LoginScreen(
             // Nickname Field
             OutlinedTextField(
                 value = nickname,
-                onValueChange = { nickname = it },
+                onValueChange = { input ->
+                    touched = true
+                    nickname = input.filter { c -> c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9' }.take(8)
+                },
                 label = { Text(stringResource(R.string.description_nickname), color = Color.LightGray) },
+                isError = touched && nickname.isEmpty(),
+                supportingText = {
+                    if (touched && nickname.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.nickname_error_empty),
+                            color = Color.Red
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.nickname_hint),
+                            color = Color.LightGray
+                        )
+                    }
+                },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.White,
                     unfocusedBorderColor = Color.LightGray,
                     focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
+                    unfocusedTextColor = Color.White,
+                    errorBorderColor = Color.Red,
+                    errorLabelColor = Color.Red
                 ),
                 modifier = Modifier.width(300.dp),
                 singleLine = true

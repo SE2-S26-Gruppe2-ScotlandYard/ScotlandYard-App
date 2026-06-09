@@ -54,6 +54,8 @@
 
     <string name="title_nickname">NICKNAME</string>
     <string name="description_nickname">Choose your Nickname</string>
+    <string name="nickname_hint">1–8 characters · A–Z · 0–9</string>
+    <string name="nickname_error_empty">Min. 1 character required</string>
     <string name="button_connect">Connect</string>
     <string name="button_refresh_connection">Refresh Connection</string>
     <string name="button_back">Back</string>
