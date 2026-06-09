@@ -157,7 +157,7 @@ private fun AppNavHost(
     onLanguageChange: (String) -> Unit
 ) {
     NavHost(navController = navController, startDestination = "start") {
-        composable("start") { StartRoute(navController) }
+        composable("start") { StartRoute(navController, currentUser) }
         composable("login") { LoginRoute(navController, currentUser, authViewModel, isConnected) }
         composable("rules") { RulesRoute(navController) }
         composable("lobby") {
@@ -212,10 +212,15 @@ private fun AppNavHost(
 }
 
 @Composable
-private fun StartRoute(navController: NavHostController) {
+private fun StartRoute(navController: NavHostController, currentUser: User?) {
     val isNavigating = rememberIsNavigating()
     StartScreen(
-        onStartGame = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("login") } },
+        onStartGame = {
+            if (!isNavigating.value) {
+                isNavigating.value = true
+                if (currentUser != null) navController.navigate("lobby") else navController.navigate("login")
+            }
+        },
         onRules     = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("rules") } },
         onSettings  = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("settings") } }
     )

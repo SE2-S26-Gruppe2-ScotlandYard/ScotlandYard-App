@@ -42,6 +42,8 @@
     <string name="status_disconnected">Getrennt</string>
     <string name="title_nickname">BENUTZERNAME</string>
     <string name="description_nickname">Wähle einen Benutzernamen</string>
+    <string name="nickname_hint">1–8 Zeichen · A–Z · 0–9</string>
+    <string name="nickname_error_empty">Mind. 1 Zeichen erforderlich</string>
     <string name="button_connect">Verbindung herstellen</string>
     <string name="button_refresh_connection">Verbindung aktualisieren</string>
     <string name="button_back">Zurück</string>
