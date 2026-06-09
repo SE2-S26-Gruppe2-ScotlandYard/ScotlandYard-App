@@ -215,7 +215,7 @@ fun RoleSelectionContent(
             onGameStart = onGameStart
         )
 
-        // Disconnected-Banner – deckt alles ab, inkl. TopBar
+        // Disconnected-Banner
         if (!isConnected) {
             Row(
                 modifier = Modifier

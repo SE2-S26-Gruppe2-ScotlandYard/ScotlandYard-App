@@ -255,6 +255,7 @@ class MyStomp(val callbacks: Callbacks) {
                 }
             } catch (e: Exception) {
                 Log.e("MyStomp", "Start position subscription failed", e)
+                callback("Error: Startposition-Subscription fehlgeschlagen: ${e.message}")
             }
         }
     }
@@ -320,6 +321,7 @@ class MyStomp(val callbacks: Callbacks) {
                     ?: callback("Error: Not connected")
             } catch (e: Exception) {
                 Log.e("MyStomp", "sendConfirmedStartPosition failed", e)
+                callback("Error: Position senden fehlgeschlagen: ${e.message}")
             }
         }
     }

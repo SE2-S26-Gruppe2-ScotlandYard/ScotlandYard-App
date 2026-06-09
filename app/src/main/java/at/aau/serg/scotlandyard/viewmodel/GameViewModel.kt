@@ -173,6 +173,10 @@ class GameViewModel : ViewModel(), Callbacks {
         _errorMessage.value = null
     }
 
+    fun setError(message: String) {
+        _errorMessage.value = message
+    }
+
     fun requestGameState(gameId: String) {
         myStomp.requestGameState(gameId)
     }
@@ -227,6 +231,11 @@ class GameViewModel : ViewModel(), Callbacks {
             }
         }
 
+        if (res.startsWith("Error:")) {
+            _errorMessage.value = res
+            return
+        }
+
         // Handle start position responses
         if (res.startsWith("startPosition:")) {
             val jsonString = res.removePrefix("startPosition:")
@@ -242,6 +251,12 @@ class GameViewModel : ViewModel(), Callbacks {
 
                 when (response.type) {
                     "START_POSITION_ASSIGNED" -> {
+                        _startPosition.value = response.startPosition
+                        _myPosition.value = response.startPosition
+                        _isLoading.value = false
+                        _errorMessage.value = null
+                    }
+                    "START_POSITION_CONFIRMED" -> {
                         _startPosition.value = response.startPosition
                         _myPosition.value = response.startPosition
                         _isLoading.value = false

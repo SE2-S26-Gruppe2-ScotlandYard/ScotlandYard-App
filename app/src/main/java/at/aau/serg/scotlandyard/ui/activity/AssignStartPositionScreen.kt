@@ -7,6 +7,7 @@ import android.view.KeyEvent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -38,7 +40,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -133,22 +138,34 @@ fun AssignStartPositionScreen(
         }
     }
 
-    // Server confirmed the start position (same) or resolved a conflict (different).
-    // Only relevant while in WAITING_SERVER – activated once the backend implements
-    // the conflict-check response on /topic/game/{gameId}/player/{playerId}/start-position.
+    // Server confirmed the start position – navigate forward regardless of conflict resolution.
     LaunchedEffect(startPosition) {
         if (screenState == SpinnerScreenState.WAITING_SERVER && startPosition != null) {
-            if (startPosition == sentPosition) {
-                onPositionConfirmed()
-            } else {
-                // Server resolved a conflict and assigned a new position – re-animate
-                manualPosition = startPosition ?: manualPosition
-                triggerSpin = true
-                screenState = SpinnerScreenState.SPINNER_ANIMATING
+            onPositionConfirmed()
+        }
+    }
+
+    // Timeout: if server doesn't respond within 10 s in WAITING_SERVER, surface error
+    LaunchedEffect(screenState) {
+        if (screenState == SpinnerScreenState.WAITING_SERVER) {
+            delay(10_000L)
+            if (screenState == SpinnerScreenState.WAITING_SERVER) {
+                gameViewModel.setError("Server hat nicht geantwortet. Bitte erneut versuchen.")
+                screenState = SpinnerScreenState.SPINNER_DONE
             }
         }
     }
 
+    // Disconnect handling after the connecting phase
+    LaunchedEffect(isConnected) {
+        if (!isConnected && screenState != SpinnerScreenState.CONNECTING) {
+            gameViewModel.setError("Verbindung unterbrochen – verbinde erneut…")
+        }
+        if (isConnected && screenState != SpinnerScreenState.CONNECTING) {
+            // Re-subscribe after reconnect so messages still arrive
+            gameViewModel.subscribeToStartPosition(gameId, playerId)
+        }
+    }
 
     // Lifecycle-safe: register volume-key listener + both sensors
     DisposableEffect(shakeDetector, cheatDetector) {
@@ -182,9 +199,20 @@ fun AssignStartPositionScreen(
     }
 
     // ── Render ───────────────────────────────────────────────────────────────────────────────
-    BaseScreen(onBackClick = onBackClick) { modifier ->
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xFF060810))) {
+        Image(
+            painter = painterResource(id = R.drawable.map_bw),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize().alpha(0.18f)
+        )
         Box(
-            modifier = modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFF0A1428).copy(alpha = 0.45f))
+        )
+        Box(
+            modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             when (screenState) {
@@ -204,7 +232,7 @@ fun AssignStartPositionScreen(
                 SpinnerScreenState.SPINNER_ANIMATING,
                 SpinnerScreenState.SPINNER_DONE -> SpinnerAutoState(
                     positions = StartPositionConstants.VALID_POSITIONS,
-                    targetPosition = startPosition ?: StartPositionConstants.MIN_POSITION,
+                    targetPosition = startPosition ?: sentPosition.takeIf { it > 0 } ?: StartPositionConstants.MIN_POSITION,
                     triggerSpin = triggerSpin,
                     isSpinComplete = screenState == SpinnerScreenState.SPINNER_DONE,
                     onSpinComplete = {
@@ -215,9 +243,7 @@ fun AssignStartPositionScreen(
                         sentPosition = startPosition ?: StartPositionConstants.MIN_POSITION
                         gameViewModel.confirmStartPosition(gameId, playerId)
                         gameViewModel.clearStartPosition()
-                        // Navigate immediately. Once the backend implements the conflict-check
-                        // response, switch screenState to WAITING_SERVER here instead.
-                        onPositionConfirmed()
+                        screenState = SpinnerScreenState.WAITING_SERVER
                     }
                 )
 
@@ -231,7 +257,7 @@ fun AssignStartPositionScreen(
                         gameViewModel.confirmStartPosition(gameId, playerId)
                         gameViewModel.clearStartPosition()
                         gameViewModel.deactivateCheatMode()
-                        onPositionConfirmed()
+                        screenState = SpinnerScreenState.WAITING_SERVER
                     }
                 )
 
@@ -293,11 +319,6 @@ private fun WaitingServerState() {
     }
 }
 
-/**
- * Waiting state: wheel is visible but static. Player must shake to start the spin.
- * A button is provided to simulate a shake (useful for emulator testing).
- * A second debug button activates cheat mode (for testing the volume-key combo on emulators).
- */
 @Composable
 private fun WaitingToSpinState(
     onSimulateShake: () -> Unit,
@@ -306,92 +327,98 @@ private fun WaitingToSpinState(
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     if (isLandscape) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 32.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            // Left: icon + instruction text
+        Box(modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp, vertical = 12.dp)) {
             Column(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(text = "📳", fontSize = 48.sp, textAlign = TextAlign.Center)
+                Text(text = "📳", fontSize = 144.sp, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(12.dp))
                 Text(
                     text = stringResource(R.string.assign_start_position_text_shake_device),
-                    fontSize = 18.sp,
+                    fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    lineHeight = 34.sp
                 )
-            }
-            // Right: buttons
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
+                Spacer(Modifier.height(20.dp))
                 Button(
                     onClick = onSimulateShake,
-                    modifier = Modifier
-                        .fillMaxWidth(0.85f)
-                        .height(48.dp),
+                    modifier = Modifier.alpha(0.65f),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
                 ) {
-                    Text(stringResource(R.string.button_simulate_shaking), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text(stringResource(R.string.button_simulate_shaking), fontSize = 14.sp, color = Color(0xFFCCCCCC))
                 }
-                Spacer(Modifier.height(10.dp))
-                Button(
-                    onClick = onSimulateCheat,
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A1A00))
-                ) {
-                    Text(stringResource(R.string.button_cheat), fontSize = 13.sp, color = Color(0xFFFF9944))
+            }
+            // Bottom-right: barely visible cheat
+            Box(
+                modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 8.dp).alpha(0.13f)
+            ) {
+                TextButton(onClick = onSimulateCheat) {
+                    Text(stringResource(R.string.button_cheat), fontSize = 11.sp, color = Color(0xFF4A7ACC))
                 }
             }
         }
     } else {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 32.dp)
+        Box(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Text(text = "📳", fontSize = 56.sp, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(20.dp))
-            Text(
-                text = stringResource(R.string.assign_start_position_text_shake_device),
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(40.dp))
-            Button(
-                onClick = onSimulateShake,
+            // Shake instruction — centered
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth(0.75f)
-                    .height(52.dp),
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
+                    .align(Alignment.Center)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(stringResource(R.string.button_simulate_shaking), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                Text(
+                    text = "📳",
+                    fontSize = 88.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(24.dp))
+                Text(
+                    text = stringResource(R.string.assign_start_position_text_shake_device),
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 44.sp,
+                    modifier = Modifier.padding(horizontal = 32.dp)
+                )
             }
-            Spacer(Modifier.height(12.dp))
-            Button(
-                onClick = onSimulateCheat,
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A1A00))
+            // Simulate shaking — below center, slightly transparent
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 72.dp)
+                    .alpha(0.65f),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(stringResource(R.string.button_cheat), fontSize = 13.sp, color = Color(0xFFFF9944))
+                Button(
+                    onClick = onSimulateShake,
+                    modifier = Modifier.fillMaxWidth(0.65f).height(48.dp),
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
+                ) {
+                    Text(stringResource(R.string.button_simulate_shaking), fontSize = 15.sp, color = Color(0xFFCCCCCC))
+                }
+            }
+            // Bottom-right: barely visible cheat
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 12.dp, bottom = 12.dp)
+                    .alpha(0.13f)
+            ) {
+                TextButton(onClick = onSimulateCheat) {
+                    Text(stringResource(R.string.button_cheat), fontSize = 12.sp, color = Color(0xFF4A7ACC))
+                }
             }
         }
     }
@@ -464,9 +491,9 @@ private fun SpinnerAutoState(
                 if (isSpinComplete) {
                     Text(
                         text = stringResource(R.string.text_station, targetPosition),
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color(0xFFCCCCCC),
+                        fontSize = 44.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color.White,
                         textAlign = TextAlign.Center
                     )
                     Spacer(Modifier.height(20.dp))
@@ -474,11 +501,13 @@ private fun SpinnerAutoState(
                         onClick = onConfirm,
                         modifier = Modifier
                             .fillMaxWidth(0.75f)
-                            .height(52.dp),
+                            .height(52.dp)
+                            .border(1.5.dp, Color(0xFF22AA80).copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                            .alpha(0.75f),
                         shape = RoundedCornerShape(8.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
                     ) {
-                        Text(stringResource(R.string.button_confirm), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                        Text(stringResource(R.string.button_start_game), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFCCCCCC))
                     }
                 } else {
                     CircularProgressIndicator(modifier = Modifier.size(28.dp), color = Color.White, strokeWidth = 2.dp)
@@ -520,7 +549,7 @@ private fun SpinnerAutoState(
                 )
                 Spacer(Modifier.height(24.dp))
                 if (isSpinComplete) {
-                    Text(text = stringResource(R.string.text_station, targetPosition), fontSize = 20.sp, color = Color(0xFFCCCCCC), textAlign = TextAlign.Center)
+                    Text(text = stringResource(R.string.text_station, targetPosition), fontSize = 36.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, textAlign = TextAlign.Center)
                 } else {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color.White, strokeWidth = 2.dp)
                 }
@@ -532,11 +561,13 @@ private fun SpinnerAutoState(
                     onClick = onConfirm,
                     modifier = Modifier
                         .fillMaxWidth(0.7f)
-                        .height(52.dp),
+                        .height(52.dp)
+                        .border(1.5.dp, Color(0xFF22AA80).copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                        .alpha(0.75f),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
                 ) {
-                    Text(stringResource(R.string.button_confirm), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text(stringResource(R.string.button_start_game), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFCCCCCC))
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -610,23 +641,25 @@ private fun CheatModeSpinnerState(
                 Text(text = stringResource(R.string.title_choose_start_position), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
                 Text(text = stringResource(R.string.text_spin_and_confirm), fontSize = 12.sp, color = Color(0xFFCCCCCC), textAlign = TextAlign.Center)
                 Spacer(Modifier.height(16.dp))
-                Box(
-                    modifier = Modifier
-                        .background(Color(0x33FF6B00), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 20.dp, vertical = 8.dp)
-                ) {
-                    Text(text = stringResource(R.string.text_station, selectedPosition), fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                }
+                Text(
+                    text = stringResource(R.string.text_station, selectedPosition),
+                    fontSize = 44.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
                 Spacer(Modifier.height(20.dp))
                 Button(
                     onClick = onConfirm,
                     modifier = Modifier
                         .fillMaxWidth(0.85f)
-                        .height(52.dp),
+                        .height(52.dp)
+                        .border(1.5.dp, Color(0xFFFF6B00).copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                        .alpha(0.75f),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
                 ) {
-                    Text(stringResource(R.string.button_confirm_station, selectedPosition), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                    Text(stringResource(R.string.button_start_game), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFCCCCCC))
                 }
             }
         }
@@ -674,13 +707,13 @@ private fun CheatModeSpinnerState(
                     )
                 }
                 Spacer(Modifier.height(24.dp))
-                Box(
-                    modifier = Modifier
-                        .background(Color(0x33FF6B00), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 24.dp, vertical = 8.dp)
-                ) {
-                    Text(text = stringResource(R.string.button_confirm_station, selectedPosition), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                }
+                Text(
+                    text = stringResource(R.string.text_station, selectedPosition),
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center
+                )
                 Spacer(Modifier.height(16.dp))
             }
             Spacer(Modifier.height(12.dp))
@@ -688,11 +721,13 @@ private fun CheatModeSpinnerState(
                 onClick = onConfirm,
                 modifier = Modifier
                     .fillMaxWidth(0.75f)
-                    .height(52.dp),
+                    .height(52.dp)
+                    .border(1.5.dp, Color(0xFFFF6B00).copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                    .alpha(0.75f),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
             ) {
-                Text(stringResource(R.string.button_confirm_station, selectedPosition), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+                Text(stringResource(R.string.button_start_game), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFCCCCCC))
             }
             Spacer(Modifier.height(8.dp))
         }
