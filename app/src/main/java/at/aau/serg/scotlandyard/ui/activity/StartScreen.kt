@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton // TEST (LÖSCHEN)
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,7 +39,10 @@ fun StartScreen(
     onRules: () -> Unit,
     onSettings: () -> Unit,
     startGameButtonText: String = stringResource(R.string.button_start_game),
-    rulesButtonText: String = stringResource(R.string.title_rules)
+    rulesButtonText: String = stringResource(R.string.title_rules),
+    // =================== TEST (LÖSCHEN) ===================
+    onTestNavigate: ((String) -> Unit)? = null
+    // =================== END TEST (LÖSCHEN) ===================
 ) {
     // Box stapelt alles übereinander: Hintergrundbild → Inhalt
     Box(modifier = Modifier.fillMaxSize()) {
@@ -141,6 +145,49 @@ fun StartScreen(
                 )
             }
         }
+
+        // =================== TEST (LÖSCHEN) ===================
+        onTestNavigate?.let { navigate ->
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .background(Color(0xCC000000))
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "⚠ TEST NAVIGATION — LÖSCHEN ⚠",
+                    color = Color(0xFFFF4444),
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                ) {
+                    TextButton(onClick = { navigate("test_roleselection") }) {
+                        Text("Role\nSelect", color = Color.Yellow, fontSize = 11.sp, fontFamily = FontFamily.Serif)
+                    }
+                    TextButton(onClick = { navigate("test_roleselection_mrx") }) {
+                        Text("Role\n(MrX taken)", color = Color.Yellow, fontSize = 11.sp, fontFamily = FontFamily.Serif)
+                    }
+                    TextButton(onClick = { navigate("test_positionselection") }) {
+                        Text("Position\nSelect", color = Color.Yellow, fontSize = 11.sp, fontFamily = FontFamily.Serif)
+                    }
+                    TextButton(onClick = { navigate("test_gameboard") }) {
+                        Text("Game\nBoard", color = Color.Yellow, fontSize = 11.sp, fontFamily = FontFamily.Serif)
+                    }
+                    TextButton(onClick = { navigate("mrxwin") }) {
+                        Text("MrX\nWon", color = Color.Yellow, fontSize = 11.sp, fontFamily = FontFamily.Serif)
+                    }
+                    TextButton(onClick = { navigate("detectiveswin") }) {
+                        Text("Detectives\nWon", color = Color.Yellow, fontSize = 11.sp, fontFamily = FontFamily.Serif)
+                    }
+                }
+            }
+        }
+        // =================== END TEST (LÖSCHEN) ===================
     }
 }
 

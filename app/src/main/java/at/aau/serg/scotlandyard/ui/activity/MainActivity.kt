@@ -30,6 +30,9 @@ import androidx.navigation.navArgument
 import at.aau.serg.scotlandyard.data.getDisplayModePreference
 import at.aau.serg.scotlandyard.dtos.User
 import at.aau.serg.scotlandyard.model.BoardConnection
+import at.aau.serg.scotlandyard.model.BoardDisplayMode // TEST (LÖSCHEN)
+import at.aau.serg.scotlandyard.model.LobbyData // TEST (LÖSCHEN)
+import at.aau.serg.scotlandyard.model.LobbyUserData // TEST (LÖSCHEN)
 import at.aau.serg.scotlandyard.model.TicketType
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
@@ -208,6 +211,54 @@ private fun AppNavHost(
                 onQuit = { (navController.context as? android.app.Activity)?.finish() }
             )
         }
+
+        // =================== TEST (LÖSCHEN) ===================
+        composable("test_roleselection") {
+            var testRoles by remember { mutableStateOf<Map<String, String>>(mapOf("1" to "DETECTIVE", "3" to "DETECTIVE")) }
+            val dummyLobby = LobbyData(
+                id = "test-id", name = "Test Lobby", hostId = "1", isStarted = false,
+                readyStatus = emptyMap(),
+                users = listOf(LobbyUserData("1", "Alice"), LobbyUserData("3", "Charlie"), LobbyUserData("2", "Bob")),
+                selectedRoles = testRoles.toMutableMap()
+            )
+            RoleSelectionContent(
+                localUserId = "2", isHost = true, lobby = dummyLobby,
+                onRoleSelect = { role -> testRoles = testRoles.toMutableMap().also { it["2"] = role } },
+                onBackClick = { navController.popBackStack() },
+                onGameStart = {}
+            )
+        }
+        composable("test_roleselection_mrx") {
+            var testRoles by remember { mutableStateOf<Map<String, String>>(mapOf("1" to "DETECTIVE", "3" to "MRX")) }
+            val dummyLobby = LobbyData(
+                id = "test-id-2", name = "Test Lobby MrX", hostId = "1", isStarted = false,
+                readyStatus = emptyMap(),
+                users = listOf(LobbyUserData("1", "Alice"), LobbyUserData("3", "Charlie"), LobbyUserData("2", "Bob")),
+                selectedRoles = testRoles.toMutableMap()
+            )
+            RoleSelectionContent(
+                localUserId = "2", isHost = true, lobby = dummyLobby,
+                onRoleSelect = { role -> testRoles = testRoles.toMutableMap().also { it["2"] = role } },
+                onBackClick = { navController.popBackStack() },
+                onGameStart = {}
+            )
+        }
+        composable("test_positionselection") {
+            AssignStartPositionScreen(
+                gameId = "test-game", playerId = "test-player",
+                onBackClick = { navController.popBackStack() },
+                onPositionConfirmed = {}
+            )
+        }
+        composable("test_gameboard") {
+            GameBoardScreen(
+                displayMode = BoardDisplayMode.MAP,
+                isMrX = false,
+                isMyTurn = true,
+                onNavigateToSettings = { navController.navigate("settings") }
+            )
+        }
+        // =================== END TEST (LÖSCHEN) ===================
     }
 }
 
@@ -222,7 +273,10 @@ private fun StartRoute(navController: NavHostController, currentUser: User?) {
             }
         },
         onRules     = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("rules") } },
-        onSettings  = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("settings") } }
+        onSettings  = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("settings") } },
+        // =================== TEST (LÖSCHEN) ===================
+        onTestNavigate = { route -> navController.navigate(route) }
+        // =================== END TEST (LÖSCHEN) ===================
     )
 }
 
