@@ -120,8 +120,12 @@
     <string name="ticket_black">Schwarz</string>
     <string name="button_restart">Neustart</string>
     <string name="button_quit">Schließen</string>
-    <string name="text_mrx_victory">Mr. X verschwand in der Stadt.</string>
-    <string name="text_detectives_victory">Mr. X wurde gefasst.</string>
+    <string name="text_you_won">DU HAST GEWONNEN</string>
+    <string name="text_you_lost">DU HAST VERLOREN</string>
+    <string name="text_mrx_victory">Mr. X verschwand\nin der Stadt.</string>
+    <string name="text_mrx_victory_sub">Spurlos verschwunden.</string>
+    <string name="text_detectives_victory">Mr. X wurde\ngefasst.</string>
+    <string name="text_detectives_victory_sub">Gerechtigkeit siegt.</string>
     <string name="toast_connection_lost">Verbindung verloren!</string>
     <string name="title_language">Sprache</string>
     <string name="settings_language_description">Wähle die Sprache der App aus.</string>

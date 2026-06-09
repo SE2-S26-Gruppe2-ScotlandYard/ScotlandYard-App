@@ -178,11 +178,14 @@ fun StartScreen(
                     TextButton(onClick = { navigate("test_gameboard") }) {
                         Text("Game\nBoard", color = Color.Yellow, fontSize = 11.sp, fontFamily = FontFamily.Serif)
                     }
-                    TextButton(onClick = { navigate("mrxwin") }) {
+                    TextButton(onClick = { navigate("mrxwin/true") }) {
                         Text("MrX\nWon", color = Color.Yellow, fontSize = 11.sp, fontFamily = FontFamily.Serif)
                     }
-                    TextButton(onClick = { navigate("detectiveswin") }) {
+                    TextButton(onClick = { navigate("detectiveswin/false") }) {
                         Text("Detectives\nWon", color = Color.Yellow, fontSize = 11.sp, fontFamily = FontFamily.Serif)
+                    }
+                    TextButton(onClick = { navigate("mrxwin/false") }) {
+                        Text("Loss", color = Color(0xFFFF6666), fontSize = 11.sp, fontFamily = FontFamily.Serif)
                     }
                 }
             }

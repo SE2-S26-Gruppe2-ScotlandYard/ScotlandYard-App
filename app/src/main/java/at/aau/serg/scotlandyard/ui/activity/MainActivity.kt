@@ -200,16 +200,22 @@ private fun AppNavHost(
                 navController = navController
             )
         }
-        composable("mrxwin") {
+        composable(
+            route = "mrxwin/{isMrX}",
+            arguments = listOf(navArgument("isMrX") { type = NavType.BoolType })
+        ) { backStackEntry ->
             MrXWinScreen(
-                onBackClick = { navController.navigate("start") },
-                onQuit = { (navController.context as? android.app.Activity)?.finish() }
+                isMrX = backStackEntry.arguments?.getBoolean("isMrX") ?: false,
+                onMainMenu = { navController.navigate("start") { popUpTo(0) { inclusive = true } } }
             )
         }
-        composable("detectiveswin") {
+        composable(
+            route = "detectiveswin/{isMrX}",
+            arguments = listOf(navArgument("isMrX") { type = NavType.BoolType })
+        ) { backStackEntry ->
             DetectivesWinScreen(
-                onBackClick = { navController.navigate("start") },
-                onQuit = { (navController.context as? android.app.Activity)?.finish() }
+                isMrX = backStackEntry.arguments?.getBoolean("isMrX") ?: false,
+                onMainMenu = { navController.navigate("start") { popUpTo(0) { inclusive = true } } }
             )
         }
 
@@ -576,10 +582,10 @@ private fun GameOverEffect(
     LaunchedEffect(Unit) {
         gameViewModel.gameOver.collect { result ->
             when (result) {
-                "DETECTIVES_WIN" -> navController.navigate("detectiveswin") {
+                "DETECTIVES_WIN" -> navController.navigate("detectiveswin/$isMrX") {
                     popUpTo("gameboard/$gameId/$playerId/$isMrX") { inclusive = true }
                 }
-                "MRX_WINS" -> navController.navigate("mrxwin") {
+                "MRX_WINS" -> navController.navigate("mrxwin/$isMrX") {
                     popUpTo("gameboard/$gameId/$playerId/$isMrX") { inclusive = true }
                 }
             }

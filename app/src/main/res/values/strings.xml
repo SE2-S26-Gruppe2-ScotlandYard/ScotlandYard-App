@@ -140,8 +140,12 @@
 
     <string name="button_restart">Restart</string>
     <string name="button_quit">Quit</string>
-    <string name="text_mrx_victory">Mr. X vanished into the city.</string>
-    <string name="text_detectives_victory">Mr. X has been caught.</string>
+    <string name="text_you_won">YOU WON</string>
+    <string name="text_you_lost">YOU LOST</string>
+    <string name="text_mrx_victory">Mr. X vanished\ninto the city.</string>
+    <string name="text_mrx_victory_sub">Gone without a trace.</string>
+    <string name="text_detectives_victory">Mr. X has been\ncaught.</string>
+    <string name="text_detectives_victory_sub">Justice prevails.</string>
 
     <string name="toast_connection_lost">Connection lost!</string>
 </resources>
