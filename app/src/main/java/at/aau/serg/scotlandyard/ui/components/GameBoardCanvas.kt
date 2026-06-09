@@ -312,9 +312,19 @@ private fun DrawScope.drawPlayers(
     val outerRadius = PLAYER_RADIUS_OUTER_FACTOR * minDimension
     val innerRadius = PLAYER_RADIUS_INNER_FACTOR * minDimension
     val stackSpacing = minDimension * 0.007f
+    val stationCircleRadius = NODE_RADIUS_FACTOR * minDimension * 1.3f
 
     players.entries.forEachIndexed { index, (color, stationId) ->
         val pos = positions[stationId] ?: return@forEachIndexed
+        
+        // Draw colored circle around the station
+        drawCircle(
+            color = color,
+            radius = stationCircleRadius,
+            center = pos,
+            style = Stroke(width = minDimension * 0.0035f)
+        )
+        
         // Stack multiple player slightly offset if on same station
         val stackOffset = Offset(x = index * stackSpacing, y = -index * stackSpacing)
         val tokenPos = pos + stackOffset + Offset(0f, -(nodeRadius + 8f))

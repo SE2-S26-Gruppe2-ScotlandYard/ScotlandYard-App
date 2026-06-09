@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -76,6 +77,7 @@ private val selectedFactor = 0.86f
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
+    isInGame: Boolean = false,
     onDisplayModeChange: (BoardDisplayMode) -> Unit = {},
     onLanguageChange: (String) -> Unit = {},
     onServerChange: () -> Unit = {}
@@ -91,6 +93,7 @@ fun SettingsScreen(
         Row(modifier = Modifier.fillMaxSize()) {
             SettingsSidebar(
                 selected = selectedCategory,
+                isInGame = isInGame,
                 onSelect = { selectedCategory = it }
             )
 
@@ -122,6 +125,7 @@ fun SettingsScreen(
                     SettingsCategory.SERVER -> ServerSettingsContent(
                         uriType = serverUriType,
                         customUri = serverUriCustom,
+                        isInGame = isInGame,
                         onUriTypeChange = { type ->
                             serverUriType = type
                             context.saveServerUriTypePreference(type)
@@ -143,6 +147,7 @@ fun SettingsScreen(
 @Composable
 private fun SettingsSidebar(
     selected: SettingsCategory,
+    isInGame: Boolean = false,
     onSelect: (SettingsCategory) -> Unit
 ) {
     Column(
@@ -167,12 +172,15 @@ private fun SettingsSidebar(
         Spacer(modifier = Modifier.height(4.dp))
 
         SettingsCategory.entries.forEach { category ->
-            SidebarItem(
-                label = stringResource(category.labelRes),
-                icon = category.icon,
-                isSelected = category == selected,
-                onClick = { onSelect(category) }
-            )
+            val lockedInGame = isInGame && category == SettingsCategory.SERVER
+            Box(modifier = Modifier.alpha(if (lockedInGame) 0.4f else 1f)) {
+                SidebarItem(
+                    label = stringResource(category.labelRes),
+                    icon = category.icon,
+                    isSelected = category == selected,
+                    onClick = { onSelect(category) }
+                )
+            }
         }
     }
 }
@@ -385,6 +393,7 @@ private fun LanguageOption(
 private fun ServerSettingsContent(
     uriType: String,
     customUri: String,
+    isInGame: Boolean = false,
     onUriTypeChange: (String) -> Unit,
     onCustomUriChange: (String) -> Unit
 ) {
@@ -405,15 +414,19 @@ private fun ServerSettingsContent(
         SectionHeader(
             icon = Icons.Default.Wifi,
             title = stringResource(R.string.title_server),
-            subtitle = stringResource(R.string.settings_server_description),
+            subtitle = if (isInGame)
+                stringResource(R.string.settings_server_locked_ingame)
+            else
+                stringResource(R.string.settings_server_description),
             bottomSpacing = 20.dp
         )
 
         options.forEach { (type, label) ->
             val isSelected = uriType == type
-            val borderColor = if (isSelected) AccentGlow else SidebarBorder
+            val alpha = if (isInGame) 0.38f else 1f
+            val borderColor = (if (isSelected) AccentGlow else SidebarBorder).copy(alpha = alpha)
             val borderWidth = if (isSelected) 2.dp else 1.dp
-            val bgColor = if (isSelected) AccentTeal.copy(alpha = selectedFactor) else SidebarBg
+            val bgColor = (if (isSelected) AccentTeal.copy(alpha = selectedFactor) else SidebarBg).copy(alpha = alpha)
             val uriHint = when (type) {
                 "GLOBAL" -> ServerConfig.GLOBAL_URI
                 "LOCAL" -> ServerConfig.LOCAL_URI
@@ -427,7 +440,7 @@ private fun ServerSettingsContent(
                     .clip(RoundedCornerShape(12.dp))
                     .background(bgColor)
                     .border(borderWidth, borderColor, RoundedCornerShape(12.dp))
-                    .clickable { onUriTypeChange(type) }
+                    .then(if (!isInGame) Modifier.clickable { onUriTypeChange(type) } else Modifier)
                     .padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -435,20 +448,20 @@ private fun ServerSettingsContent(
                 Text(
                     text = label,
                     fontSize = 16.sp, fontWeight = FontWeight.SemiBold,
-                    color = if (isSelected) AccentGlow else TextPrimary
+                    color = (if (isSelected) AccentGlow else TextPrimary).copy(alpha = alpha)
                 )
 
                 Text(
                     text = uriHint,
                     fontSize = 11.sp,
-                    color = TextMuted
+                    color = TextMuted.copy(alpha = alpha)
                 )
 
                 if (isSelected) {
                     Text(
                         text = stringResource(R.string.checkmark),
                         fontSize = 16.sp, fontWeight = FontWeight.Bold,
-                        color = AccentGlow
+                        color = AccentGlow.copy(alpha = alpha)
                     )
                 }
             }
@@ -458,7 +471,8 @@ private fun ServerSettingsContent(
             Spacer(modifier = Modifier.height(12.dp))
             OutlinedTextField(
                 value = customUri,
-                onValueChange = onCustomUriChange,
+                onValueChange = if (isInGame) { _ -> } else onCustomUriChange,
+                enabled = !isInGame,
                 label = {
                     Text(
                         stringResource(R.string.settings_text_custom_uri),

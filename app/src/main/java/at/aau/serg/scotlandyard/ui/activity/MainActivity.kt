@@ -35,6 +35,7 @@ import at.aau.serg.scotlandyard.model.LobbyData // TEST (LÖSCHEN)
 import at.aau.serg.scotlandyard.model.LobbyUserData // TEST (LÖSCHEN)
 import at.aau.serg.scotlandyard.model.TicketType
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
+import at.aau.serg.scotlandyard.ui.theme.MRX_COLOR
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
 import at.aau.serg.scotlandyard.viewmodel.GameViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
@@ -354,12 +355,16 @@ private fun SettingsRoute(
     onLanguageChange: (String) -> Unit
 ) {
     val isNavigating = rememberIsNavigating()
+    val isInGame = remember {
+        navController.previousBackStackEntry?.destination?.route?.contains("gameboard") == true
+    }
     SettingsScreen(
         onBackClick = {
             if (!isNavigating.value && navController.previousBackStackEntry != null) {
                 isNavigating.value = true; navController.popBackStack()
             }
         },
+        isInGame = isInGame,
         onLanguageChange = onLanguageChange,
         onServerChange   = { authViewModel.reconnect() }
     )
@@ -424,12 +429,18 @@ private fun GameBoardRoute(
         gameState?.let { if (isMrX) it.isMrXPhase else it.isDetectivesPhase } ?: false
     }
 
+    // Gray out tickets immediately after the local player submits a move,
+    // without waiting for the server to confirm the turn change.
+    var movedThisTurn by remember { mutableStateOf(false) }
+    LaunchedEffect(isMyTurn) { if (isMyTurn) movedThisTurn = false }
+    val effectiveIsMyTurn = isMyTurn && !movedThisTurn
+
     val detectiveIdOrder = gameState?.detectivePositions?.keys?.sorted() ?: emptyList()
     val playerPositions  = gameViewModel.buildPlayerPositions(isMrX, detectiveIdOrder)
 
     var selectedTicket by remember { mutableStateOf<TicketType?>(null) }
 
-    LaunchedEffect(!isMyTurn && selectedTicket != null) {
+    LaunchedEffect(!effectiveIsMyTurn && selectedTicket != null) {
         selectedTicket = null
     }
 
@@ -448,6 +459,16 @@ private fun GameBoardRoute(
     val mrXRevealed    = if (!isMrX) gameState?.mrXRevealedPositions ?: emptyMap() else emptyMap()
     val mrXHistory     = if (!isMrX) gameState?.mrXMoveHistory ?: emptyList() else emptyList()
 
+    val currentPlayerColor = remember(myPosition, playerPositions, isMrX) {
+        if (isMrX) {
+            MRX_COLOR
+        } else if (myPosition != null) {
+            playerPositions.entries.find { it.value == myPosition }?.key
+        } else {
+            null
+        }
+    }
+
     GameBoardScreen(
         isMrX                = isMrX,
         mrXRevealedPositions = mrXRevealed,
@@ -455,20 +476,22 @@ private fun GameBoardRoute(
         displayMode          = displayMode,
         playerPositions      = playerPositions,
         highlightedNodes     = highlightedNodes,
-        isMyTurn             = isMyTurn,
+        isMyTurn             = effectiveIsMyTurn,
         selectedTicket       = selectedTicket,
+        currentPlayerColor   = currentPlayerColor,
         mrXMoveHistory       = mrXHistory,
         ticketCounts         = ticketCounts.toMutableMap().apply {
             if (isDoubleActive) put(TicketType.DOUBLE, 0)
         },
         onTicketSelect = { ticket ->
-            if (isMyTurn) selectedTicket = if (selectedTicket == ticket) null else ticket
+            if (effectiveIsMyTurn) selectedTicket = if (selectedTicket == ticket) null else ticket
         },
         onNodeClick = { stationId ->
             val ticket = selectedTicket
             if (ticket != null) {
                 gameViewModel.sendMove(gameId, playerId, ticket, stationId)
                 selectedTicket = null
+                movedThisTurn = true
             }
         },
         onNavigateToSettings = { navController.navigate("settings") }

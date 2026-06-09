@@ -8,6 +8,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,6 +19,7 @@ import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateZoom
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,7 +38,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -45,20 +46,24 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -69,8 +74,6 @@ import androidx.compose.ui.unit.sp
 import at.aau.serg.scotlandyard.model.BoardDisplayMode
 import at.aau.serg.scotlandyard.model.TicketType
 import at.aau.serg.scotlandyard.model.TicketStyleProvider
-import at.aau.serg.scotlandyard.ui.components.BOARD_HEIGHT_DP
-import at.aau.serg.scotlandyard.ui.components.BOARD_WIDTH_DP
 import at.aau.serg.scotlandyard.ui.components.GameBoardCanvas
 import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
@@ -106,11 +109,11 @@ fun GameBoardScreen(
     isMyTurn: Boolean = false,
     mrXMoveHistory: List<String> = emptyList(),
     selectedTicket: TicketType? = null,
+    currentPlayerColor: Color? = null,
     onNodeClick: ((Int) -> Unit)? = null,
     onTicketSelect: (TicketType) -> Unit = {},
     onNavigateToSettings: () -> Unit = {}
 ) {
-    var isMenuOpen by remember { mutableStateOf(false) }
     var isHistoryOpen by remember { mutableStateOf(false) }
 
     val revealRounds = setOf(3, 8, 13, 18)
@@ -118,30 +121,67 @@ fun GameBoardScreen(
         mrXRevealedPositions[currentRound]
     } else null
 
+    var showRevealBanner by remember { mutableStateOf(false) }
+    var revealedPosition by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(currentRevealPosition) {
+        if (!isMrX && currentRevealPosition != null) {
+            revealedPosition = currentRevealPosition
+            showRevealBanner = true
+            delay(5_000L)
+            showRevealBanner = false
+        }
+    }
+
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BackgroundDark)
+        modifier = Modifier.fillMaxSize()
     ) {
-        BoardArea(
-            modifier = Modifier.fillMaxSize(),
-            displayMode = displayMode,
-            playerPositions = playerPositions,
-            highlightedNodes = highlightedNodes,
-            onNodeClick = if (isMyTurn) onNodeClick else null
+        Image(
+            painter = painterResource(id = R.drawable.background),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
         )
 
-        SidePanel(
-            isMrX = isMrX,
-            currentRound = currentRound,
-            totalRounds = totalRounds,
-            ticketCounts = ticketCounts,
-            selectedTicket = selectedTicket,
-            isMyTurn = isMyTurn,
-            onMenuClick = { isMenuOpen = true },
-            onMrXHistoryClick = { isHistoryOpen = true },
-            onTicketSelect = { type -> onTicketSelect(type) }
-        )
+        Row(modifier = Modifier.fillMaxSize()) {
+            SidePanel(
+                isMrX = isMrX,
+                currentRound = currentRound,
+                totalRounds = totalRounds,
+                ticketCounts = ticketCounts,
+                selectedTicket = selectedTicket,
+                isMyTurn = isMyTurn,
+                currentPlayerColor = currentPlayerColor,
+                onNavigateToSettings = onNavigateToSettings,
+                onMrXHistoryClick = { isHistoryOpen = true },
+                onTicketSelect = { type -> onTicketSelect(type) }
+            )
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(top = 8.dp, end = 8.dp, bottom = 8.dp)
+                    .border(2.dp, AccentGlow.copy(alpha = 0.45f), RoundedCornerShape(16.dp))
+                    .clip(RoundedCornerShape(16.dp))
+            ) {
+                BoardArea(
+                    modifier = Modifier.fillMaxSize(),
+                    displayMode = displayMode,
+                    playerPositions = playerPositions,
+                    highlightedNodes = highlightedNodes,
+                    onNodeClick = if (isMyTurn) onNodeClick else null
+                )
+
+                // Reveal Mr. X position – top-center of board container, auto-dismisses after 5 s
+                RevealBanner(
+                    visible = showRevealBanner,
+                    position = revealedPosition ?: 0,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = 12.dp)
+                )
+            }
+        }
 
         // Double ticket usability hint (banner)
         if (selectedTicket == TicketType.DOUBLE) {
@@ -163,29 +203,6 @@ fun GameBoardScreen(
             }
         }
 
-        // Reveal Mr. X position (banner)
-        if (!isMrX && currentRevealPosition != null) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = if (selectedTicket == TicketType.DOUBLE) 48.dp else 8.dp)
-                    .background(AccentGlow.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
-                    .border(1.dp, AccentGlow.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 16.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = stringResource(
-                        R.string.banner_mrx_position_reveal,
-                        currentRevealPosition
-                    ),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    textAlign = TextAlign.Center
-                )
-            }
-        }
-
         // Mr. X move history overlay
         MrXHistoryOverlay(
             isVisible = isHistoryOpen,
@@ -194,15 +211,6 @@ fun GameBoardScreen(
             onClose = { isHistoryOpen = false }
         )
 
-        // Menu overlay - rendered on top of everything else
-        MenuOverlay(
-            isVisible = isMenuOpen,
-            onClose = { isMenuOpen = false },
-            onNavigateToSettings = {
-                isMenuOpen = false
-                onNavigateToSettings()
-            }
-        )
     }
 }
 
@@ -300,7 +308,8 @@ private fun MenuCard(
             MenuItem(
                 icon = Icons.Default.Settings,
                 label = stringResource(R.string.title_settings),
-                onClick = onNavigateToSettings
+                onClick = onNavigateToSettings,
+                enabled = false
             )
 
             // TODO: Add other items here [MenuItem(icon = Icons.Default.ExitToApp, label = "Leave", onClick = onQuit)]
@@ -312,15 +321,17 @@ private fun MenuCard(
 private fun MenuItem(
     icon: ImageVector,
     label: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    enabled: Boolean = true
 ) {
+    val contentAlpha = if (enabled) 1f else 0.35f
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .height(52.dp)
             .background(Color(0xFF152536), RoundedCornerShape(10.dp))
-            .border(1.dp, SidebarBorder, RoundedCornerShape(10.dp))
-            .clickable(onClick = onClick)
+            .border(1.dp, SidebarBorder.copy(alpha = contentAlpha), RoundedCornerShape(10.dp))
+            .clickable(enabled = enabled, onClick = onClick)
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start
@@ -328,7 +339,7 @@ private fun MenuItem(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = AccentGlow,
+            tint = AccentGlow.copy(alpha = contentAlpha),
             modifier = Modifier.size(20.dp)
         )
 
@@ -338,7 +349,7 @@ private fun MenuItem(
             text = label,
             fontSize = 15.sp,
             fontWeight = FontWeight.SemiBold,
-            color = TextPrimary
+            color = TextPrimary.copy(alpha = contentAlpha)
         )
     }
 }
@@ -550,6 +561,32 @@ private fun MrXHistoryTicketChip(
 }
 
 @Composable
+private fun RevealBanner(visible: Boolean, position: Int, modifier: Modifier = Modifier) {
+    AnimatedVisibility(
+        visible = visible,
+        modifier = modifier,
+        enter = fadeIn(tween(300)) + scaleIn(initialScale = 0.88f, animationSpec = tween(300)),
+        exit  = fadeOut(tween(300)) + scaleOut(targetScale = 0.88f, animationSpec = tween(300))
+    ) {
+        Box(
+            modifier = Modifier
+                .background(Color(0xCC0D1E2E), RoundedCornerShape(12.dp))
+                .border(2.dp, AccentGlow, RoundedCornerShape(12.dp))
+                .padding(horizontal = 24.dp, vertical = 10.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = stringResource(R.string.banner_mrx_position_reveal, position),
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
 private fun SidePanel(
     isMrX: Boolean,
     currentRound: Int,
@@ -557,7 +594,8 @@ private fun SidePanel(
     ticketCounts: Map<TicketType, Int>,
     selectedTicket: TicketType?,
     isMyTurn: Boolean = false,
-    onMenuClick: () -> Unit,
+    currentPlayerColor: Color? = null,
+    onNavigateToSettings: () -> Unit,
     onMrXHistoryClick: () -> Unit = {},
     onTicketSelect: (TicketType) -> Unit
 ) {
@@ -568,15 +606,11 @@ private fun SidePanel(
 
     Column(
         modifier = Modifier
-            .width(160.dp)
+            .width(140.dp)
             .fillMaxHeight()
-            .background(SidebarBg)
-            .border(
-                width = 1.dp,
-                color = SidebarBorder,
-                shape = RoundedCornerShape(topEnd = 0.dp, bottomEnd = 0.dp)
-            )
-            .padding(horizontal = 10.dp, vertical = 12.dp),
+            .padding(vertical = 8.dp)
+            .clip(RoundedCornerShape(topEnd = 16.dp, bottomEnd = 16.dp))
+            .padding(horizontal = 8.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         // Top row: Menu and Round Counter
@@ -585,7 +619,7 @@ private fun SidePanel(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            MenuButton(onClick = onMenuClick)
+            MenuButton(onClick = onNavigateToSettings)
             RoundCounter(current = currentRound, total = totalRounds)
         }
 
@@ -597,7 +631,11 @@ private fun SidePanel(
             fontSize = 10.sp,
             fontWeight = FontWeight.Bold,
             letterSpacing = 2.sp,
-            color = if (isMrX) Color(0xFFF090F5) else AccentGlow,
+            color = when {
+                isMrX -> Color(0xFFF090F5)
+                currentPlayerColor != null -> currentPlayerColor
+                else -> AccentGlow
+            },
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
         )
@@ -670,8 +708,8 @@ private fun MenuButton(onClick: () -> Unit) {
         modifier = Modifier.size(36.dp)
     ) {
         Icon(
-            imageVector = Icons.Default.Menu,
-            contentDescription = stringResource(R.string.title_menu),
+            imageVector = Icons.Default.Settings,
+            contentDescription = stringResource(R.string.title_settings),
             tint = TextPrimary,
             modifier = Modifier.size(22.dp)
         )
@@ -793,98 +831,92 @@ private fun BoardArea(
     highlightedNodes: Set<Int> = emptySet(),
     onNodeClick: ((Int) -> Unit)? = null
 ) {
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val vpW = constraints.maxWidth.toFloat()
+        val vpH = constraints.maxHeight.toFloat()
 
-    var viewportWidth by remember { mutableFloatStateOf(0f) }
-    var viewportHeight by remember { mutableFloatStateOf(0f) }
+        // minScale = 1 so the map always fills (stretches to) the container at minimum zoom
+        val minScale = 1f
+        var scale  by remember(vpW, vpH) { mutableFloatStateOf(minScale) }
+        var offset by remember(vpW, vpH) { mutableStateOf(Offset.Zero) }
 
-    val boardWidthDp = BOARD_WIDTH_DP
-    val boardHeightDp = BOARD_HEIGHT_DP
+        val dispMaxX = ((vpW * scale) / 2f - vpW / 2f).coerceAtLeast(0f)
+        val dispMaxY = ((vpH * scale) / 2f - vpH / 2f).coerceAtLeast(0f)
 
-    Box(
-        modifier = modifier
-            .fillMaxSize()
-            .background(Color(0xFF0A1520))
-            .onSizeChanged { size ->
-                viewportWidth = size.width.toFloat()
-                viewportHeight = size.height.toFloat()
-            }
-            .pointerInput(Unit) {
-                awaitEachGesture {
-                    var zoom = 1f
-                    var pan = Offset.Zero
-                    var pastTouchSlop = false
-                    val touchSlop = viewConfiguration.touchSlop
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(vpW, vpH) {
+                    awaitEachGesture {
+                        var zoom = 1f
+                        var pan = Offset.Zero
+                        var pastTouchSlop = false
+                        val touchSlop = viewConfiguration.touchSlop
 
-                    awaitFirstDown(requireUnconsumed = false)
-                    do {
-                        val event = awaitPointerEvent()
-                        val canceled = event.changes.any { it.isConsumed }
-                        if (!canceled) {
-                            val zoomChange = event.calculateZoom()
-                            val panChange = event.calculatePan()
+                        awaitFirstDown(requireUnconsumed = false)
+                        do {
+                            val event = awaitPointerEvent()
+                            val canceled = event.changes.any { it.isConsumed }
+                            if (!canceled) {
+                                val zoomChange = event.calculateZoom()
+                                val panChange = event.calculatePan()
 
-                            if (!pastTouchSlop) {
-                                zoom *= zoomChange
-                                pan += panChange
-                                val centroidSize = event.calculateCentroidSize(useCurrent = false)
-                                val zoomMotion = abs(1 - zoom) * centroidSize
-                                val panMotion = pan.getDistance()
-                                if (zoomMotion > touchSlop || panMotion > touchSlop) {
-                                    pastTouchSlop = true
+                                if (!pastTouchSlop) {
+                                    zoom *= zoomChange
+                                    pan += panChange
+                                    val centroidSize = event.calculateCentroidSize(useCurrent = false)
+                                    val zoomMotion = abs(1 - zoom) * centroidSize
+                                    val panMotion = pan.getDistance()
+                                    if (zoomMotion > touchSlop || panMotion > touchSlop) {
+                                        pastTouchSlop = true
+                                    }
+                                }
+
+                                if (pastTouchSlop) {
+                                    val newScale = (scale * zoomChange).coerceIn(minScale, 5f)
+                                    val maxX = ((vpW * newScale) / 2f - vpW / 2f).coerceAtLeast(0f)
+                                    val maxY = ((vpH * newScale) / 2f - vpH / 2f).coerceAtLeast(0f)
+                                    scale = newScale
+                                    offset = Offset(
+                                        x = (offset.x + panChange.x).coerceIn(-maxX, maxX),
+                                        y = (offset.y + panChange.y).coerceIn(-maxY, maxY)
+                                    )
+                                    event.changes.forEach { it.consume() }
                                 }
                             }
-
-                            if (pastTouchSlop) {
-                                val newScale = (scale * zoomChange).coerceIn(0.8f, 5f)
-                                val boardWidthPx = boardWidthDp * density
-                                val boardHeightPx = boardHeightDp * density
-                                val scaledHalfW = (boardWidthPx * newScale) / 2f
-                                val scaledHalfH = (boardHeightPx * newScale) / 2f
-                                val viewHalfW = viewportWidth / 2f
-                                val viewHalfH = viewportHeight / 2f
-                                val xPaddingPx = 200f * density
-                                val maxX = (scaledHalfW - viewHalfW + xPaddingPx).coerceAtLeast(0f)
-                                val maxY = (scaledHalfH - viewHalfH).coerceAtLeast(0f)
-                                scale = newScale
-                                offset = Offset(
-                                    x = (offset.x + panChange.x).coerceIn(-maxX, maxX),
-                                    y = (offset.y + panChange.y).coerceIn(-maxY, maxY)
-                                )
-                                event.changes.forEach { it.consume() }
-                            }
-                        }
-                    } while (event.changes.any { it.pressed })
-                }
-            },
-        contentAlignment = Alignment.Center
-    ) {
-        Box(
-            modifier = Modifier.graphicsLayer(
-                scaleX = scale,
-                scaleY = scale,
-                translationX = offset.x,
-                translationY = offset.y
-            )
+                        } while (event.changes.any { it.pressed })
+                    }
+                },
+            contentAlignment = Alignment.Center
         ) {
-            GameBoardCanvas(
-                displayMode = displayMode,
-                playerPositions = playerPositions,
-                highlightedNodes = highlightedNodes,
-                onNodeClick = onNodeClick
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(
+                        scaleX = scale,
+                        scaleY = scale,
+                        translationX = offset.x.coerceIn(-dispMaxX, dispMaxX),
+                        translationY = offset.y.coerceIn(-dispMaxY, dispMaxY)
+                    )
+            ) {
+                GameBoardCanvas(
+                    modifier = Modifier.fillMaxSize(),
+                    displayMode = displayMode,
+                    playerPositions = playerPositions,
+                    highlightedNodes = highlightedNodes,
+                    onNodeClick = onNodeClick
+                )
+            }
+
+            Text(
+                text = stringResource(R.string.hint_usability),
+                fontSize = 10.sp,
+                color = TextMuted.copy(alpha = 0.5f),
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(8.dp)
             )
         }
-
-        // Usability hint
-        Text(
-            text = stringResource(R.string.hint_usability),
-            fontSize = 10.sp,
-            color = TextMuted.copy(alpha = 0.5f),
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(8.dp)
-        )
     }
 }
 
@@ -906,7 +938,8 @@ fun GameBoardScreenDetectivePreview() {
             isMrX = false,
             currentRound = 5,
             displayMode = BoardDisplayMode.GRAPH,
-            totalRounds = 22
+            totalRounds = 22,
+            currentPlayerColor = Color(0xFF2196F3)
         )
     }
 }
@@ -919,7 +952,8 @@ fun GameBoardScreenMrXPreview() {
             isMrX = true,
             currentRound = 8,
             displayMode = BoardDisplayMode.GRAPH,
-            totalRounds = 22
+            totalRounds = 22,
+            currentPlayerColor = Color(0xFF2C2C2C)
         )
     }
 }
