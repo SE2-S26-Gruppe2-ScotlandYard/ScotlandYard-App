@@ -56,6 +56,11 @@ class GameViewModel : ViewModel(), Callbacks {
     init {
         myStomp.connect()
         viewModelScope.launch {
+            myStomp.isConnected.collect { connected ->
+                _isConnected.value = connected
+            }
+        }
+        viewModelScope.launch {
             gameStompService.latestGameState.collect { state ->
                 if (state != null) {
                     _gameState.value = state
@@ -219,17 +224,7 @@ class GameViewModel : ViewModel(), Callbacks {
     }
 
     override fun onResponse(res: String) {
-        // Verbindungsstatus tracken
-        when {
-            res == "connected to server" -> {
-                _isConnected.value = true
-                return
-            }
-            res.startsWith("Connection lost") -> {
-                _isConnected.value = false
-                return
-            }
-        }
+        if (res == "connected to server" || res.startsWith("Connection lost")) return
 
         if (res.startsWith("Error:")) {
             _errorMessage.value = res

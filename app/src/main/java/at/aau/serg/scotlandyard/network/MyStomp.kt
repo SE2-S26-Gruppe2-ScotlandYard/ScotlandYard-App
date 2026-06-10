@@ -15,10 +15,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import org.hildan.krossbow.stomp.StompClient
 import org.hildan.krossbow.stomp.StompSession
+import org.hildan.krossbow.stomp.config.HeartBeat
 import org.hildan.krossbow.stomp.sendText
 import org.hildan.krossbow.stomp.subscribeText
 import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
+import kotlin.time.Duration.Companion.seconds
 
 class MyStomp(val callbacks: Callbacks) {
 
@@ -75,7 +77,9 @@ class MyStomp(val callbacks: Callbacks) {
 
     fun connect() {
         disconnect()
-        client = StompClient(OkHttpWebSocketClient())
+        client = StompClient(OkHttpWebSocketClient()) {
+            heartBeat = HeartBeat(minSendPeriod = 10.seconds, expectedPeriod = 10.seconds)
+        }
         connectionJob = scope.launch {
             while (isActive) {
                 try {
