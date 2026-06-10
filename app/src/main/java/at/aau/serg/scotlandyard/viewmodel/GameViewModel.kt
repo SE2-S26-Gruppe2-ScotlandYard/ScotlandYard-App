@@ -58,6 +58,12 @@ class GameViewModel : ViewModel(), Callbacks {
     private val _lastDetectiveMoveRound = MutableStateFlow(-1)
     val lastDetectiveMoveRound: StateFlow<Int> = _lastDetectiveMoveRound.asStateFlow()
 
+    // Maps reveal-turn key → 0-based history index of the last move in that turn.
+    // Snapshotted the moment each reveal key first appears so double moves are handled correctly
+    // (server doesn't include a "DOUBLE" marker in mrXMoveHistory).
+    private val _revealHistoryIndices = MutableStateFlow<Map<Int, Int>>(emptyMap())
+    val revealHistoryIndices: StateFlow<Map<Int, Int>> = _revealHistoryIndices.asStateFlow()
+
     fun recordDetectiveMove() {
         _lastDetectiveMoveRound.value = _gameState.value?.currentRound ?: -1
     }
@@ -74,9 +80,16 @@ class GameViewModel : ViewModel(), Callbacks {
             }
         }
         viewModelScope.launch {
+            var knownRevealKeys = setOf<Int>()
             gameStompService.latestGameState.collect { state ->
                 if (state != null) {
                     _gameState.value = state
+                    val newKeys = state.mrXRevealedPositions.keys - knownRevealKeys
+                    if (newKeys.isNotEmpty()) {
+                        val lastIdx = (state.mrXMoveHistory.size - 1).coerceAtLeast(0)
+                        _revealHistoryIndices.value = _revealHistoryIndices.value + newKeys.associateWith { lastIdx }
+                        knownRevealKeys = state.mrXRevealedPositions.keys
+                    }
                 }
             }
         }

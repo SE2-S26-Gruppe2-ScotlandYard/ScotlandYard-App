@@ -406,6 +406,7 @@ private fun GameBoardRoute(
     val isDoubleActive = gameState?.doubleMoveActive ?: false
     val mrXRevealed    = if (!isMrX) gameState?.mrXRevealedPositions ?: emptyMap() else emptyMap()
     val mrXHistory     = if (!isMrX) gameState?.mrXMoveHistory ?: emptyList() else emptyList()
+    val revealHistoryIndices by gameViewModel.revealHistoryIndices.collectAsState()
 
     val currentPlayerColor = remember(myPosition, playerPositions, isMrX) {
         if (isMrX) {
@@ -429,6 +430,7 @@ private fun GameBoardRoute(
         selectedTicket       = selectedTicket,
         currentPlayerColor   = currentPlayerColor,
         mrXMoveHistory       = mrXHistory,
+        revealHistoryIndices = revealHistoryIndices,
         ticketCounts         = ticketCounts.toMutableMap().apply {
             if (isDoubleActive) put(TicketType.DOUBLE, 0)
         },
@@ -443,7 +445,7 @@ private fun GameBoardRoute(
         },
         onNodeClick = { stationId ->
             val ticket = selectedTicket
-            if (ticket != null) {
+            if (ticket != null && stationId in highlightedNodes) {
                 gameViewModel.sendMove(gameId, playerId, ticket, stationId)
                 selectedTicket = null
                 if (!isMrX) gameViewModel.recordDetectiveMove()

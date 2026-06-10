@@ -108,6 +108,7 @@ fun GameBoardScreen(
     isMyTurn: Boolean = false,
     isDoubleActive: Boolean = false,
     mrXMoveHistory: List<String> = emptyList(),
+    revealHistoryIndices: Map<Int, Int> = emptyMap(),
     selectedTicket: TicketType? = null,
     currentPlayerColor: Color? = null,
     onNodeClick: ((Int) -> Unit)? = null,
@@ -185,9 +186,9 @@ fun GameBoardScreen(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
                             .padding(top = 8.dp)
-                            .background(AccentGlow.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
-                            .border(1.dp, AccentGlow.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                            .background(Color(0xCC0D1E2E), RoundedCornerShape(8.dp))
+                            .border(2.dp, AccentGlow, RoundedCornerShape(8.dp))
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         Text(
                             text = stringResource(R.string.banner_double_move_hint),
@@ -206,6 +207,7 @@ fun GameBoardScreen(
             isVisible = isHistoryOpen,
             moveHistory = mrXMoveHistory,
             mrXRevealedPositions = mrXRevealedPositions,
+            revealHistoryIndices = revealHistoryIndices,
             onClose = { isHistoryOpen = false }
         )
 
@@ -217,6 +219,7 @@ private fun MrXHistoryOverlay(
     isVisible: Boolean,
     moveHistory: List<String>,
     mrXRevealedPositions: Map<Int, Int> = emptyMap(),
+    revealHistoryIndices: Map<Int, Int> = emptyMap(),
     onClose: () -> Unit
 ) {
     AnimatedVisibility(
@@ -238,7 +241,7 @@ private fun MrXHistoryOverlay(
                 exit = scaleOut(targetScale = 0.88f, animationSpec = tween(160)) +
                         fadeOut(animationSpec = tween(160))
             ) {
-                MrXHistoryCard(moveHistory = moveHistory, mrXRevealedPositions = mrXRevealedPositions, onClose = onClose)
+                MrXHistoryCard(moveHistory = moveHistory, mrXRevealedPositions = mrXRevealedPositions, revealHistoryIndices = revealHistoryIndices, onClose = onClose)
             }
         }
     }
@@ -248,6 +251,7 @@ private fun MrXHistoryOverlay(
 private fun MrXHistoryCard(
     moveHistory: List<String>,
     mrXRevealedPositions: Map<Int, Int> = emptyMap(),
+    revealHistoryIndices: Map<Int, Int> = emptyMap(),
     onClose: () -> Unit
 ) {
     Card(
@@ -307,44 +311,31 @@ private fun MrXHistoryCard(
                     modifier = Modifier.fillMaxWidth()
                 )
             } else {
-                // Compute per-entry turn number and whether it's the last entry of its turn.
-                // "DOUBLE" entries start a double turn; the 2 following entries are sub-moves.
-                // The reveal badge belongs on the LAST entry of the turn, not on the DOUBLE marker.
-                val allMoves = moveHistory
-                val entryTurn = IntArray(allMoves.size)
-                val entryIsLastOfTurn = BooleanArray(allMoves.size)
-                var t = 1; var subMovesLeft = 0
-                allMoves.forEachIndexed { i, ticket ->
-                    entryTurn[i] = t
-                    when {
-                        ticket == "DOUBLE" -> subMovesLeft = 2
-                        subMovesLeft > 0 -> {
-                            subMovesLeft--
-                            if (subMovesLeft == 0) { entryIsLastOfTurn[i] = true; t++ }
-                        }
-                        else -> { entryIsLastOfTurn[i] = true; t++ }
+                // Build a reverse lookup: history-index → reveal position.
+                // revealHistoryIndices maps turn-key → last-move-index snapshotted by the ViewModel
+                // at the exact moment the reveal appeared, so doubles are handled correctly.
+                val indexToReveal: Map<Int, Int> = revealHistoryIndices
+                    .mapNotNull { (turnKey, histIdx) ->
+                        mrXRevealedPositions[turnKey]?.let { pos -> histIdx to pos }
                     }
-                }
+                    .toMap()
 
-                val startIdx = maxOf(0, allMoves.size - 24)
-                val displayedEntries = (startIdx until allMoves.size).map { i ->
-                    Triple(allMoves[i], entryTurn[i], entryIsLastOfTurn[i])
-                }
-                val rows = displayedEntries.chunked(3)
+                val startIdx = maxOf(0, moveHistory.size - 24)
+                val rows = (startIdx until moveHistory.size).toList().chunked(3)
 
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    rows.forEachIndexed { rowIndex, rowItems ->
+                    rows.forEachIndexed { rowIndex, rowIndices ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            rowItems.forEachIndexed { colIndex, (ticket, turnNum, isLastOfTurn) ->
-                                val globalIndex = rowIndex * 3 + colIndex
+                            rowIndices.forEachIndexed { colIndex, globalIndex ->
+                                val ticket = moveHistory[globalIndex]
                                 val moveNumber = globalIndex + 1
-                                val revealedPos = if (isLastOfTurn) mrXRevealedPositions[turnNum] else null
+                                val revealedPos = indexToReveal[globalIndex]
                                 val isRevealEntry = revealedPos != null
 
                                 Text(
@@ -366,7 +357,7 @@ private fun MrXHistoryCard(
                                     )
                                 }
 
-                                if (colIndex < rowItems.size - 1) {
+                                if (colIndex < rowIndices.size - 1) {
                                     Box(
                                         modifier = Modifier
                                             .fillMaxHeight()
@@ -375,7 +366,7 @@ private fun MrXHistoryCard(
                                 }
                             }
 
-                            repeat(3 - rowItems.size) {
+                            repeat(3 - rowIndices.size) {
                                 Spacer(modifier = Modifier.weight(1f))
                             }
                         }
