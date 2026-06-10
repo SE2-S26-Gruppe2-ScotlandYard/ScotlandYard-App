@@ -163,6 +163,12 @@ fun GameBoardScreen(
                     .border(2.dp, AccentGlow.copy(alpha = 0.45f), RoundedCornerShape(16.dp))
                     .clip(RoundedCornerShape(16.dp))
             ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.35f))
+                )
+
                 BoardArea(
                     modifier = Modifier.fillMaxSize(),
                     displayMode = displayMode,
