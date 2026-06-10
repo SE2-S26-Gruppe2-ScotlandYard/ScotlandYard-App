@@ -53,6 +53,19 @@ class GameViewModel : ViewModel(), Callbacks {
     private val _gameOver = MutableSharedFlow<String>()
     val gameOver: SharedFlow<String> = _gameOver.asSharedFlow()
 
+    // Round number of the detective's last move — used to prevent moving twice in the same round.
+    // Stored in ViewModel so it survives settings navigation. -1 = no move yet.
+    private val _lastDetectiveMoveRound = MutableStateFlow(-1)
+    val lastDetectiveMoveRound: StateFlow<Int> = _lastDetectiveMoveRound.asStateFlow()
+
+    fun recordDetectiveMove() {
+        _lastDetectiveMoveRound.value = _gameState.value?.currentRound ?: -1
+    }
+
+    fun activateDoubleMove(gameId: String, playerId: String) {
+        gameStompService.sendDoubleMove(gameId, playerId)
+    }
+
     init {
         myStomp.connect()
         viewModelScope.launch {

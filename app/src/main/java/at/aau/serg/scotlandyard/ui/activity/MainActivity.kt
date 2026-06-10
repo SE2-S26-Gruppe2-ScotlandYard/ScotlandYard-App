@@ -376,10 +376,11 @@ private fun GameBoardRoute(
         gameState?.let { if (isMrX) it.isMrXPhase else it.isDetectivesPhase } ?: false
     }
 
-    // Gray out tickets immediately after the local player submits a move,
-    // without waiting for the server to confirm the turn change.
-    var movedThisTurn by remember { mutableStateOf(false) }
-    LaunchedEffect(isMyTurn) { if (isMyTurn) movedThisTurn = false }
+    // Detectives only: grey out tickets once they've moved this round, until the round advances.
+    // Stored in ViewModel so settings navigation doesn't reset it.
+    // MrX never needs this — the phase flip to DETECTIVES already disables their tickets.
+    val lastDetectiveMoveRound by gameViewModel.lastDetectiveMoveRound.collectAsState()
+    val movedThisTurn = !isMrX && lastDetectiveMoveRound == (gameState?.currentRound ?: -2)
     val effectiveIsMyTurn = isMyTurn && !movedThisTurn
 
     val detectiveIdOrder = gameState?.detectivePositions?.keys?.sorted() ?: emptyList()
@@ -424,6 +425,7 @@ private fun GameBoardRoute(
         playerPositions      = playerPositions,
         highlightedNodes     = highlightedNodes,
         isMyTurn             = effectiveIsMyTurn,
+        isDoubleActive       = isDoubleActive,
         selectedTicket       = selectedTicket,
         currentPlayerColor   = currentPlayerColor,
         mrXMoveHistory       = mrXHistory,
@@ -431,14 +433,20 @@ private fun GameBoardRoute(
             if (isDoubleActive) put(TicketType.DOUBLE, 0)
         },
         onTicketSelect = { ticket ->
-            if (effectiveIsMyTurn) selectedTicket = if (selectedTicket == ticket) null else ticket
+            if (effectiveIsMyTurn) {
+                if (ticket == TicketType.DOUBLE) {
+                    gameViewModel.activateDoubleMove(gameId, playerId)
+                } else {
+                    selectedTicket = if (selectedTicket == ticket) null else ticket
+                }
+            }
         },
         onNodeClick = { stationId ->
             val ticket = selectedTicket
             if (ticket != null) {
                 gameViewModel.sendMove(gameId, playerId, ticket, stationId)
                 selectedTicket = null
-                movedThisTurn = true
+                if (!isMrX) gameViewModel.recordDetectiveMove()
             }
         },
         onNavigateToSettings = { navController.navigate("settings") }

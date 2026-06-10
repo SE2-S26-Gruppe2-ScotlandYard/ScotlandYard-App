@@ -106,6 +106,7 @@ fun GameBoardScreen(
     playerPositions: Map<Color, Int> = emptyMap(),
     highlightedNodes: Set<Int> = emptySet(),
     isMyTurn: Boolean = false,
+    isDoubleActive: Boolean = false,
     mrXMoveHistory: List<String> = emptyList(),
     selectedTicket: TicketType? = null,
     currentPlayerColor: Color? = null,
@@ -115,10 +116,8 @@ fun GameBoardScreen(
 ) {
     var isHistoryOpen by remember { mutableStateOf(false) }
 
-    val revealRounds = setOf(3, 8, 13, 18)
-    val currentRevealPosition = if (currentRound in revealRounds) {
-        mrXRevealedPositions[currentRound]
-    } else null
+    // Let the server decide which rounds are reveal rounds via the map it sends.
+    val currentRevealPosition = mrXRevealedPositions[currentRound]
 
     var showRevealBanner by remember { mutableStateOf(false) }
     var revealedPosition by remember { mutableStateOf<Int?>(null) }
@@ -179,26 +178,26 @@ fun GameBoardScreen(
                         .align(Alignment.TopCenter)
                         .padding(top = 12.dp)
                 )
-            }
-        }
 
-        // Double ticket usability hint (banner)
-        if (selectedTicket == TicketType.DOUBLE) {
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 8.dp)
-                    .background(AccentGlow.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
-                    .border(1.dp, AccentGlow.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-                    .padding(horizontal = 16.dp, vertical = 6.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.banner_double_move_hint),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = AccentGlow,
-                    textAlign = TextAlign.Center
-                )
+                // Double move active hint — shown while MrX picks their 2 sub-moves
+                if (isDoubleActive) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 8.dp)
+                            .background(AccentGlow.copy(alpha = 0.15f), RoundedCornerShape(8.dp))
+                            .border(1.dp, AccentGlow.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.banner_double_move_hint),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AccentGlow,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             }
         }
 
