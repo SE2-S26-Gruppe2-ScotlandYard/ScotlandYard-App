@@ -13,7 +13,6 @@ val Pink40 = Color(0xFF7D5260)
 // App backgrounds
 val BackgroundDark = Color(0xFF0D1B2A)
 val SidebarBg = Color(0xFF101E2D)
-val CanvasBgColor = Color(0xFF0F2235)
 val NodeFill = Color(0xFF1A3A55)
 
 // Sidebar / panel chrome

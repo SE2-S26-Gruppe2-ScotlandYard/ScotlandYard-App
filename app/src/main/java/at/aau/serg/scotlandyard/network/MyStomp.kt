@@ -4,9 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import at.aau.serg.scotlandyard.Callbacks
-import at.aau.serg.scotlandyard.network.ServerConfig.DEVICE_URI
-import at.aau.serg.scotlandyard.network.ServerConfig.GLOBAL_URI
-import at.aau.serg.scotlandyard.network.ServerConfig.LOCAL_URI
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,10 +19,6 @@ import org.hildan.krossbow.stomp.sendText
 import org.hildan.krossbow.stomp.subscribeText
 import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
-
-//private const val WEBSOCKET_URI = GLOBAL_URI
-private const val WEBSOCKET_URI = LOCAL_URI   // ← Emulator (10.0.2.2)
-//private const val WEBSOCKET_URI = DEVICE_URI    // ← Physisches Gerät (143.205.192.169)
 
 class MyStomp(val callbacks: Callbacks) {
 
@@ -96,7 +90,7 @@ class MyStomp(val callbacks: Callbacks) {
                 } catch (e: Exception) {
                     Log.e("MyStomp", "Verbindung fehlgeschlagen, neuer Versuch in 5s", e)
                     _isConnected.value = false
-                    delay(5000)
+                    delay(5000.milliseconds)
                 }
             }
         }
@@ -177,7 +171,7 @@ class MyStomp(val callbacks: Callbacks) {
         scope.launch {
             // Wait until the primary connection is ready (up to 15 s)
             if (!_isConnected.value) {
-                withTimeoutOrNull(15_000L) { _isConnected.first { it } }
+                withTimeoutOrNull(15_000.milliseconds) { _isConnected.first { it } }
             }
             val s = session ?: run {
                 Log.e("MyStomp", "connectToGame: no session after waiting")
@@ -276,7 +270,7 @@ class MyStomp(val callbacks: Callbacks) {
             try {
                 // Wait for connection if not ready yet (up to 15 s)
                 if (!_isConnected.value) {
-                    withTimeoutOrNull(15_000L) { _isConnected.first { it } }
+                    withTimeoutOrNull(15_000.milliseconds) { _isConnected.first { it } }
                 }
                 session?.sendText("/app/game/$gameId/state", "")
                     ?: Log.w("MyStomp", "Cannot request game state: no session after waiting")

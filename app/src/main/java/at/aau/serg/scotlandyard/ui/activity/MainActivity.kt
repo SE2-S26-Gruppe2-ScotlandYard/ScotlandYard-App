@@ -138,7 +138,7 @@ private fun ScotlandYardApp() {
 }
 
 @Composable
-private fun rememberIsNavigating(): androidx.compose.runtime.MutableState<Boolean> {
+private fun rememberIsNavigating(): MutableState<Boolean> {
     val state = remember { mutableStateOf(false) }
     LaunchedEffect(state.value) {
         if (state.value) { delay(500.milliseconds); state.value = false }
@@ -162,7 +162,7 @@ private fun AppNavHost(
         composable("login") { LoginRoute(navController, currentUser, authViewModel, isConnected) }
         composable("rules") { RulesRoute(navController) }
         composable("lobby") {
-            LobbyRoute(navController, currentUser, authViewModel, currentRoute, sharedLobbyViewModel, onSharedLobbyViewModelChange)
+            LobbyRoute(navController, currentUser, authViewModel, currentRoute, onSharedLobbyViewModelChange)
         }
         composable("roleSelection") {
             sharedLobbyViewModel?.let { RoleSelectionRoute(lobbyVm = it, navController = navController) }
@@ -275,7 +275,6 @@ private fun LobbyRoute(
     currentUser: User?,
     authViewModel: AuthViewModel,
     currentRoute: String?,
-    sharedLobbyViewModel: LobbyViewModel?,
     onSharedLobbyViewModelChange: (LobbyViewModel) -> Unit
 ) {
     val isNavigating = rememberIsNavigating()
@@ -334,11 +333,6 @@ private fun AssignStartPositionRoute(
     AssignStartPositionScreen(
         gameId   = gameId,
         playerId = playerId,
-        onBackClick = {
-            if (!isNavigating.value && navController.previousBackStackEntry != null) {
-                isNavigating.value = true; navController.popBackStack()
-            }
-        },
         onPositionConfirmed = {
             val selectedRoles = sharedLobbyViewModel?.currentLobby?.value?.selectedRoles
             val isMrX = selectedRoles?.get(playerId) == "MRX"
@@ -363,9 +357,9 @@ private fun GameBoardRoute(
     LaunchedEffect(gameId) {
         gameViewModel.gameStompService.subscribe(gameId)
         gameViewModel.isConnected.first { it }
-        delay(600)
+        delay(600.milliseconds)
         gameViewModel.requestGameState(gameId)
-        delay(3_000)
+        delay(3_000.milliseconds)
         if (gameViewModel.gameState.value == null) {
             Log.d("MainActivity", "GameState still null after 3 s – retrying requestGameState")
             gameViewModel.requestGameState(gameId)

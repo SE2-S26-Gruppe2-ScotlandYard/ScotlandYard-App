@@ -3,7 +3,6 @@ package at.aau.serg.scotlandyard.ui.components
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.ScrollableDefaults
@@ -160,8 +159,8 @@ fun SpinnerWheelPicker(
         ) {
             items(extendedItems.size) { index ->
                 val position = extendedItems[index]
-                val isCenter = index == listState.firstVisibleItemIndex + half
-                WheelItem(position = position, isSelected = isCenter, isCheatMode = isCheatMode)
+                val isCenter by remember { derivedStateOf { index == listState.firstVisibleItemIndex + half } }
+                WheelItem(position = position, isSelected = isCenter)
             }
         }
 
@@ -199,8 +198,7 @@ fun SpinnerWheelPicker(
 @Composable
 private fun WheelItem(
     position: Int,
-    isSelected: Boolean,
-    isCheatMode: Boolean
+    isSelected: Boolean
 ) {
     Box(
         modifier = Modifier

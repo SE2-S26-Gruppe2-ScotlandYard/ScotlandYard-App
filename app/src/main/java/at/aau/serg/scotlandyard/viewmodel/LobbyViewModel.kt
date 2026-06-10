@@ -70,7 +70,7 @@ class LobbyViewModel(
     }
 
     private fun setupLobbyService(session: org.hildan.krossbow.stomp.StompSession) {
-        lobbyService = LobbyStompService(session, userId, myStomp)
+        lobbyService = LobbyStompService(session, myStomp)
         lobbyService!!.subscribe()
 
         // Netzwerk-Sendefehler aus dem Service weiterleiten
@@ -94,7 +94,7 @@ class LobbyViewModel(
                         || response.message == "BACK_TO_LOBBY"
 
                 if (incomingLobby != null) {
-                    val isPlayerInLobby = incomingLobby.users?.any { it.id == userId } == true
+                    val isPlayerInLobby = incomingLobby.users.any { it.id == userId }
                             || incomingLobby.hostId == userId
                     if (isPlayerInLobby) {
                         _currentLobby.value = incomingLobby
@@ -196,7 +196,7 @@ class LobbyViewModel(
                     put("requesterId", userId)
                 }
                 myStomp.getSession()?.sendText("/app/lobby/backToLobby", payload.toString())
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _statusMessage.value = "⚠️ Fehler bei der Rückkehr zur Lobby."
                 _errorEvent.tryEmit("Fehler bei der Rückkehr zur Lobby.")
             }

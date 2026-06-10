@@ -66,7 +66,7 @@ import at.aau.serg.scotlandyard.ui.theme.TextMuted
 import at.aau.serg.scotlandyard.ui.theme.TextPrimary
 import com.example.scotlandyard.R
 
-private enum class SettingsCategory(@StringRes val labelRes: Int, val icon: ImageVector) {
+private enum class SettingsCategory(@param:StringRes val labelRes: Int, val icon: ImageVector) {
     GAMEBOARD(R.string.title_gameboard, Icons.Default.Map),
     LANGUAGE(R.string.title_language, Icons.Default.Language),
     SERVER(R.string.title_server, Icons.Default.Wifi)
@@ -333,7 +333,6 @@ private fun LanguageSettingsContent(
                 LanguageOption(
                     modifier = Modifier.weight(1f),
                     languageName = name,
-                    languageCode = code,
                     isSelected = selectedLanguage == code,
                     onClick = { onLanguageChange(code) }
                 )
@@ -353,7 +352,6 @@ private fun LanguageSettingsContent(
 private fun LanguageOption(
     modifier: Modifier = Modifier,
     languageName: String,
-    languageCode: String,
     isSelected: Boolean,
     onClick: () -> Unit
 ) {

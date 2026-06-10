@@ -41,7 +41,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -52,6 +51,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -126,7 +126,7 @@ fun GameBoardScreen(
         if (!isMrX && currentRevealPosition != null) {
             revealedPosition = currentRevealPosition
             showRevealBanner = true
-            delay(5_000L)
+            delay(5_000.milliseconds)
             showRevealBanner = false
         }
     }
@@ -368,8 +368,8 @@ private fun MrXHistoryCard(
 @Composable
 private fun MrXHistoryTicketChip(
     ticket: String,
-    revealedPos: Int? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    revealedPos: Int? = null
 ) {
     val (color, label) = when (ticket) {
         "WALKING" -> Pair(WalkingColor, stringResource(R.string.ticket_walking))

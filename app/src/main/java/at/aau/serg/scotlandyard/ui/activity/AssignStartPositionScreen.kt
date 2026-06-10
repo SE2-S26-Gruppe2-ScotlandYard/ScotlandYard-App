@@ -58,6 +58,7 @@ import at.aau.serg.scotlandyard.ui.components.SpinnerWheelPicker
 import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.viewmodel.GameViewModel
 import com.example.scotlandyard.R
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 
 // Screen state machine
@@ -90,7 +91,6 @@ private enum class SpinnerScreenState {
 fun AssignStartPositionScreen(
     gameId: String = "",
     playerId: String = "",
-    onBackClick: () -> Unit = {},
     onPositionConfirmed: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -123,7 +123,7 @@ fun AssignStartPositionScreen(
     LaunchedEffect(gameId, playerId, isConnected) {
         if (isConnected && screenState == SpinnerScreenState.CONNECTING) {
             gameViewModel.subscribeToStartPosition(gameId, playerId)
-            delay(300L)
+            delay(300.milliseconds)
             gameViewModel.generateLocalStartPosition()
             manualPosition = gameViewModel.peekStartPosition() ?: StartPositionConstants.MIN_POSITION
             screenState = SpinnerScreenState.WAITING_TO_SPIN
@@ -148,7 +148,7 @@ fun AssignStartPositionScreen(
     // Timeout: if server doesn't respond within 10 s in WAITING_SERVER, surface error
     LaunchedEffect(screenState) {
         if (screenState == SpinnerScreenState.WAITING_SERVER) {
-            delay(10_000L)
+            delay(10_000.milliseconds)
             if (screenState == SpinnerScreenState.WAITING_SERVER) {
                 gameViewModel.setError("Server hat nicht geantwortet. Bitte erneut versuchen.")
                 screenState = SpinnerScreenState.SPINNER_DONE
@@ -439,7 +439,7 @@ private fun SpinnerAutoState(
 ) {
     var localTrigger by remember { mutableStateOf(false) }
     LaunchedEffect(triggerSpin) {
-        if (triggerSpin) { delay(50); localTrigger = true } else { localTrigger = false }
+        if (triggerSpin) { delay(50.milliseconds); localTrigger = true } else { localTrigger = false }
     }
 
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE

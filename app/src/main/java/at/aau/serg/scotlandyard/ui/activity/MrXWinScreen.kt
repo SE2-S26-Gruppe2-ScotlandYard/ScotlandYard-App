@@ -63,7 +63,7 @@ fun MrXWinScreen(isMrX: Boolean, onMainMenu: () -> Unit) {
         )
 
         // Pulsing dark night-sky overlay — background dims and lightens slowly
-        androidx.compose.foundation.layout.Box(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = nightAlpha))

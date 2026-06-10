@@ -246,7 +246,7 @@ class GameViewModel : ViewModel(), Callbacks {
                     gameId = jsonObject.optString("gameId", ""),
                     playerId = jsonObject.optString("playerId", ""),
                     startPosition = if (jsonObject.has("startPosition")) jsonObject.optInt("startPosition") else null,
-                    message = jsonObject.optString("message", null)
+                    message = if (jsonObject.has("message")) jsonObject.getString("message") else null
                 )
 
                 when (response.type) {

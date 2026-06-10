@@ -19,7 +19,6 @@ private const val TAG = "LobbyStompService"
 
 class LobbyStompService(
     private val session: StompSession,
-    private val userId: String,
     private val myStomp: MyStomp
 ) {
     private val scope = CoroutineScope(Dispatchers.IO)
