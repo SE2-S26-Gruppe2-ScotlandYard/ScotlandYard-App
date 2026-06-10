@@ -122,8 +122,8 @@ fun GameBoardScreen(
 
     var showRevealBanner by remember { mutableStateOf(false) }
     var revealedPosition by remember { mutableStateOf<Int?>(null) }
-    LaunchedEffect(currentRevealPosition) {
-        if (!isMrX && currentRevealPosition != null) {
+    LaunchedEffect(currentRevealPosition, isDoubleActive) {
+        if (!isMrX && currentRevealPosition != null && !isDoubleActive) {
             revealedPosition = currentRevealPosition
             showRevealBanner = true
             delay(5_000.milliseconds)
