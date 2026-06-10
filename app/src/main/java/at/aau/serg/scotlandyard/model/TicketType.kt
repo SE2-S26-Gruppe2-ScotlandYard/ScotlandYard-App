@@ -59,7 +59,7 @@ object TicketStyleProvider {
             TicketType.DOUBLE -> TicketStyle(
                 type = TicketType.DOUBLE,
                 label = "2X",
-                backgroundColor = DoubleColor,
+                backgroundColor = MRX_COLOR,
                 centerStyle = TicketCenterStyle.Text2x,
                 centerText = "2x"
             )

@@ -7,11 +7,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.hildan.krossbow.stomp.StompSession
 import org.hildan.krossbow.stomp.sendText
@@ -26,10 +23,9 @@ class LobbyStompService(
     private val myStomp: MyStomp
 ) {
     private val scope = CoroutineScope(Dispatchers.IO)
-    private var lastKnownHostName: String = "Host"
 
-    private val _lobbyResponse = MutableStateFlow<LobbyResponse?>(null)
-    val lobbyResponse: StateFlow<LobbyResponse?> = _lobbyResponse.asStateFlow()
+    private val _lobbyResponse = MutableSharedFlow<LobbyResponse>(extraBufferCapacity = 1)
+    val lobbyResponse: SharedFlow<LobbyResponse> = _lobbyResponse.asSharedFlow()
 
     private val _sendError = MutableSharedFlow<String>(extraBufferCapacity = 1)
     val sendError: SharedFlow<String> = _sendError.asSharedFlow()
@@ -75,14 +71,7 @@ class LobbyStompService(
 
     private fun handleIncomingMessage(msg: String) {
         try {
-            var response = msg.toLobbyResponse()
-            response.lobby?.let { lobby ->
-                val hostUser = lobby.users?.find { it.id == lobby.hostId }
-                if (hostUser != null) lastKnownHostName = hostUser.name
-            }
-            val customMessage = response.message
-            response = response.copy(message = customMessage)
-            _lobbyResponse.value = response
+            _lobbyResponse.tryEmit(msg.toLobbyResponse())
         } catch (e: Exception) {
             Log.e(TAG, "Parse error: $msg", e)
         }

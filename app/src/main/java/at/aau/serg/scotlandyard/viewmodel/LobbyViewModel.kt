@@ -38,8 +38,8 @@ class LobbyViewModel(
     private val _navigateToLobby = MutableSharedFlow<Unit>()
     val navigateToLobby: SharedFlow<Unit> = _navigateToLobby.asSharedFlow()
 
-    // ── Navigation Event: alle Spieler zum Spiel schicken ────────────
-    private val _navigateToGame = MutableSharedFlow<String>() // emits gameId
+    // Navigation event: emits gameId to navigate all players to the game
+    private val _navigateToGame = MutableSharedFlow<String>()
     val navigateToGame: SharedFlow<String> = _navigateToGame.asSharedFlow()
 
     // One-shot error events für UI-Screens (z.B. RoleSelection)
@@ -80,7 +80,6 @@ class LobbyViewModel(
 
         viewModelScope.launch {
             lobbyService!!.lobbyResponse.collect { response ->
-                response ?: return@collect
                 _isLoading.value = false
 
                 if (!response.success) {
@@ -183,7 +182,6 @@ class LobbyViewModel(
         lobbyService?.startRoleSelection(lobbyId, userId)
     }
 
-    // ── Host drückt "Start Game" in der Rollenwahl ────────────────────────
     fun startGame() {
         val lobbyId = _currentLobby.value?.id ?: return
         lobbyService?.startGame(lobbyId, userId)

@@ -60,7 +60,6 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -172,7 +171,7 @@ fun GameBoardScreen(
                     onNodeClick = if (isMyTurn) onNodeClick else null
                 )
 
-                // Reveal Mr. X position – top-center of board container, auto-dismisses after 5 s
+                // Reveal Mr. X position banner, top-center, auto-dismisses after 5s
                 RevealBanner(
                     visible = showRevealBanner,
                     position = revealedPosition ?: 0,
@@ -215,146 +214,6 @@ fun GameBoardScreen(
 }
 
 @Composable
-private fun MenuOverlay(
-    isVisible: Boolean,
-    onClose: () -> Unit,
-    onNavigateToSettings: () -> Unit
-) {
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = fadeIn(animationSpec = tween(200)),
-        exit = fadeOut(animationSpec = tween(180))
-    ) {
-        // Dim backdrop - tap outside the box to close
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xCC000000))
-                .clickable(onClick = onClose),
-            contentAlignment = Alignment.Center
-        ) {
-            AnimatedVisibility(
-                visible = isVisible,
-                enter = scaleIn(initialScale = 0.88f, animationSpec = tween(220)) +
-                        fadeIn(animationSpec = tween(220)),
-                exit = scaleOut(targetScale = 0.88f, animationSpec = tween(160)) +
-                        fadeOut(animationSpec = tween(160))
-            ) {
-                MenuCard(
-                    onClose = onClose,
-                    onNavigateToSettings = onNavigateToSettings
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun MenuCard(
-    onClose: () -> Unit,
-    onNavigateToSettings: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .widthIn(min = 260.dp, max = 340.dp)
-            // Stop clicks to the gameboard through the menu overlay
-            .clickable(enabled = false, onClick = {}),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1E2E)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 24.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Header row: title + close button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.title_menu),
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 3.sp,
-                    color = TextPrimary
-                )
-
-                IconButton(
-                    onClick = onClose,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .background(Color(0xFF1E3347), CircleShape)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = stringResource(R.string.button_close),
-                        tint = TextPrimary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            HorizontalDivider(
-                color = SidebarBorder,
-                thickness = 1.dp,
-                modifier = Modifier.padding(vertical = 12.dp)
-            )
-
-            // Menu entries
-            MenuItem(
-                icon = Icons.Default.Settings,
-                label = stringResource(R.string.title_settings),
-                onClick = onNavigateToSettings,
-                enabled = false
-            )
-
-            // TODO: Add other items here [MenuItem(icon = Icons.Default.ExitToApp, label = "Leave", onClick = onQuit)]
-        }
-    }
-}
-
-@Composable
-private fun MenuItem(
-    icon: ImageVector,
-    label: String,
-    onClick: () -> Unit,
-    enabled: Boolean = true
-) {
-    val contentAlpha = if (enabled) 1f else 0.35f
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(52.dp)
-            .background(Color(0xFF152536), RoundedCornerShape(10.dp))
-            .border(1.dp, SidebarBorder.copy(alpha = contentAlpha), RoundedCornerShape(10.dp))
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
-    ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = null,
-            tint = AccentGlow.copy(alpha = contentAlpha),
-            modifier = Modifier.size(20.dp)
-        )
-
-        Spacer(modifier = Modifier.width(12.dp))
-
-        Text(
-            text = label,
-            fontSize = 15.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = TextPrimary.copy(alpha = contentAlpha)
-        )
-    }
-}
-
-@Composable
 private fun MrXHistoryOverlay(
     isVisible: Boolean,
     moveHistory: List<String>,
@@ -369,7 +228,7 @@ private fun MrXHistoryOverlay(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xCC000000))
+                .background(DarkOverlay)
                 .clickable(onClick = onClose),
             contentAlignment = Alignment.Center
         ) {
@@ -397,7 +256,7 @@ private fun MrXHistoryCard(
             .widthIn(min = 260.dp, max = 360.dp)
             .clickable(enabled = false, onClick = {}),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF0D1E2E)),
+        colors = CardDefaults.cardColors(containerColor = BackgroundDark),
         elevation = CardDefaults.cardElevation(defaultElevation = 24.dp)
     ) {
         Column(
@@ -632,7 +491,7 @@ private fun SidePanel(
             fontWeight = FontWeight.Bold,
             letterSpacing = 2.sp,
             color = when {
-                isMrX -> Color(0xFFF090F5)
+                isMrX -> MrXPurple
                 currentPlayerColor != null -> currentPlayerColor
                 else -> AccentGlow
             },
@@ -680,7 +539,7 @@ private fun SidePanel(
                     text = stringResource(R.string.title_mrx_moves),
                     fontSize = 9.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color(0xFFF090F5),
+                    color = MrXPurple,
                     textAlign = TextAlign.Center
                 )
             }

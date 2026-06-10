@@ -23,10 +23,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import at.aau.serg.scotlandyard.ui.theme.AccentTeal
+import at.aau.serg.scotlandyard.ui.theme.ButtonBorder
+import at.aau.serg.scotlandyard.ui.theme.DarkActionButtonBg
 
 private val NavigationIconTint = Color(0xFFE0E0E0)
-private val ActionButtonColor = Color(0xFF1A4A3A)
-private val DarkActionButtonColor = Color(0xFF102920)
 private val ActionButtonShape = RoundedCornerShape(6.dp)
 
 @Composable
@@ -46,7 +47,7 @@ fun AppBackButton(
             }
         },
         enabled = isEnabled.value,
-        modifier = modifier.then(Modifier.then(Modifier))
+        modifier = modifier
     ) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -95,7 +96,7 @@ fun AppActionButton(
         text = text,
         onClick = onClick,
         modifier = modifier,
-        containerColor = ActionButtonColor
+        containerColor = AccentTeal
     )
 }
 
@@ -109,7 +110,7 @@ fun AppDarkActionButton(
         text = text,
         onClick = onClick,
         modifier = modifier,
-        containerColor = DarkActionButtonColor
+        containerColor = DarkActionButtonBg
     )
 }
 
@@ -134,7 +135,7 @@ private fun AppStyledActionButton(
             .height(52.dp)
             .border(
                 width = 1.dp,
-                color = Color(0xAAFFFFFF),
+                color = ButtonBorder,
                 shape = ActionButtonShape
             ),
         shape = ActionButtonShape,

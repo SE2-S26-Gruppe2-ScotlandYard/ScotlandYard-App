@@ -225,7 +225,7 @@ private fun DrawScope.drawNodes(
 
             if (isHighlighted) {
                 drawCircle(
-                    color = Color(0xFF22AA80).copy(alpha = 0.4f),
+                    color = AccentGlow.copy(alpha = 0.4f),
                     radius = nodeRadius + highlightOffset,
                     center = pos
                 )
@@ -242,7 +242,7 @@ private fun DrawScope.drawNodes(
 
             if (isHighlighted) {
                 // Highlighted: solid accent fill, skip transport colours
-                drawCircle(color = Color(0xFF22AA80), radius = nodeRadius, center = pos)
+                drawCircle(color = AccentGlow, radius = nodeRadius, center = pos)
             } else {
                 clipPath(circlePath) {
                     drawRect(
@@ -347,7 +347,7 @@ private fun GameBoardCanvasPreview() {
         GameBoardCanvas(
             highlightedNodes = setOf(1, 8, 9, 46, 58),
             playerPositions = mapOf(
-                Color(0xFF22AA80) to 1,   // detective (teal)
+                AccentGlow to 1,   // detective (teal)
                 Color(0xFF333333) to 46   // Mr. X (dark)
             )
         )

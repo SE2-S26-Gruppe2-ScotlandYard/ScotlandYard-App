@@ -250,13 +250,7 @@ class GameViewModel : ViewModel(), Callbacks {
                 )
 
                 when (response.type) {
-                    "START_POSITION_ASSIGNED" -> {
-                        _startPosition.value = response.startPosition
-                        _myPosition.value = response.startPosition
-                        _isLoading.value = false
-                        _errorMessage.value = null
-                    }
-                    "START_POSITION_CONFIRMED" -> {
+                    "START_POSITION_ASSIGNED", "START_POSITION_CONFIRMED" -> {
                         _startPosition.value = response.startPosition
                         _myPosition.value = response.startPosition
                         _isLoading.value = false

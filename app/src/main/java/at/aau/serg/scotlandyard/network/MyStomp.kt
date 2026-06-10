@@ -172,26 +172,6 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
-    fun sendHello() {
-        scope.launch {
-            try {
-                session?.sendText("/app/hello", "message from client") ?: callback("Error: Not connected")
-            } catch (_: Exception) { }
-        }
-    }
-
-    fun sendJson() {
-        val json = JSONObject().apply {
-            put("from", "client")
-            put("text", "from client")
-        }
-        scope.launch {
-            try {
-                session?.sendText("/app/object", json.toString()) ?: callback("Error: Not connected")
-            } catch (_: Exception) { }
-        }
-    }
-
     fun connectToGame(gameId: String) {
         currentGameId = gameId
         scope.launch {
@@ -233,7 +213,10 @@ class MyStomp(val callbacks: Callbacks) {
         scope.launch {
             try {
                 session?.sendText("/app/game/$gameId/move", json.toString()) ?: callback("Error: Not connected")
-            } catch (_: Exception) { }
+            } catch (e: Exception) {
+                Log.e("MyStomp", "sendMove failed", e)
+                callback("Error: Move konnte nicht gesendet werden")
+            }
         }
     }
 

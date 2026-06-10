@@ -55,12 +55,12 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import at.aau.serg.scotlandyard.model.StartPositionConstants
 import at.aau.serg.scotlandyard.ui.components.SpinnerWheelPicker
-import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
+import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.viewmodel.GameViewModel
 import com.example.scotlandyard.R
 import kotlinx.coroutines.delay
 
-// ── Screen state machine ─────────────────────────────────────────────────────────────────────
+// Screen state machine
 
 private enum class SpinnerScreenState {
     CONNECTING,         // WebSocket not ready yet
@@ -71,7 +71,7 @@ private enum class SpinnerScreenState {
     WAITING_SERVER,     // Position sent to server – waiting for conflict-free confirmation
 }
 
-// ── Main composable ──────────────────────────────────────────────────────────────────────────
+// Main composable
 
 /**
  * AssignStartPositionScreen – shows a spinning wheel that selects the player's start position.
@@ -198,7 +198,7 @@ fun AssignStartPositionScreen(
         }
     }
 
-    // ── Render ───────────────────────────────────────────────────────────────────────────────
+    // Render
     Box(modifier = Modifier.fillMaxSize().background(Color(0xFF060810))) {
         Image(
             painter = painterResource(id = R.drawable.map_bw),
@@ -291,7 +291,7 @@ fun AssignStartPositionScreen(
     }
 }
 
-// ── Private sub-composables ──────────────────────────────────────────────────────────────────
+// Sub-composables
 
 @Composable
 private fun ConnectingState() {
@@ -315,7 +315,7 @@ private fun WaitingServerState() {
         Spacer(Modifier.height(16.dp))
         Text(stringResource(R.string.status_confirming_position), color = Color.White, fontSize = 14.sp)
         Spacer(Modifier.height(6.dp))
-        Text(stringResource(R.string.text_please_wait), color = Color(0xFFCCCCCC), fontSize = 12.sp)
+        Text(stringResource(R.string.text_please_wait), color = TextLight, fontSize = 12.sp)
     }
 }
 
@@ -350,9 +350,9 @@ private fun WaitingToSpinState(
                     onClick = onSimulateShake,
                     modifier = Modifier.alpha(0.65f),
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentTeal)
                 ) {
-                    Text(stringResource(R.string.button_simulate_shaking), fontSize = 14.sp, color = Color(0xFFCCCCCC))
+                    Text(stringResource(R.string.button_simulate_shaking), fontSize = 14.sp, color = TextLight)
                 }
             }
             // Bottom-right: barely visible cheat
@@ -360,7 +360,7 @@ private fun WaitingToSpinState(
                 modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 8.dp).alpha(0.13f)
             ) {
                 TextButton(onClick = onSimulateCheat) {
-                    Text(stringResource(R.string.button_cheat), fontSize = 11.sp, color = Color(0xFF4A7ACC))
+                    Text(stringResource(R.string.button_cheat), fontSize = 11.sp, color = DetectiveBlue)
                 }
             }
         }
@@ -404,9 +404,9 @@ private fun WaitingToSpinState(
                     onClick = onSimulateShake,
                     modifier = Modifier.fillMaxWidth(0.65f).height(48.dp),
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentTeal)
                 ) {
-                    Text(stringResource(R.string.button_simulate_shaking), fontSize = 15.sp, color = Color(0xFFCCCCCC))
+                    Text(stringResource(R.string.button_simulate_shaking), fontSize = 15.sp, color = TextLight)
                 }
             }
             // Bottom-right: barely visible cheat
@@ -417,7 +417,7 @@ private fun WaitingToSpinState(
                     .alpha(0.13f)
             ) {
                 TextButton(onClick = onSimulateCheat) {
-                    Text(stringResource(R.string.button_cheat), fontSize = 12.sp, color = Color(0xFF4A7ACC))
+                    Text(stringResource(R.string.button_cheat), fontSize = 12.sp, color = DetectiveBlue)
                 }
             }
         }
@@ -445,7 +445,7 @@ private fun SpinnerAutoState(
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     if (isLandscape) {
-        // ── Landscape: wheel left, info + button right ──────────────────────────
+        // Landscape: wheel left, info + button right
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -502,12 +502,12 @@ private fun SpinnerAutoState(
                         modifier = Modifier
                             .fillMaxWidth(0.75f)
                             .height(52.dp)
-                            .border(1.5.dp, Color(0xFF22AA80).copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                            .border(1.5.dp, AccentGlow.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
                             .alpha(0.75f),
                         shape = RoundedCornerShape(8.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentTeal)
                     ) {
-                        Text(stringResource(R.string.button_start_game), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFCCCCCC))
+                        Text(stringResource(R.string.button_start_game), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = TextLight)
                     }
                 } else {
                     CircularProgressIndicator(modifier = Modifier.size(28.dp), color = Color.White, strokeWidth = 2.dp)
@@ -515,7 +515,7 @@ private fun SpinnerAutoState(
             }
         }
     } else {
-        // ── Portrait: content scrollable, button pinned at bottom ───────────────
+        // Portrait: content scrollable, button pinned at bottom
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
@@ -562,12 +562,12 @@ private fun SpinnerAutoState(
                     modifier = Modifier
                         .fillMaxWidth(0.7f)
                         .height(52.dp)
-                        .border(1.5.dp, Color(0xFF22AA80).copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                        .border(1.5.dp, AccentGlow.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
                         .alpha(0.75f),
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentTeal)
                 ) {
-                    Text(stringResource(R.string.button_start_game), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFCCCCCC))
+                    Text(stringResource(R.string.button_start_game), fontSize = 18.sp, fontWeight = FontWeight.SemiBold, color = TextLight)
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -588,7 +588,7 @@ private fun CheatModeSpinnerState(
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
     if (isLandscape) {
-        // ── Landscape: wheel left, controls right ───────────────────────────────
+        // Landscape: wheel left, controls right
         Row(
             modifier = Modifier
                 .fillMaxSize()
@@ -605,7 +605,7 @@ private fun CheatModeSpinnerState(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(0.85f)
-                        .border(2.dp, Color(0xFFFF6B00), RoundedCornerShape(12.dp))
+                        .border(2.dp, CheatOrange, RoundedCornerShape(12.dp))
                         .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
                 ) {
                     SpinnerWheelPicker(
@@ -632,14 +632,14 @@ private fun CheatModeSpinnerState(
             ) {
                 Box(
                     modifier = Modifier
-                        .background(Color(0xFFFF6B00), RoundedCornerShape(8.dp))
+                        .background(CheatOrange, RoundedCornerShape(8.dp))
                         .padding(horizontal = 16.dp, vertical = 6.dp)
                 ) {
                     Text(text = stringResource(R.string.status_cheat_active), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
                 Spacer(Modifier.height(16.dp))
                 Text(text = stringResource(R.string.title_choose_start_position), fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
-                Text(text = stringResource(R.string.text_spin_and_confirm), fontSize = 12.sp, color = Color(0xFFCCCCCC), textAlign = TextAlign.Center)
+                Text(text = stringResource(R.string.text_spin_and_confirm), fontSize = 12.sp, color = TextLight, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(16.dp))
                 Text(
                     text = stringResource(R.string.text_station, selectedPosition),
@@ -654,17 +654,17 @@ private fun CheatModeSpinnerState(
                     modifier = Modifier
                         .fillMaxWidth(0.85f)
                         .height(52.dp)
-                        .border(1.5.dp, Color(0xFFFF6B00).copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                        .border(1.5.dp, CheatOrange.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
                         .alpha(0.75f),
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
+                    colors = ButtonDefaults.buttonColors(containerColor = CheatOrange)
                 ) {
-                    Text(stringResource(R.string.button_start_game), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFCCCCCC))
+                    Text(stringResource(R.string.button_start_game), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = TextLight)
                 }
             }
         }
     } else {
-        // ── Portrait: content scrollable, button pinned at bottom ───────────────
+        // Portrait: content scrollable, button pinned at bottom
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
@@ -679,19 +679,19 @@ private fun CheatModeSpinnerState(
             ) {
                 Box(
                     modifier = Modifier
-                        .background(Color(0xFFFF6B00), RoundedCornerShape(8.dp))
+                        .background(CheatOrange, RoundedCornerShape(8.dp))
                         .padding(horizontal = 16.dp, vertical = 6.dp)
                 ) {
                     Text(text = stringResource(R.string.status_cheat_active), fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color.White)
                 }
                 Spacer(Modifier.height(20.dp))
                 Text(text = stringResource(R.string.title_choose_start_position), fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White, textAlign = TextAlign.Center)
-                Text(text = stringResource(R.string.text_spin_and_confirm), fontSize = 13.sp, color = Color(0xFFCCCCCC), textAlign = TextAlign.Center)
+                Text(text = stringResource(R.string.text_spin_and_confirm), fontSize = 13.sp, color = TextLight, textAlign = TextAlign.Center)
                 Spacer(Modifier.height(24.dp))
                 Box(
                     modifier = Modifier
                         .fillMaxWidth(0.6f)
-                        .border(2.dp, Color(0xFFFF6B00), RoundedCornerShape(12.dp))
+                        .border(2.dp, CheatOrange, RoundedCornerShape(12.dp))
                         .background(Color.Black.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
                 ) {
                     SpinnerWheelPicker(
@@ -722,19 +722,19 @@ private fun CheatModeSpinnerState(
                 modifier = Modifier
                     .fillMaxWidth(0.75f)
                     .height(52.dp)
-                    .border(1.5.dp, Color(0xFFFF6B00).copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                    .border(1.5.dp, CheatOrange.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
                     .alpha(0.75f),
                 shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF6B00))
+                colors = ButtonDefaults.buttonColors(containerColor = CheatOrange)
             ) {
-                Text(stringResource(R.string.button_start_game), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFFCCCCCC))
+                Text(stringResource(R.string.button_start_game), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = TextLight)
             }
             Spacer(Modifier.height(8.dp))
         }
     }
 }
 
-// ── Previews ─────────────────────────────────────────────────────────────────────────────────
+// Previews
 
 @Preview(showBackground = true, widthDp = 400, heightDp = 750)
 @Composable

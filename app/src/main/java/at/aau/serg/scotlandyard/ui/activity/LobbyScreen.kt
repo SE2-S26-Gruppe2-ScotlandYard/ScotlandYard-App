@@ -37,13 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import at.aau.serg.scotlandyard.model.LobbyData
 import at.aau.serg.scotlandyard.model.LobbyUserData
 import at.aau.serg.scotlandyard.ui.components.SectionHeader
-import at.aau.serg.scotlandyard.ui.theme.AccentGlow
-import at.aau.serg.scotlandyard.ui.theme.AccentTeal
-import at.aau.serg.scotlandyard.ui.theme.DETECTIVE_COLORS
-import at.aau.serg.scotlandyard.ui.theme.SidebarBg
-import at.aau.serg.scotlandyard.ui.theme.SidebarBorder
-import at.aau.serg.scotlandyard.ui.theme.TextMuted
-import at.aau.serg.scotlandyard.ui.theme.TextPrimary
+import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModelFactory
@@ -52,9 +46,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val AccentRed       = Color(0xFFE53935)
-private val AccentPurple    = Color(0xFF7B1FA2)
-private val AccentGold      = Color(0xFFFFD700)
 private val StartButtonText = Color(0xFF071A0E)
 
 @Composable
@@ -194,8 +185,6 @@ fun LobbyScreen(
     }
 }
 
-// ── Header connected badge ────────────────────────────────────────────────────
-
 @Composable
 private fun HeaderConnectedBadge(isConnected: Boolean) {
     Row(
@@ -207,20 +196,18 @@ private fun HeaderConnectedBadge(isConnected: Boolean) {
         Box(
             modifier = Modifier
                 .size(6.dp)
-                .background(if (isConnected) AccentGlow else AccentRed, CircleShape)
+                .background(if (isConnected) AccentGlow else RoleRed, CircleShape)
         )
         Spacer(modifier = Modifier.width(4.dp))
         Text(
             text = if (isConnected) stringResource(R.string.status_connected)
                    else stringResource(R.string.status_disconnected),
-            color = if (isConnected) AccentGlow else AccentRed,
+            color = if (isConnected) AccentGlow else RoleRed,
             fontSize = 10.sp,
             fontWeight = FontWeight.SemiBold
         )
     }
 }
-
-// ── Activity console (scrolls with content) ──────────────────────────────────
 
 @Composable
 private fun LobbyConsole(messages: List<String>, userName: String) {
@@ -278,8 +265,6 @@ private fun LobbyConsole(messages: List<String>, userName: String) {
         )
     }
 }
-
-// ── Lobby browser (no lobby yet) ──────────────────────────────────────────────
 
 @Composable
 private fun LobbyBrowserView(
@@ -396,8 +381,6 @@ private fun LobbyBrowserView(
     }
 }
 
-// ── In-lobby view ─────────────────────────────────────────────────────────────
-
 @Composable
 private fun InLobbyView(
     lobby: LobbyData,
@@ -455,7 +438,7 @@ private fun InLobbyView(
             LobbyDestructiveButton(
                 text     = stringResource(R.string.button_leave),
                 enabled  = !isLoading,
-                color    = AccentRed,
+                color    = RoleRed,
                 onClick  = onLeave,
                 modifier = Modifier.weight(1f)
             )
@@ -463,7 +446,7 @@ private fun InLobbyView(
                 LobbyDestructiveButton(
                     text     = stringResource(R.string.lobby_button_delete),
                     enabled  = !isLoading,
-                    color    = AccentPurple,
+                    color    = RolePurple,
                     onClick  = onDelete,
                     modifier = Modifier.weight(1f)
                 )
@@ -481,8 +464,6 @@ private fun InLobbyView(
         }
     }
 }
-
-// ── Sub-composables ───────────────────────────────────────────────────────────
 
 @Composable
 private fun LobbyCodeCard(lobby: LobbyData, modifier: Modifier = Modifier) {
@@ -508,7 +489,7 @@ private fun LobbyCodeCard(lobby: LobbyData, modifier: Modifier = Modifier) {
             fontWeight    = FontWeight.ExtraBold,
             fontFamily    = FontFamily.Monospace,
             letterSpacing = 8.sp,
-            color         = AccentGold,
+            color         = RoleGold,
             textAlign     = TextAlign.Center,
             modifier      = Modifier.fillMaxWidth()
         )
@@ -559,7 +540,7 @@ private fun PlayerRow(
             Icon(
                 imageVector        = Icons.Default.Star,
                 contentDescription = stringResource(R.string.description_host),
-                tint               = AccentGold,
+                tint               = RoleGold,
                 modifier           = Modifier.size(15.dp)
             )
             if (showKickButton) Spacer(modifier = Modifier.width(4.dp))
@@ -569,7 +550,7 @@ private fun PlayerRow(
                 Icon(
                     imageVector        = Icons.Default.Close,
                     contentDescription = stringResource(R.string.button_kick),
-                    tint               = AccentRed.copy(alpha = 0.8f),
+                    tint               = RoleRed.copy(alpha = 0.8f),
                     modifier           = Modifier.size(15.dp)
                 )
             }
@@ -585,7 +566,7 @@ private fun PlayerRow(
             text             = { Text(stringResource(R.string.lobby_button_remove_player, user.name), color = TextMuted) },
             confirmButton    = {
                 TextButton(onClick = { onKick(); showKickConfirm = false }) {
-                    Text(stringResource(R.string.button_kick), color = AccentRed, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.button_kick), color = RoleRed, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
@@ -616,8 +597,6 @@ private fun EmptyPlayerSlot() {
         Text(text = stringResource(R.string.lobby_waiting), color = TextMuted.copy(alpha = 0.4f), fontSize = 13.sp)
     }
 }
-
-// ── Buttons ───────────────────────────────────────────────────────────────────
 
 @Composable
 private fun LobbyPrimaryButton(

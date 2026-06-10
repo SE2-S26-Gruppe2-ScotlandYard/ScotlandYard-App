@@ -112,7 +112,7 @@
     <string name="text_please_wait">Please wait</string>
     <string name="assign_start_position_text_shake_device">Shake the device to determine your starting position!</string>
     <string name="button_simulate_shaking">Simulate shaking</string>
-    <string name="button_cheat">Cheat</string>
+    <string name="button_cheat">Schummeln</string>
     <string name="title_your_start_position">Your start position!</string>
     <string name="status_rolling_start_position">Rolling starting position…</string>
     <string name="text_station">Station  %1$d</string>

@@ -9,7 +9,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -31,7 +34,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.aau.serg.scotlandyard.ui.components.AppActionButton
-import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
+import at.aau.serg.scotlandyard.ui.theme.*
 import com.example.scotlandyard.R
 
 @Composable
@@ -70,32 +73,36 @@ fun MrXWinScreen(isMrX: Boolean, onMainMenu: () -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 56.dp)
+                .padding(horizontal = 48.dp)
                 .padding(bottom = 140.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
         ) {
-            // YOU WON / YOU LOST — personal outcome label
-            Text(
-                text = stringResource(if (isMrX) R.string.text_you_won else R.string.text_you_lost),
-                textAlign = TextAlign.Center,
-                style = TextStyle(
-                    fontSize = 34.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    letterSpacing = 4.sp,
-                    color = if (isMrX) Color(0xFF44DD77) else Color(0xFFCC4444),
-                    shadow = Shadow(
-                        color = Color.Black.copy(alpha = 0.85f),
-                        offset = Offset(0f, 2f),
-                        blurRadius = 10f
+            val lineColor = Color.White.copy(alpha = 0.35f)
+            val labelColor = if (isMrX) WinGreen else LoseRed
+
+            // YOU WON / YOU LOST label
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(modifier = Modifier.weight(1f).height(1.dp).background(lineColor))
+                Text(
+                    text = "  ${stringResource(if (isMrX) R.string.text_you_won else R.string.text_you_lost)}  ",
+                    style = TextStyle(
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 4.sp,
+                        color = labelColor,
+                        shadow = Shadow(Color.Black.copy(alpha = 0.8f), Offset(0f, 2f), 8f)
                     )
                 )
-            )
+                Box(modifier = Modifier.weight(1f).height(1.dp).background(lineColor))
+            }
 
-            androidx.compose.foundation.layout.Spacer(
-                modifier = Modifier.height(20.dp)
-            )
+            Spacer(modifier = Modifier.height(24.dp))
 
+            // Main title
             Text(
                 text = stringResource(R.string.text_mrx_victory),
                 textAlign = TextAlign.Center,
@@ -104,7 +111,7 @@ fun MrXWinScreen(isMrX: Boolean, onMainMenu: () -> Unit) {
                     fontWeight = FontWeight.ExtraBold,
                     lineHeight = 80.sp,
                     letterSpacing = 1.sp,
-                    color = Color(0xFF7788BB),
+                    color = Color.White,
                     shadow = Shadow(
                         color = Color.Black.copy(alpha = 0.9f),
                         offset = Offset(0f, 3f),
@@ -112,6 +119,11 @@ fun MrXWinScreen(isMrX: Boolean, onMainMenu: () -> Unit) {
                     )
                 )
             )
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Bottom decorative line
+            Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(lineColor))
         }
 
         // Single button at the bottom — does not breathe (always tappable)

@@ -44,7 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
+import at.aau.serg.scotlandyard.ui.theme.*
 import com.example.scotlandyard.R
 
 @Composable
@@ -183,7 +183,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            /// Main Action Button
+            // Main Action Button
             Button(
                 onClick = {
                     if (nickname.isNotBlank() && isConnectedToServer) {
@@ -195,12 +195,12 @@ fun LoginScreen(
                     .height(48.dp)
                     .border(
                         width = 1.dp,
-                        color = Color(0xAAFFFFFF),
+                        color = ButtonBorder,
                         shape = RoundedCornerShape(6.dp)
                     ),
                 shape = RoundedCornerShape(6.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF1A4A3A)
+                    containerColor = AccentTeal
                 ),
                 enabled = nickname.isNotBlank() && isConnectedToServer // <-- Fix here
             ) {

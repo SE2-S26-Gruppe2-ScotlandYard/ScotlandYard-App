@@ -185,8 +185,6 @@ private fun SettingsSidebar(
     }
 }
 
-
-
 @Composable
 private fun GameboardSettingsContent(
     displayMode: BoardDisplayMode,

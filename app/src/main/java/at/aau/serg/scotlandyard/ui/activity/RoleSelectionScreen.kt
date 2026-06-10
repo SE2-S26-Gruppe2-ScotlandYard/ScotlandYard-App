@@ -31,15 +31,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.aau.serg.scotlandyard.model.LobbyData
 import at.aau.serg.scotlandyard.model.LobbyUserData
+import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import com.example.scotlandyard.R
 
-private val RoleGreen       = Color(0xFF22AA80) // AccentGlow aus Lobby – Start-Button wenn bereit
-private val RoleRed         = Color(0xFFE53935) // AccentRed aus Lobby – "Already taken"
-private val RoleGold        = Color(0xFFFFD700) // Host-Name
-private val RoleButtonColor = Color(0xFFCCCCCC) // neutrales Grau für Buttons (kein Knallweiß)
-private val DetectiveBlue   = Color(0xFF4A8FCC) // dunkleres Blau für Detektiv-Spielernamen
-private val MrXPink         = Color(0xFFEF9A9A) // helles Rot für MrX-Spielernamen
+private val MrXPink = Color(0xFFEF9A9A)
 
 private fun LobbyData.playersInRole(role: String): List<LobbyUserData> =
     users.filter { (selectedRoles[it.id] ?: "NONE") == role }
@@ -111,7 +107,7 @@ fun RoleSelectionContent(
         label = "mrxDim"
     )
 
-    // Textfade für nicht ausgewählte Seite (Spielernamen ausgenommen)
+    // Text alpha for the non-selected side (player names are excluded from fading)
     val detectiveTextAlpha = 1f - detectiveDimAlpha * 0.6f
     val mrxTextAlpha       = 1f - mrxDimAlpha * 0.6f
 
@@ -193,7 +189,7 @@ fun RoleSelectionContent(
             }
         }
 
-        // Mittiger Gradient-Streifen – reicht in beide Hälften rein, folgt der animierten Teilung
+        // Center gradient stripe that bleeds into both halves, follows the animated split
         Box(
             modifier = Modifier.fillMaxSize().background(
                 Brush.horizontalGradient(
@@ -236,7 +232,7 @@ fun RoleSelectionContent(
             }
         }
 
-        // Spieler ohne Rollenauswahl – Mitte oben
+        // Players who haven't selected a role yet, shown at top-center
         val pendingPlayers = lobby.users.filter { (lobby.selectedRoles[it.id] ?: "NONE") == "NONE" }
         if (pendingPlayers.isNotEmpty()) {
             Column(
@@ -252,7 +248,7 @@ fun RoleSelectionContent(
                 )
                 Text(
                     text = pendingPlayers.joinToString(" · ") { it.name },
-                    color = Color(0xFFCCCCCC),
+                    color = TextLight,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -326,7 +322,7 @@ private fun RoleSelectionTopBar(
             } else {
                 Text(
                     text = stringResource(R.string.status_waiting_for_host),
-                    color = RoleButtonColor,
+                    color = TextLight,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     modifier = Modifier.padding(end = 8.dp)
@@ -349,7 +345,7 @@ private fun BackToLobbyButton(onBackClick: () -> Unit) {
             }
         },
         enabled = enabled.value,
-        colors = ButtonDefaults.textButtonColors(contentColor = RoleButtonColor),
+        colors = ButtonDefaults.textButtonColors(contentColor = TextLight),
         modifier = Modifier.wrapContentSize()
     ) {
         Icon(
@@ -391,7 +387,7 @@ private fun StartGameButton(allRolesSet: Boolean, onGameStart: () -> Unit) {
             fontWeight = FontWeight.Bold,
             style = if (allRolesSet) TextStyle(
                 shadow = Shadow(
-                    color = RoleGreen,
+                    color = AccentGlow,
                     offset = Offset.Zero,
                     blurRadius = 20f
                 )

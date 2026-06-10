@@ -95,7 +95,7 @@
     <string name="text_please_wait">Bitte warten</string>
     <string name="assign_start_position_text_shake_device">Schüttel das Gerät um deine Startposition zu ermitteln!</string>
     <string name="button_simulate_shaking">Schütteln simulieren</string>
-    <string name="button_cheat">Schummelmodus aktivieren</string>
+    <string name="button_cheat">Schummeln</string>
     <string name="title_your_start_position">Deine Startposition!</string>
     <string name="status_rolling_start_position">Würfle Startposition...</string>
     <string name="text_station">Station  %1$d</string>

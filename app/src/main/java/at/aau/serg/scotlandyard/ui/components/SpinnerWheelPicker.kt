@@ -29,6 +29,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import at.aau.serg.scotlandyard.ui.theme.AccentGlow
+import at.aau.serg.scotlandyard.ui.theme.CheatOrange
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
@@ -93,7 +95,7 @@ fun SpinnerWheelPicker(
     // Exact pixel height of one wheel item (density-aware)
     val itemHeightPx = with(LocalDensity.current) { WHEEL_ITEM_HEIGHT_DP.dp.toPx() }
 
-    // ── Auto-spin animation ──────────────────────────────────────────────────────────────────
+    // Auto-spin animation
     LaunchedEffect(triggerSpin, targetPosition) {
         if (triggerSpin && !isCheatMode) {
             val targetIdx = positions.indexOf(targetPosition).coerceAtLeast(0)
@@ -117,7 +119,7 @@ fun SpinnerWheelPicker(
         }
     }
 
-    // ── Cheat-mode: jump to targetPosition when mode first activates ─────────────────────────
+    // Cheat-mode: jump to targetPosition when mode first activates
     LaunchedEffect(isCheatMode) {
         if (isCheatMode) {
             val targetIdx = positions.indexOf(targetPosition).coerceAtLeast(0)
@@ -126,7 +128,7 @@ fun SpinnerWheelPicker(
         }
     }
 
-    // ── Track centred item and report selection changes ──────────────────────────────────────
+    // Track centred item and report selection changes
     val centredPosition by remember {
         derivedStateOf {
             val centredIdx = listState.firstVisibleItemIndex + half
@@ -139,8 +141,8 @@ fun SpinnerWheelPicker(
         if (isCheatMode) onSelectionChanged(centredPosition)
     }
 
-    // ── Render ───────────────────────────────────────────────────────────────────────────────
-    val accentColor = if (isCheatMode) Color(0xFFFF6B00) else Color(0xFF22AA80)
+    // Render
+    val accentColor = if (isCheatMode) CheatOrange else AccentGlow
     val bgColor = Color(0xFF0F0F0F)
 
     Box(
@@ -192,7 +194,7 @@ fun SpinnerWheelPicker(
     }
 }
 
-// ── Private sub-composables ──────────────────────────────────────────────────────────────────
+// Sub-composables
 
 @Composable
 private fun WheelItem(
