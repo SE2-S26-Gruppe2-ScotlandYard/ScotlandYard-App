@@ -181,7 +181,7 @@ fun GameBoardScreen(
                 )
 
                 // Double move active hint — shown while MrX picks their 2 sub-moves
-                if (isDoubleActive) {
+                if (isDoubleActive && isMrX) {
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
