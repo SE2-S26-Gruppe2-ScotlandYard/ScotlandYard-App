@@ -307,8 +307,30 @@ private fun MrXHistoryCard(
                     modifier = Modifier.fillMaxWidth()
                 )
             } else {
-                val displayedMoves = moveHistory.takeLast(24)
-                val rows = displayedMoves.chunked(3)
+                // Compute per-entry turn number and whether it's the last entry of its turn.
+                // "DOUBLE" entries start a double turn; the 2 following entries are sub-moves.
+                // The reveal badge belongs on the LAST entry of the turn, not on the DOUBLE marker.
+                val allMoves = moveHistory
+                val entryTurn = IntArray(allMoves.size)
+                val entryIsLastOfTurn = BooleanArray(allMoves.size)
+                var t = 1; var subMovesLeft = 0
+                allMoves.forEachIndexed { i, ticket ->
+                    entryTurn[i] = t
+                    when {
+                        ticket == "DOUBLE" -> subMovesLeft = 2
+                        subMovesLeft > 0 -> {
+                            subMovesLeft--
+                            if (subMovesLeft == 0) { entryIsLastOfTurn[i] = true; t++ }
+                        }
+                        else -> { entryIsLastOfTurn[i] = true; t++ }
+                    }
+                }
+
+                val startIdx = maxOf(0, allMoves.size - 24)
+                val displayedEntries = (startIdx until allMoves.size).map { i ->
+                    Triple(allMoves[i], entryTurn[i], entryIsLastOfTurn[i])
+                }
+                val rows = displayedEntries.chunked(3)
 
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -319,17 +341,17 @@ private fun MrXHistoryCard(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            rowItems.forEachIndexed { colIndex, ticket ->
+                            rowItems.forEachIndexed { colIndex, (ticket, turnNum, isLastOfTurn) ->
                                 val globalIndex = rowIndex * 3 + colIndex
                                 val moveNumber = globalIndex + 1
-                                val isRevealRound = moveNumber in setOf(3, 8, 13, 18)
-                                val revealedPos = if (isRevealRound) mrXRevealedPositions[moveNumber] else null
+                                val revealedPos = if (isLastOfTurn) mrXRevealedPositions[turnNum] else null
+                                val isRevealEntry = revealedPos != null
 
                                 Text(
                                     text = "$moveNumber.",
                                     fontSize = 9.sp,
-                                    color = if (isRevealRound) TextPrimary else TextMuted,
-                                    fontWeight = if (isRevealRound) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isRevealEntry) TextPrimary else TextMuted,
+                                    fontWeight = if (isRevealEntry) FontWeight.Bold else FontWeight.Normal,
                                     modifier = Modifier.width(20.dp),
                                     textAlign = TextAlign.End
                                 )
