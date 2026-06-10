@@ -80,15 +80,24 @@ class GameViewModel : ViewModel(), Callbacks {
             }
         }
         viewModelScope.launch {
-            var knownRevealKeys = setOf<Int>()
+            var snappedKeys = setOf<Int>()
+            var pendingKeys = setOf<Int>()  // seen while doubleMoveActive=true, deferred
             gameStompService.latestGameState.collect { state ->
                 if (state != null) {
                     _gameState.value = state
-                    val newKeys = state.mrXRevealedPositions.keys - knownRevealKeys
-                    if (newKeys.isNotEmpty()) {
-                        val lastIdx = (state.mrXMoveHistory.size - 1).coerceAtLeast(0)
-                        _revealHistoryIndices.value = _revealHistoryIndices.value + newKeys.associateWith { lastIdx }
-                        knownRevealKeys = state.mrXRevealedPositions.keys
+                    val currentKeys = state.mrXRevealedPositions.keys
+                    val lastIdx = (state.mrXMoveHistory.size - 1).coerceAtLeast(0)
+                    if (state.doubleMoveActive) {
+                        // Double in progress — track new keys but don't snap yet
+                        pendingKeys = pendingKeys + (currentKeys - snappedKeys)
+                    } else {
+                        // Double done (or never active) — snap all unsnapped keys now
+                        val toSnap = (currentKeys - snappedKeys) + pendingKeys
+                        if (toSnap.isNotEmpty()) {
+                            _revealHistoryIndices.value = _revealHistoryIndices.value + toSnap.associateWith { lastIdx }
+                            snappedKeys = snappedKeys + toSnap
+                            pendingKeys = emptySet()
+                        }
                     }
                 }
             }

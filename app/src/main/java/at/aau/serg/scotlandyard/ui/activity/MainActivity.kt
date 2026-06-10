@@ -373,7 +373,10 @@ private fun GameBoardRoute(
     }
 
     val isMyTurn = remember(gameState) {
-        gameState?.let { if (isMrX) it.isMrXPhase else it.isDetectivesPhase } ?: false
+        gameState?.let {
+            if (isMrX) it.isMrXPhase || it.doubleMoveActive
+            else it.isDetectivesPhase
+        } ?: false
     }
 
     // Detectives only: grey out tickets once they've moved this round, until the round advances.
