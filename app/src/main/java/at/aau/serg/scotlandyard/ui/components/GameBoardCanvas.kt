@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -81,6 +82,9 @@ fun GameBoardCanvas(
         }
     }
 
+    // Always reflects the latest onNodeClick even though pointerInput(Unit) only launches once.
+    val currentOnNodeClick by rememberUpdatedState(newValue = onNodeClick)
+
     // In MAP mode: stack a background image below the transparent Canvas.
     Box(
         modifier = modifier
@@ -119,7 +123,7 @@ fun GameBoardCanvas(
                                     val dy = tapOffset.y - pos.y
                                     dx * dx + dy * dy <= hitRadius * hitRadius
                                 }
-                                tappedNode?.let { (id, _) -> onNodeClick(id) }
+                                tappedNode?.let { (id, _) -> currentOnNodeClick?.invoke(id) }
                             }
                         }
                     } else Modifier
