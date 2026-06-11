@@ -53,12 +53,52 @@ class GameViewModel : ViewModel(), Callbacks {
     private val _gameOver = MutableSharedFlow<String>()
     val gameOver: SharedFlow<String> = _gameOver.asSharedFlow()
 
+    // Round number of the detective's last move — used to prevent moving twice in the same round.
+    // Stored in ViewModel so it survives settings navigation. -1 = no move yet.
+    private val _lastDetectiveMoveRound = MutableStateFlow(-1)
+    val lastDetectiveMoveRound: StateFlow<Int> = _lastDetectiveMoveRound.asStateFlow()
+
+    // Maps reveal-turn key → 0-based history index of the last move in that turn.
+    // Snapshotted the moment each reveal key first appears so double moves are handled correctly
+    // (server doesn't include a "DOUBLE" marker in mrXMoveHistory).
+    private val _revealHistoryIndices = MutableStateFlow<Map<Int, Int>>(emptyMap())
+    val revealHistoryIndices: StateFlow<Map<Int, Int>> = _revealHistoryIndices.asStateFlow()
+
+    fun recordDetectiveMove() {
+        _lastDetectiveMoveRound.value = _gameState.value?.currentRound ?: -1
+    }
+
+    fun activateDoubleMove(gameId: String, playerId: String) {
+        gameStompService.sendDoubleMove(gameId, playerId)
+    }
+
     init {
         myStomp.connect()
         viewModelScope.launch {
+            myStomp.isConnected.collect { connected ->
+                _isConnected.value = connected
+            }
+        }
+        viewModelScope.launch {
+            var snappedKeys = setOf<Int>()
+            var pendingKeys = setOf<Int>()  // seen while doubleMoveActive=true, deferred
             gameStompService.latestGameState.collect { state ->
                 if (state != null) {
                     _gameState.value = state
+                    val currentKeys = state.mrXRevealedPositions.keys
+                    val lastIdx = (state.mrXMoveHistory.size - 1).coerceAtLeast(0)
+                    if (state.doubleMoveActive) {
+                        // Double in progress — track new keys but don't snap yet
+                        pendingKeys = pendingKeys + (currentKeys - snappedKeys)
+                    } else {
+                        // Double done (or never active) — snap all unsnapped keys now
+                        val toSnap = (currentKeys - snappedKeys) + pendingKeys
+                        if (toSnap.isNotEmpty()) {
+                            _revealHistoryIndices.value = _revealHistoryIndices.value + toSnap.associateWith { lastIdx }
+                            snappedKeys = snappedKeys + toSnap
+                            pendingKeys = emptySet()
+                        }
+                    }
                 }
             }
         }
@@ -173,6 +213,10 @@ class GameViewModel : ViewModel(), Callbacks {
         _errorMessage.value = null
     }
 
+    fun setError(message: String) {
+        _errorMessage.value = message
+    }
+
     fun requestGameState(gameId: String) {
         myStomp.requestGameState(gameId)
     }
@@ -215,16 +259,11 @@ class GameViewModel : ViewModel(), Callbacks {
     }
 
     override fun onResponse(res: String) {
-        // Verbindungsstatus tracken
-        when {
-            res == "connected to server" -> {
-                _isConnected.value = true
-                return
-            }
-            res.startsWith("Connection lost") -> {
-                _isConnected.value = false
-                return
-            }
+        if (res == "connected to server" || res.startsWith("Connection lost")) return
+
+        if (res.startsWith("Error:")) {
+            _errorMessage.value = res
+            return
         }
 
         // Handle start position responses
@@ -237,11 +276,11 @@ class GameViewModel : ViewModel(), Callbacks {
                     gameId = jsonObject.optString("gameId", ""),
                     playerId = jsonObject.optString("playerId", ""),
                     startPosition = if (jsonObject.has("startPosition")) jsonObject.optInt("startPosition") else null,
-                    message = jsonObject.optString("message", null)
+                    message = if (jsonObject.has("message")) jsonObject.getString("message") else null
                 )
 
                 when (response.type) {
-                    "START_POSITION_ASSIGNED" -> {
+                    "START_POSITION_ASSIGNED", "START_POSITION_CONFIRMED" -> {
                         _startPosition.value = response.startPosition
                         _myPosition.value = response.startPosition
                         _isLoading.value = false

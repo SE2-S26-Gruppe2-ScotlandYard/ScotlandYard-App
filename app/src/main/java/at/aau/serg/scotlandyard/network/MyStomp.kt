@@ -4,9 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import at.aau.serg.scotlandyard.Callbacks
-import at.aau.serg.scotlandyard.network.ServerConfig.DEVICE_URI
-import at.aau.serg.scotlandyard.network.ServerConfig.GLOBAL_URI
-import at.aau.serg.scotlandyard.network.ServerConfig.LOCAL_URI
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,14 +15,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import org.hildan.krossbow.stomp.StompClient
 import org.hildan.krossbow.stomp.StompSession
+import org.hildan.krossbow.stomp.config.HeartBeat
 import org.hildan.krossbow.stomp.sendText
 import org.hildan.krossbow.stomp.subscribeText
 import org.hildan.krossbow.websocket.okhttp.OkHttpWebSocketClient
 import org.json.JSONObject
-
-//private const val WEBSOCKET_URI = GLOBAL_URI
-private const val WEBSOCKET_URI = LOCAL_URI   // ← Emulator (10.0.2.2)
-//private const val WEBSOCKET_URI = DEVICE_URI    // ← Physisches Gerät (143.205.192.169)
+import kotlin.time.Duration.Companion.seconds
 
 class MyStomp(val callbacks: Callbacks) {
 
@@ -81,7 +77,9 @@ class MyStomp(val callbacks: Callbacks) {
 
     fun connect() {
         disconnect()
-        client = StompClient(OkHttpWebSocketClient())
+        client = StompClient(OkHttpWebSocketClient()) {
+            heartBeat = HeartBeat(minSendPeriod = 10.seconds, expectedPeriod = 10.seconds)
+        }
         connectionJob = scope.launch {
             while (isActive) {
                 try {
@@ -96,7 +94,7 @@ class MyStomp(val callbacks: Callbacks) {
                 } catch (e: Exception) {
                     Log.e("MyStomp", "Verbindung fehlgeschlagen, neuer Versuch in 5s", e)
                     _isConnected.value = false
-                    delay(5000)
+                    delay(5000.milliseconds)
                 }
             }
         }
@@ -172,32 +170,12 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
-    fun sendHello() {
-        scope.launch {
-            try {
-                session?.sendText("/app/hello", "message from client") ?: callback("Error: Not connected")
-            } catch (_: Exception) { }
-        }
-    }
-
-    fun sendJson() {
-        val json = JSONObject().apply {
-            put("from", "client")
-            put("text", "from client")
-        }
-        scope.launch {
-            try {
-                session?.sendText("/app/object", json.toString()) ?: callback("Error: Not connected")
-            } catch (_: Exception) { }
-        }
-    }
-
     fun connectToGame(gameId: String) {
         currentGameId = gameId
         scope.launch {
             // Wait until the primary connection is ready (up to 15 s)
             if (!_isConnected.value) {
-                withTimeoutOrNull(15_000L) { _isConnected.first { it } }
+                withTimeoutOrNull(15_000.milliseconds) { _isConnected.first { it } }
             }
             val s = session ?: run {
                 Log.e("MyStomp", "connectToGame: no session after waiting")
@@ -233,7 +211,10 @@ class MyStomp(val callbacks: Callbacks) {
         scope.launch {
             try {
                 session?.sendText("/app/game/$gameId/move", json.toString()) ?: callback("Error: Not connected")
-            } catch (_: Exception) { }
+            } catch (e: Exception) {
+                Log.e("MyStomp", "sendMove failed", e)
+                callback("Error: Move konnte nicht gesendet werden")
+            }
         }
     }
 
@@ -255,6 +236,7 @@ class MyStomp(val callbacks: Callbacks) {
                 }
             } catch (e: Exception) {
                 Log.e("MyStomp", "Start position subscription failed", e)
+                callback("Error: Startposition-Subscription fehlgeschlagen: ${e.message}")
             }
         }
     }
@@ -292,7 +274,7 @@ class MyStomp(val callbacks: Callbacks) {
             try {
                 // Wait for connection if not ready yet (up to 15 s)
                 if (!_isConnected.value) {
-                    withTimeoutOrNull(15_000L) { _isConnected.first { it } }
+                    withTimeoutOrNull(15_000.milliseconds) { _isConnected.first { it } }
                 }
                 session?.sendText("/app/game/$gameId/state", "")
                     ?: Log.w("MyStomp", "Cannot request game state: no session after waiting")
@@ -320,6 +302,7 @@ class MyStomp(val callbacks: Callbacks) {
                     ?: callback("Error: Not connected")
             } catch (e: Exception) {
                 Log.e("MyStomp", "sendConfirmedStartPosition failed", e)
+                callback("Error: Position senden fehlgeschlagen: ${e.message}")
             }
         }
     }

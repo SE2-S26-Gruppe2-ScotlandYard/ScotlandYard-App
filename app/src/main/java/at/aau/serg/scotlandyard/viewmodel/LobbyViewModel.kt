@@ -38,9 +38,13 @@ class LobbyViewModel(
     private val _navigateToLobby = MutableSharedFlow<Unit>()
     val navigateToLobby: SharedFlow<Unit> = _navigateToLobby.asSharedFlow()
 
-    // ── Navigation Event: alle Spieler zum Spiel schicken ────────────
-    private val _navigateToGame = MutableSharedFlow<String>() // emits gameId
+    // Navigation event: emits gameId to navigate all players to the game
+    private val _navigateToGame = MutableSharedFlow<String>()
     val navigateToGame: SharedFlow<String> = _navigateToGame.asSharedFlow()
+
+    // One-shot error events für UI-Screens (z.B. RoleSelection)
+    private val _errorEvent = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val errorEvent: SharedFlow<String> = _errorEvent.asSharedFlow()
 
     init {
         // Verbindungsstatus direkt aus MyStomp beziehen
@@ -66,16 +70,21 @@ class LobbyViewModel(
     }
 
     private fun setupLobbyService(session: org.hildan.krossbow.stomp.StompSession) {
-        lobbyService = LobbyStompService(session, userId, myStomp)
+        lobbyService = LobbyStompService(session, myStomp)
         lobbyService!!.subscribe()
+
+        // Netzwerk-Sendefehler aus dem Service weiterleiten
+        viewModelScope.launch {
+            lobbyService!!.sendError.collect { msg -> _errorEvent.tryEmit(msg) }
+        }
 
         viewModelScope.launch {
             lobbyService!!.lobbyResponse.collect { response ->
-                response ?: return@collect
                 _isLoading.value = false
 
                 if (!response.success) {
                     _statusMessage.value = "⚠️ ${response.message}"
+                    _errorEvent.tryEmit(response.message)
                     return@collect
                 }
 
@@ -85,7 +94,7 @@ class LobbyViewModel(
                         || response.message == "BACK_TO_LOBBY"
 
                 if (incomingLobby != null) {
-                    val isPlayerInLobby = incomingLobby.users?.any { it.id == userId } == true
+                    val isPlayerInLobby = incomingLobby.users.any { it.id == userId }
                             || incomingLobby.hostId == userId
                     if (isPlayerInLobby) {
                         _currentLobby.value = incomingLobby
@@ -173,7 +182,6 @@ class LobbyViewModel(
         lobbyService?.startRoleSelection(lobbyId, userId)
     }
 
-    // ── Host drückt "Start Game" in der Rollenwahl ────────────────────────
     fun startGame() {
         val lobbyId = _currentLobby.value?.id ?: return
         lobbyService?.startGame(lobbyId, userId)
@@ -188,8 +196,9 @@ class LobbyViewModel(
                     put("requesterId", userId)
                 }
                 myStomp.getSession()?.sendText("/app/lobby/backToLobby", payload.toString())
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 _statusMessage.value = "⚠️ Fehler bei der Rückkehr zur Lobby."
+                _errorEvent.tryEmit("Fehler bei der Rückkehr zur Lobby.")
             }
         }
     }

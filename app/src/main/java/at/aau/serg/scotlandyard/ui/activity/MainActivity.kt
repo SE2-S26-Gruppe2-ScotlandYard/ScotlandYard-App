@@ -32,6 +32,7 @@ import at.aau.serg.scotlandyard.dtos.User
 import at.aau.serg.scotlandyard.model.BoardConnection
 import at.aau.serg.scotlandyard.model.TicketType
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
+import at.aau.serg.scotlandyard.ui.theme.MRX_COLOR
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
 import at.aau.serg.scotlandyard.viewmodel.GameViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
@@ -137,7 +138,7 @@ private fun ScotlandYardApp() {
 }
 
 @Composable
-private fun rememberIsNavigating(): androidx.compose.runtime.MutableState<Boolean> {
+private fun rememberIsNavigating(): MutableState<Boolean> {
     val state = remember { mutableStateOf(false) }
     LaunchedEffect(state.value) {
         if (state.value) { delay(500.milliseconds); state.value = false }
@@ -157,11 +158,11 @@ private fun AppNavHost(
     onLanguageChange: (String) -> Unit
 ) {
     NavHost(navController = navController, startDestination = "start") {
-        composable("start") { StartRoute(navController) }
+        composable("start") { StartRoute(navController, currentUser) }
         composable("login") { LoginRoute(navController, currentUser, authViewModel, isConnected) }
         composable("rules") { RulesRoute(navController) }
         composable("lobby") {
-            LobbyRoute(navController, currentUser, authViewModel, currentRoute, sharedLobbyViewModel, onSharedLobbyViewModelChange)
+            LobbyRoute(navController, currentUser, authViewModel, currentRoute, onSharedLobbyViewModelChange)
         }
         composable("roleSelection") {
             sharedLobbyViewModel?.let { RoleSelectionRoute(lobbyVm = it, navController = navController) }
@@ -196,26 +197,38 @@ private fun AppNavHost(
                 navController = navController
             )
         }
-        composable("mrxwin") {
+        composable(
+            route = "mrxwin/{isMrX}",
+            arguments = listOf(navArgument("isMrX") { type = NavType.BoolType })
+        ) { backStackEntry ->
             MrXWinScreen(
-                onBackClick = { navController.navigate("start") },
-                onQuit = { (navController.context as? android.app.Activity)?.finish() }
+                isMrX = backStackEntry.arguments?.getBoolean("isMrX") ?: false,
+                onMainMenu = { navController.navigate("start") { popUpTo(0) { inclusive = true } } }
             )
         }
-        composable("detectiveswin") {
+        composable(
+            route = "detectiveswin/{isMrX}",
+            arguments = listOf(navArgument("isMrX") { type = NavType.BoolType })
+        ) { backStackEntry ->
             DetectivesWinScreen(
-                onBackClick = { navController.navigate("start") },
-                onQuit = { (navController.context as? android.app.Activity)?.finish() }
+                isMrX = backStackEntry.arguments?.getBoolean("isMrX") ?: false,
+                onMainMenu = { navController.navigate("start") { popUpTo(0) { inclusive = true } } }
             )
         }
+
     }
 }
 
 @Composable
-private fun StartRoute(navController: NavHostController) {
+private fun StartRoute(navController: NavHostController, currentUser: User?) {
     val isNavigating = rememberIsNavigating()
     StartScreen(
-        onStartGame = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("login") } },
+        onStartGame = {
+            if (!isNavigating.value) {
+                isNavigating.value = true
+                if (currentUser != null) navController.navigate("lobby") else navController.navigate("login")
+            }
+        },
         onRules     = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("rules") } },
         onSettings  = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("settings") } }
     )
@@ -262,7 +275,6 @@ private fun LobbyRoute(
     currentUser: User?,
     authViewModel: AuthViewModel,
     currentRoute: String?,
-    sharedLobbyViewModel: LobbyViewModel?,
     onSharedLobbyViewModelChange: (LobbyViewModel) -> Unit
 ) {
     val isNavigating = rememberIsNavigating()
@@ -295,12 +307,16 @@ private fun SettingsRoute(
     onLanguageChange: (String) -> Unit
 ) {
     val isNavigating = rememberIsNavigating()
+    val isInGame = remember {
+        navController.previousBackStackEntry?.destination?.route?.contains("gameboard") == true
+    }
     SettingsScreen(
         onBackClick = {
             if (!isNavigating.value && navController.previousBackStackEntry != null) {
                 isNavigating.value = true; navController.popBackStack()
             }
         },
+        isInGame = isInGame,
         onLanguageChange = onLanguageChange,
         onServerChange   = { authViewModel.reconnect() }
     )
@@ -317,11 +333,6 @@ private fun AssignStartPositionRoute(
     AssignStartPositionScreen(
         gameId   = gameId,
         playerId = playerId,
-        onBackClick = {
-            if (!isNavigating.value && navController.previousBackStackEntry != null) {
-                isNavigating.value = true; navController.popBackStack()
-            }
-        },
         onPositionConfirmed = {
             val selectedRoles = sharedLobbyViewModel?.currentLobby?.value?.selectedRoles
             val isMrX = selectedRoles?.get(playerId) == "MRX"
@@ -346,9 +357,9 @@ private fun GameBoardRoute(
     LaunchedEffect(gameId) {
         gameViewModel.gameStompService.subscribe(gameId)
         gameViewModel.isConnected.first { it }
-        delay(600)
+        delay(600.milliseconds)
         gameViewModel.requestGameState(gameId)
-        delay(3_000)
+        delay(3_000.milliseconds)
         if (gameViewModel.gameState.value == null) {
             Log.d("MainActivity", "GameState still null after 3 s – retrying requestGameState")
             gameViewModel.requestGameState(gameId)
@@ -362,15 +373,25 @@ private fun GameBoardRoute(
     }
 
     val isMyTurn = remember(gameState) {
-        gameState?.let { if (isMrX) it.isMrXPhase else it.isDetectivesPhase } ?: false
+        gameState?.let {
+            if (isMrX) it.isMrXPhase || it.doubleMoveActive
+            else it.isDetectivesPhase
+        } ?: false
     }
+
+    // Detectives only: grey out tickets once they've moved this round, until the round advances.
+    // Stored in ViewModel so settings navigation doesn't reset it.
+    // MrX never needs this — the phase flip to DETECTIVES already disables their tickets.
+    val lastDetectiveMoveRound by gameViewModel.lastDetectiveMoveRound.collectAsState()
+    val movedThisTurn = !isMrX && lastDetectiveMoveRound == (gameState?.currentRound ?: -2)
+    val effectiveIsMyTurn = isMyTurn && !movedThisTurn
 
     val detectiveIdOrder = gameState?.detectivePositions?.keys?.sorted() ?: emptyList()
     val playerPositions  = gameViewModel.buildPlayerPositions(isMrX, detectiveIdOrder)
 
     var selectedTicket by remember { mutableStateOf<TicketType?>(null) }
 
-    LaunchedEffect(!isMyTurn && selectedTicket != null) {
+    LaunchedEffect(!effectiveIsMyTurn && selectedTicket != null) {
         selectedTicket = null
     }
 
@@ -388,6 +409,17 @@ private fun GameBoardRoute(
     val isDoubleActive = gameState?.doubleMoveActive ?: false
     val mrXRevealed    = if (!isMrX) gameState?.mrXRevealedPositions ?: emptyMap() else emptyMap()
     val mrXHistory     = if (!isMrX) gameState?.mrXMoveHistory ?: emptyList() else emptyList()
+    val revealHistoryIndices by gameViewModel.revealHistoryIndices.collectAsState()
+
+    val currentPlayerColor = remember(myPosition, playerPositions, isMrX) {
+        if (isMrX) {
+            MRX_COLOR
+        } else if (myPosition != null) {
+            playerPositions.entries.find { it.value == myPosition }?.key
+        } else {
+            null
+        }
+    }
 
     GameBoardScreen(
         isMrX                = isMrX,
@@ -396,20 +428,30 @@ private fun GameBoardRoute(
         displayMode          = displayMode,
         playerPositions      = playerPositions,
         highlightedNodes     = highlightedNodes,
-        isMyTurn             = isMyTurn,
+        isMyTurn             = effectiveIsMyTurn,
+        isDoubleActive       = isDoubleActive,
         selectedTicket       = selectedTicket,
+        currentPlayerColor   = currentPlayerColor,
         mrXMoveHistory       = mrXHistory,
+        revealHistoryIndices = revealHistoryIndices,
         ticketCounts         = ticketCounts.toMutableMap().apply {
             if (isDoubleActive) put(TicketType.DOUBLE, 0)
         },
         onTicketSelect = { ticket ->
-            if (isMyTurn) selectedTicket = if (selectedTicket == ticket) null else ticket
+            if (effectiveIsMyTurn) {
+                if (ticket == TicketType.DOUBLE) {
+                    gameViewModel.activateDoubleMove(gameId, playerId)
+                } else {
+                    selectedTicket = if (selectedTicket == ticket) null else ticket
+                }
+            }
         },
         onNodeClick = { stationId ->
             val ticket = selectedTicket
-            if (ticket != null) {
+            if (ticket != null && stationId in highlightedNodes) {
                 gameViewModel.sendMove(gameId, playerId, ticket, stationId)
                 selectedTicket = null
+                if (!isMrX) gameViewModel.recordDetectiveMove()
             }
         },
         onNavigateToSettings = { navController.navigate("settings") }
@@ -418,8 +460,11 @@ private fun GameBoardRoute(
 
 @Composable
 private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostController) {
-    val lobby by lobbyVm.currentLobby.collectAsState()
+    val lobby       by lobbyVm.currentLobby.collectAsState()
+    val isConnected by lobbyVm.isConnected.collectAsState()
+    val context = LocalContext.current
 
+    // Spiel startet → zur Startpositions-Auswahl
     LaunchedEffect(lobbyVm) {
         lobbyVm.navigateToGame.collect { gameId ->
             val playerId = lobbyVm.userId
@@ -430,12 +475,31 @@ private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostCo
     }
 
     // Gäste: navigieren zurück wenn Host "Back to Lobby" auslöst.
-    // Route-Guard verhindert doppeltes popBackStack beim Host, der bereits
-    // sofort über den Button navigiert hat.
     LaunchedEffect("backToLobby", lobbyVm) {
         lobbyVm.navigateToLobby.collect {
             if (navController.currentBackStackEntry?.destination?.route == "roleSelection") {
                 navController.popBackStack()
+            }
+        }
+    }
+
+    // Server-Fehler als Toast anzeigen (MrX Race Condition, startGame reject, etc.)
+    LaunchedEffect(lobbyVm) {
+        lobbyVm.errorEvent.collect { msg ->
+            Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Lobby wird null → Spieler wurde gekickt oder Lobby gelöscht
+    LaunchedEffect(lobbyVm) {
+        var hadLobby = false
+        lobbyVm.currentLobby.collect { l ->
+            if (l != null) {
+                hadLobby = true
+            } else if (hadLobby) {
+                if (navController.currentBackStackEntry?.destination?.route == "roleSelection") {
+                    navController.popBackStack()
+                }
             }
         }
     }
@@ -449,6 +513,7 @@ private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostCo
         RoleSelectionScreen(
             viewModel   = lobbyVm,
             lobby       = lobby!!,
+            isConnected = isConnected,
             onBackClick = {
                 if (!isNavigating.value && navController.previousBackStackEntry != null) {
                     isNavigating.value = true
@@ -471,10 +536,10 @@ private fun GameOverEffect(
     LaunchedEffect(Unit) {
         gameViewModel.gameOver.collect { result ->
             when (result) {
-                "DETECTIVES_WIN" -> navController.navigate("detectiveswin") {
+                "DETECTIVES_WIN" -> navController.navigate("detectiveswin/$isMrX") {
                     popUpTo("gameboard/$gameId/$playerId/$isMrX") { inclusive = true }
                 }
-                "MRX_WINS" -> navController.navigate("mrxwin") {
+                "MRX_WINS" -> navController.navigate("mrxwin/$isMrX") {
                     popUpTo("gameboard/$gameId/$playerId/$isMrX") { inclusive = true }
                 }
             }

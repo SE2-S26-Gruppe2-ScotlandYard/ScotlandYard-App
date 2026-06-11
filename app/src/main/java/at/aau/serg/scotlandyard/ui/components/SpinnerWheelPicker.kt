@@ -1,8 +1,8 @@
 package at.aau.serg.scotlandyard.ui.components
 
-import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.ScrollableDefaults
@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,9 +24,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import at.aau.serg.scotlandyard.ui.theme.AccentGlow
+import at.aau.serg.scotlandyard.ui.theme.CheatOrange
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -87,26 +94,31 @@ fun SpinnerWheelPicker(
     // Exact pixel height of one wheel item (density-aware)
     val itemHeightPx = with(LocalDensity.current) { WHEEL_ITEM_HEIGHT_DP.dp.toPx() }
 
-    // ── Auto-spin animation ──────────────────────────────────────────────────────────────────
+    // Auto-spin animation
     LaunchedEffect(triggerSpin, targetPosition) {
         if (triggerSpin && !isCheatMode) {
             val targetIdx = positions.indexOf(targetPosition).coerceAtLeast(0)
-            // Land in the 6th repetition so we always scroll forward 3-4 rotations
-            val targetFirst = (positions.size * 5 + targetIdx - half).coerceAtLeast(0)
+            // Repetition 4 instead of 6 → 2 full cycles instead of 3 (~400 items vs ~600)
+            val targetFirst = (positions.size * 4 + targetIdx - half).coerceAtLeast(0)
             val currentFirst = listState.firstVisibleItemIndex
             val pixelsToScroll = (targetFirst - currentFirst) * itemHeightPx
 
+            // Phase 1: constant-speed spin (80 % of distance)
             listState.animateScrollBy(
-                value = pixelsToScroll,
-                animationSpec = tween(durationMillis = 3500, easing = FastOutSlowInEasing)
+                value = pixelsToScroll * 0.80f,
+                animationSpec = tween(durationMillis = 2400, easing = LinearEasing)
             )
-            // Force exact snap so the displayed number always matches targetPosition
+            // Phase 2: dramatic deceleration to the target (20 % of distance)
+            listState.animateScrollBy(
+                value = pixelsToScroll * 0.20f,
+                animationSpec = tween(durationMillis = 1800, easing = CubicBezierEasing(0.0f, 0.0f, 0.0f, 1.0f))
+            )
             listState.scrollToItem(targetFirst)
             onSpinComplete()
         }
     }
 
-    // ── Cheat-mode: jump to targetPosition when mode first activates ─────────────────────────
+    // Cheat-mode: jump to targetPosition when mode first activates
     LaunchedEffect(isCheatMode) {
         if (isCheatMode) {
             val targetIdx = positions.indexOf(targetPosition).coerceAtLeast(0)
@@ -115,7 +127,7 @@ fun SpinnerWheelPicker(
         }
     }
 
-    // ── Track centred item and report selection changes ──────────────────────────────────────
+    // Track centred item and report selection changes
     val centredPosition by remember {
         derivedStateOf {
             val centredIdx = listState.firstVisibleItemIndex + half
@@ -128,9 +140,16 @@ fun SpinnerWheelPicker(
         if (isCheatMode) onSelectionChanged(centredPosition)
     }
 
-    // ── Render ───────────────────────────────────────────────────────────────────────────────
+    // Render
+    val accentColor = if (isCheatMode) CheatOrange else AccentGlow
+    val bgColor = Color(0xFF0F0F0F)
+
     Box(
-        modifier = modifier.height((WHEEL_ITEM_HEIGHT_DP * WHEEL_VISIBLE_ITEMS).dp)
+        modifier = modifier
+            .height((WHEEL_ITEM_HEIGHT_DP * WHEEL_VISIBLE_ITEMS).dp)
+            .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(20.dp))
+            .background(bgColor.copy(alpha = 0.85f), RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(20.dp))
     ) {
         LazyColumn(
             state = listState,
@@ -140,72 +159,67 @@ fun SpinnerWheelPicker(
         ) {
             items(extendedItems.size) { index ->
                 val position = extendedItems[index]
-                val isCenter = index == listState.firstVisibleItemIndex + half
-                WheelItem(position = position, isSelected = isCenter, isCheatMode = isCheatMode)
+                val isCenter by remember { derivedStateOf { index == listState.firstVisibleItemIndex + half } }
+                WheelItem(position = position, isSelected = isCenter)
             }
         }
 
-        // Top & bottom fade overlays for depth effect
+        // Top & bottom fade overlays
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height((WHEEL_ITEM_HEIGHT_DP * half).dp)
                 .align(Alignment.TopCenter)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color.Black.copy(alpha = 0.55f), Color.Transparent)
-                    )
-                )
+                .background(Brush.verticalGradient(listOf(bgColor.copy(alpha = 0.97f), Color.Transparent)))
         )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .height((WHEEL_ITEM_HEIGHT_DP * half).dp)
                 .align(Alignment.BottomCenter)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color.Transparent, Color.Black.copy(alpha = 0.55f))
-                    )
-                )
+                .background(Brush.verticalGradient(listOf(Color.Transparent, bgColor.copy(alpha = 0.97f))))
         )
 
-        // Centre selection box
+        // Centre selection highlight
         Box(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(horizontal = 12.dp)
                 .height(WHEEL_ITEM_HEIGHT_DP.dp)
                 .align(Alignment.Center)
-                .border(width = 2.dp, color = if (isCheatMode) Color(0xFFFF6B00) else Color.White.copy(alpha = 0.7f))
-                .background(Color.White.copy(alpha = 0.07f))
+                .border(1.5.dp, accentColor.copy(alpha = 0.9f), RoundedCornerShape(10.dp))
+                .background(accentColor.copy(alpha = 0.1f), RoundedCornerShape(10.dp))
         )
     }
 }
 
-// ── Private sub-composables ──────────────────────────────────────────────────────────────────
+// Sub-composables
 
 @Composable
 private fun WheelItem(
     position: Int,
-    isSelected: Boolean,
-    isCheatMode: Boolean
+    isSelected: Boolean
 ) {
-    val alpha = if (isSelected) 1f else 0.35f
-    val fontSize = if (isSelected) 30.sp else 20.sp
-    val selectedColor = if (isCheatMode) Color(0xFFFF6B00) else Color.White
-
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(WHEEL_ITEM_HEIGHT_DP.dp)
-            .alpha(alpha)
+            .alpha(if (isSelected) 1f else 0.28f)
             .padding(horizontal = 8.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = position.toString(),
-            fontSize = fontSize,
+            fontSize = if (isSelected) 32.sp else 20.sp,
             fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Normal,
-            color = if (isSelected) selectedColor else Color.White
+            color = Color.White,
+            style = if (isSelected) TextStyle(
+                shadow = Shadow(
+                    color = Color.White.copy(alpha = 0.3f),
+                    offset = Offset.Zero,
+                    blurRadius = 8f
+                )
+            ) else TextStyle.Default
         )
     }
 }
