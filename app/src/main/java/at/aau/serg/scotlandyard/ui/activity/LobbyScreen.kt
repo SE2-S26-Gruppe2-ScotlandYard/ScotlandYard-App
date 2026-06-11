@@ -41,6 +41,7 @@ import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModelFactory
+import at.aau.serg.scotlandyard.data.saveLobbyId
 import com.example.scotlandyard.R
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -64,6 +65,10 @@ fun LobbyScreen(
     val statusMessage by viewModel.statusMessage.collectAsState()
     val isLoading     by viewModel.isLoading.collectAsState()
     val isConnected   by viewModel.isConnected.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
+    LaunchedEffect(currentLobby?.id) {
+        context.saveLobbyId(currentLobby?.id)
+    }
 
     val statusLog = remember { mutableStateListOf<String>() }
     LaunchedEffect(statusMessage) {

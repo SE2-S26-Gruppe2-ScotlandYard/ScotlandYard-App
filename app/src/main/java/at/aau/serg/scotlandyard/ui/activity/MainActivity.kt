@@ -276,6 +276,13 @@ private fun LobbyRoute(
 ) {
     val isNavigating = rememberIsNavigating()
     val user = currentUser ?: return
+    val context = LocalContext.current
+
+// Lobby-ID speichern wenn Spieler in Lobby ist (für Reconnect)
+    val currentLobby by (sharedLobbyViewModel?.currentLobby ?: kotlinx.coroutines.flow.MutableStateFlow(null)).collectAsState()
+    LaunchedEffect(currentLobby?.id) {
+        context.saveLobbyId(currentLobby?.id)
+    }
     LobbyScreen(
         authViewModel = authViewModel,
         onBackClick   = {
@@ -348,6 +355,11 @@ private fun GameBoardRoute(
     navController: NavHostController
 ) {
     val context = LocalContext.current
+    // Game-ID speichern wenn Spieler im Spiel ist (für Reconnect)
+    LaunchedEffect(gameId) {
+        context.saveGameId(gameId)
+        context.saveLobbyId(null) // Lobby-ID löschen wenn Spiel startet
+    }
     val displayMode = remember { context.getDisplayModePreference() }
     val gameViewModel: GameViewModel = viewModel()
 
