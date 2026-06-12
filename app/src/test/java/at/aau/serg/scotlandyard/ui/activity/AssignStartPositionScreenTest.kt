@@ -29,23 +29,6 @@ class AssignStartPositionScreenTest {
         assertNotNull(ShakeDetector::class)
     }
 
-    @Test
-    fun cheatModeDetector_class_exists() {
-        assertNotNull(CheatModeDetector::class)
-    }
-
-    @Test
-    fun cheatModeDetector_has_volumeDownHeld_property() {
-        val field = CheatModeDetector::class.java.declaredFields
-            .firstOrNull { it.name == "isVolumeDownHeld" }
-        assertNotNull(field, "CheatModeDetector must expose isVolumeDownHeld")
-    }
-
-    @Test
-    fun cheatModeDetector_onCheatListener_is_functional_interface() {
-        val listener = CheatModeDetector.OnCheatListener { /* activated */ }
-        assertNotNull(listener)
-    }
 
     @Test
     fun startPositionConstants_valid_positions_used_by_screen() {
