@@ -10,7 +10,9 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,6 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalConfiguration
@@ -239,6 +242,10 @@ fun AssignStartPositionScreen(
                         screenState = SpinnerScreenState.SPINNER_DONE
                         triggerSpin = false
                     },
+                    onDoubleClick = {
+                        manualPosition = startPosition ?: StartPositionConstants.MIN_POSITION
+                        gameViewModel.activateCheatMode()
+                    },
                     onConfirm = {
                         sentPosition = startPosition ?: StartPositionConstants.MIN_POSITION
                         gameViewModel.confirmStartPosition(gameId, playerId)
@@ -435,6 +442,7 @@ private fun SpinnerAutoState(
     triggerSpin: Boolean,
     isSpinComplete: Boolean,
     onSpinComplete: () -> Unit,
+    onDoubleClick: () -> Unit = {},
     onConfirm: () -> Unit
 ) {
     var localTrigger by remember { mutableStateOf(false) }
@@ -466,7 +474,9 @@ private fun SpinnerAutoState(
                     triggerSpin = localTrigger,
                     onSpinComplete = { localTrigger = false; onSpinComplete() },
                     onSelectionChanged = {},
-                    modifier = Modifier.fillMaxWidth(0.85f)
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .pointerInput(Unit) { detectTapGestures(onDoubleTap = { onDoubleClick() }) }
                 )
             }
             // Right: title, result, button
@@ -545,7 +555,9 @@ private fun SpinnerAutoState(
                     triggerSpin = localTrigger,
                     onSpinComplete = { localTrigger = false; onSpinComplete() },
                     onSelectionChanged = {},
-                    modifier = Modifier.fillMaxWidth(0.55f)
+                    modifier = Modifier
+                        .fillMaxWidth(0.55f)
+                        .pointerInput(Unit) { detectTapGestures(onDoubleTap = { onDoubleClick() }) }
                 )
                 Spacer(Modifier.height(24.dp))
                 if (isSpinComplete) {
