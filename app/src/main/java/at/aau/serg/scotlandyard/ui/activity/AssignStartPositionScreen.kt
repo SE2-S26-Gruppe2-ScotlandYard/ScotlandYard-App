@@ -3,14 +3,17 @@ package at.aau.serg.scotlandyard.ui.activity
 import android.content.res.Configuration
 import android.os.Handler
 import android.os.Looper
-import android.view.KeyEvent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
+
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalConfiguration
@@ -106,16 +110,12 @@ fun AssignStartPositionScreen(
     var manualPosition by remember { mutableIntStateOf(startPosition ?: StartPositionConstants.MIN_POSITION) }
     // Stores the position we sent to the server so we can detect a conflict-resolution response
     var sentPosition by remember { mutableIntStateOf(0) }
+    // Set when the server assigned a different position than requested (conflict)
+    var conflictPosition by remember { mutableStateOf<Int?>(null) }
 
-    // Normal shake detector – triggers the auto-spin (no volume-down needed)
+    // Normal shake detector – triggers the auto-spin
     val shakeDetector = remember(context) { ShakeDetector(context) }
 
-    // CheatModeDetector – shake + volume-down activates cheat mode
-    val cheatDetector = remember(context) {
-        CheatModeDetector(context).apply {
-            setOnCheatListener { gameViewModel.activateCheatMode() }
-        }
-    }
 
     // Once connected: subscribe and generate position, then WAIT for shake.
     // Keyed on (gameId, playerId, isConnected) so it only re-runs when these
@@ -138,9 +138,14 @@ fun AssignStartPositionScreen(
         }
     }
 
-    // Server confirmed the start position – navigate forward regardless of conflict resolution.
+    // Server confirmed the start position – detect conflict (different position returned).
     LaunchedEffect(startPosition) {
         if (screenState == SpinnerScreenState.WAITING_SERVER && startPosition != null) {
+            if (sentPosition > 0 && startPosition != sentPosition) {
+                // Server assigned a different position → show info banner, then navigate
+                conflictPosition = startPosition
+                delay(3000.milliseconds)
+            }
             onPositionConfirmed()
         }
     }
@@ -167,32 +172,21 @@ fun AssignStartPositionScreen(
         }
     }
 
-    // Lifecycle-safe: register volume-key listener + both sensors
-    DisposableEffect(shakeDetector, cheatDetector) {
-        val keyListener: (KeyEvent) -> Unit = { event ->
-            if (event.keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
-                cheatDetector.isVolumeDownHeld = (event.action == KeyEvent.ACTION_DOWN)
-            }
-        }
-        CheatKeyEventRegistry.addListener(keyListener)
-
-        // Normal shake (no volume-down) → start the auto-spin
+    // Lifecycle-safe: register shake sensor
+    DisposableEffect(shakeDetector) {
+        // Normal shake → start the auto-spin
         shakeDetector.setOnShakeListener {
             Handler(Looper.getMainLooper()).post {
-                // Skip if volume-down is held – cheat mode detector handles that combo
-                if (!cheatDetector.isVolumeDownHeld && screenState == SpinnerScreenState.WAITING_TO_SPIN) {
+                if (screenState == SpinnerScreenState.WAITING_TO_SPIN) {
                     screenState = SpinnerScreenState.SPINNER_ANIMATING
                     triggerSpin = true
                 }
             }
         }
         shakeDetector.start()
-        cheatDetector.start()
 
         onDispose {
-            CheatKeyEventRegistry.removeListener(keyListener)
             shakeDetector.stop()
-            cheatDetector.stop()
             gameViewModel.deactivateCheatMode()
             gameViewModel.unsubscribeFromStartPosition()
         }
@@ -239,6 +233,10 @@ fun AssignStartPositionScreen(
                         screenState = SpinnerScreenState.SPINNER_DONE
                         triggerSpin = false
                     },
+                    onDoubleClick = {
+                        manualPosition = startPosition ?: StartPositionConstants.MIN_POSITION
+                        gameViewModel.activateCheatMode()
+                    },
                     onConfirm = {
                         sentPosition = startPosition ?: StartPositionConstants.MIN_POSITION
                         gameViewModel.confirmStartPosition(gameId, playerId)
@@ -262,6 +260,31 @@ fun AssignStartPositionScreen(
                 )
 
                 SpinnerScreenState.WAITING_SERVER -> WaitingServerState()
+            }
+
+            // Conflict banner – shown at top when server assigned a different position
+            AnimatedVisibility(
+                visible = conflictPosition != null,
+                enter = fadeIn() + slideInVertically { -it },
+                exit = fadeOut() + slideOutVertically { -it },
+                modifier = Modifier.align(Alignment.TopCenter)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                        .background(Color(0xFF1A3A5C), RoundedCornerShape(12.dp))
+                        .border(1.dp, Color(0xFF4A90D9).copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.start_position_taken, conflictPosition ?: 0),
+                        color = Color(0xFFB3D9FF),
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
 
             // Non-blocking error snack
@@ -435,6 +458,7 @@ private fun SpinnerAutoState(
     triggerSpin: Boolean,
     isSpinComplete: Boolean,
     onSpinComplete: () -> Unit,
+    onDoubleClick: () -> Unit = {},
     onConfirm: () -> Unit
 ) {
     var localTrigger by remember { mutableStateOf(false) }
@@ -466,7 +490,9 @@ private fun SpinnerAutoState(
                     triggerSpin = localTrigger,
                     onSpinComplete = { localTrigger = false; onSpinComplete() },
                     onSelectionChanged = {},
-                    modifier = Modifier.fillMaxWidth(0.85f)
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .pointerInput(Unit) { detectTapGestures(onDoubleTap = { onDoubleClick() }) }
                 )
             }
             // Right: title, result, button
@@ -545,7 +571,9 @@ private fun SpinnerAutoState(
                     triggerSpin = localTrigger,
                     onSpinComplete = { localTrigger = false; onSpinComplete() },
                     onSelectionChanged = {},
-                    modifier = Modifier.fillMaxWidth(0.55f)
+                    modifier = Modifier
+                        .fillMaxWidth(0.55f)
+                        .pointerInput(Unit) { detectTapGestures(onDoubleTap = { onDoubleClick() }) }
                 )
                 Spacer(Modifier.height(24.dp))
                 if (isSpinComplete) {

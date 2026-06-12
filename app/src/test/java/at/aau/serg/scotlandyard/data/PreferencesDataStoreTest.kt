@@ -172,7 +172,7 @@ class PreferencesDataStoreTest {
     }
 
     @Test
-    fun getServerUriTypePreference_noPreferenceStored_returnsGlobal() {
+    fun getServerUriTypePreference_noPreferenceStored_returnsGLOBAL() {
         whenever(mockSharedPreferences.getString(eq("server_uri_type"), any())).thenReturn(null)
 
         val type = mockContext.getServerUriTypePreference()

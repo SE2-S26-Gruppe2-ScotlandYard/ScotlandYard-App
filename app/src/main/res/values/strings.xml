@@ -107,6 +107,7 @@
     <string name="status_no_selection_header">No role yet:</string>
     <string name="status_role_screen_disconnected">No server connection – your selection won\'t be saved</string>
 
+    <string name="start_position_taken">This start position is already taken, your new start position is: %1$d</string>
     <string name="status_connecting_to_server">Connecting to server…</string>
     <string name="status_confirming_position">Confirming position…</string>
     <string name="text_please_wait">Please wait</string>

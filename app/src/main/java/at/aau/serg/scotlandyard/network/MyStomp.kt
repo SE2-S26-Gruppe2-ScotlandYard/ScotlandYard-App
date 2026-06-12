@@ -83,7 +83,7 @@ class MyStomp(val callbacks: Callbacks) {
         connectionJob = scope.launch {
             while (isActive) {
                 try {
-                    Log.d("MyStomp", "Versuche Verbindung zum Server...")
+                    Log.d("MyStomp", "Versuche Verbindung zum Server: ${ServerConfig.activeUri}")
                     val activeSession = client!!.connect(ServerConfig.activeUri)
                     session = activeSession
                     _isConnected.value = true
