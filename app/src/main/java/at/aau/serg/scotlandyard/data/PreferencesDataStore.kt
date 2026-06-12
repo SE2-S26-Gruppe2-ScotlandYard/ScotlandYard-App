@@ -58,7 +58,7 @@ fun Context.applyLanguage(languageCode: String): Context {
 
 fun Context.getServerUriTypePreference(): String {
     val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-    return prefs.getString(KEY_SERVER_URI_TYPE, "LOCAL") ?: "LOCAL"
+    return prefs.getString(KEY_SERVER_URI_TYPE, "GLOBAL") ?: "GLOBAL"
 }
 
 fun Context.saveServerUriTypePreference(type: String) {
