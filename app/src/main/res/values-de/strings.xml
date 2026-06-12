@@ -88,6 +88,7 @@
     <string name="status_already_taken">Schon belegt</string>
     <string name="status_selected">✓ Ausgewählt</string>
     <string name="button_click_to_select">Tippe zum auswählen</string>
+    <string name="start_position_taken">Diese Startposition ist bereits vergeben. Deine neue Startposition ist: %1$d</string>
     <string name="status_no_selection_header">Noch ohne Rolle:</string>
     <string name="status_role_screen_disconnected">Keine Serververbindung – deine Auswahl wird nicht gespeichert</string>
     <string name="status_connecting_to_server">Verbindung zum Server wird hergestellt...</string>

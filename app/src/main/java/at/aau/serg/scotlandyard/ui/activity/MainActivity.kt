@@ -86,9 +86,6 @@ private fun ScotlandYardApp() {
                     if (event.nativeKeyEvent.keyCode == android.view.KeyEvent.KEYCODE_BACK) {
                         return@onPreviewKeyEvent true
                     }
-                    if (event.type == KeyEventType.KeyDown) {
-                        CheatKeyEventRegistry.notify(event.nativeKeyEvent)
-                    }
                     false
                 }
         ) {
