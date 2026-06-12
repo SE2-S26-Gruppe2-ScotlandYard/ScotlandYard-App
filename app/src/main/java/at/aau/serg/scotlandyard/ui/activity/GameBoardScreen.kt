@@ -50,9 +50,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -111,6 +113,8 @@ fun GameBoardScreen(
     revealHistoryIndices: Map<Int, Int> = emptyMap(),
     selectedTicket: TicketType? = null,
     currentPlayerColor: Color? = null,
+    ticketReachable: Map<TicketType, Boolean> = emptyMap(),
+    allPlayersReady: Boolean = true,
     onNodeClick: ((Int) -> Unit)? = null,
     onTicketSelect: (TicketType) -> Unit = {},
     onNavigateToSettings: () -> Unit = {}
@@ -150,6 +154,7 @@ fun GameBoardScreen(
                 selectedTicket = selectedTicket,
                 isMyTurn = isMyTurn,
                 currentPlayerColor = currentPlayerColor,
+                ticketReachable = ticketReachable,
                 onNavigateToSettings = onNavigateToSettings,
                 onMrXHistoryClick = { isHistoryOpen = true },
                 onTicketSelect = { type -> onTicketSelect(type) }
@@ -177,10 +182,31 @@ fun GameBoardScreen(
                     onNodeClick = if (isMyTurn) onNodeClick else null
                 )
 
-                // Reveal Mr. X position banner, top-center, auto-dismisses after 5s
+                // Waiting for all players to confirm start positions
+                if (!allPlayersReady) {
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 8.dp)
+                            .background(Color(0xCC0D1E2E), RoundedCornerShape(8.dp))
+                            .border(2.dp, Color(0xFF888888), RoundedCornerShape(8.dp))
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.banner_waiting_for_players),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFCCCCCC),
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+
+                // Reveal Mr. X position banner, top-center, auto-dismisses after 5s or on tap
                 RevealBanner(
                     visible = showRevealBanner,
                     position = revealedPosition ?: 0,
+                    onDismiss = { showRevealBanner = false },
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .padding(top = 12.dp)
@@ -397,7 +423,7 @@ private fun MrXHistoryTicketChip(
         else -> Pair(Color.Gray, ticket)
     }
 
-    Box(modifier = modifier) {
+    Box(modifier = modifier.padding(top = 8.dp)) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -438,7 +464,12 @@ private fun MrXHistoryTicketChip(
 }
 
 @Composable
-private fun RevealBanner(visible: Boolean, position: Int, modifier: Modifier = Modifier) {
+private fun RevealBanner(
+    visible: Boolean,
+    position: Int,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
     AnimatedVisibility(
         visible = visible,
         modifier = modifier,
@@ -449,6 +480,7 @@ private fun RevealBanner(visible: Boolean, position: Int, modifier: Modifier = M
             modifier = Modifier
                 .background(Color(0xCC0D1E2E), RoundedCornerShape(12.dp))
                 .border(2.dp, AccentGlow, RoundedCornerShape(12.dp))
+                .clickable(onClick = onDismiss)
                 .padding(horizontal = 24.dp, vertical = 10.dp),
             contentAlignment = Alignment.Center
         ) {
@@ -472,6 +504,7 @@ private fun SidePanel(
     selectedTicket: TicketType?,
     isMyTurn: Boolean = false,
     currentPlayerColor: Color? = null,
+    ticketReachable: Map<TicketType, Boolean> = emptyMap(),
     onNavigateToSettings: () -> Unit,
     onMrXHistoryClick: () -> Unit = {},
     onTicketSelect: (TicketType) -> Unit
@@ -533,11 +566,12 @@ private fun SidePanel(
         ) {
             visibleTickets.forEach { type ->
                 val count = ticketCounts[type] ?: 0
+                val canReach = ticketReachable[type] ?: true
                 SidePanelTicketButton(
                     type = type,
                     count = count,
                     isSelected = selectedTicket == type,
-                    isDisabled = count == 0 || !isMyTurn,
+                    isDisabled = count == 0 || !isMyTurn || !canReach,
                     onClick = { onTicketSelect(type) }
                 )
             }
@@ -580,8 +614,17 @@ private fun SidePanel(
 
 @Composable
 private fun MenuButton(onClick: () -> Unit) {
+    val isEnabled = remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
     IconButton(
-        onClick = onClick,
+        onClick = {
+            if (isEnabled.value) {
+                isEnabled.value = false
+                onClick()
+                scope.launch { delay(1_000.milliseconds); isEnabled.value = true }
+            }
+        },
+        enabled = isEnabled.value,
         modifier = Modifier.size(36.dp)
     ) {
         Icon(

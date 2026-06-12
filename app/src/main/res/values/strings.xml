@@ -122,6 +122,7 @@
     <string name="text_spin_and_confirm">Spin the wheel and confirm</string>
     <string name="button_confirm_station">Confirm station %1$d</string>
 
+    <string name="banner_waiting_for_players">Waiting for all players to join…</string>
     <string name="banner_double_move_hint">Double Move active – tap a station to use</string>
     <string name="banner_mrx_position_reveal">Mr. X was spotted at station %1$d!</string>
     <string name="title_menu">Menu</string>

@@ -104,6 +104,7 @@
     <string name="title_choose_start_position">Wähle deine Startposition</string>
     <string name="text_spin_and_confirm">Dreh das Rad und bestätige</string>
     <string name="button_confirm_station">Bestätige Station %1$d</string>
+    <string name="banner_waiting_for_players">Warte auf alle Spieler…</string>
     <string name="banner_double_move_hint">Doppel Fahrkarte aktiv – tippe auf eine Station um sie zu benutzen</string>
     <string name="banner_mrx_position_reveal">Mr. X wurde an Station %1$d gesichtet!</string>
     <string name="title_menu">Menü</string>
