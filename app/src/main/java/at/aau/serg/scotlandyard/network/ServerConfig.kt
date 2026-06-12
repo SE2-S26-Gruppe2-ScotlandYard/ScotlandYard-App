@@ -14,7 +14,7 @@ object ServerConfig {
     /** AAU demo server – works from everywhere without a local backend */
     const val GLOBAL_URI = "ws://se2-demo.aau.at:53206/scotlandyard"
 
-    var activeUri: String = GLOBAL_URI
+    var activeUri: String = LOCAL_URI
         private set
 
     fun init(context: Context) {

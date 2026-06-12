@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -99,8 +101,6 @@ fun AssignStartPositionScreen(
     var screenState by remember { mutableStateOf(SpinnerScreenState.CONNECTING) }
     var triggerSpin by remember { mutableStateOf(false) }
     var manualPosition by remember { mutableIntStateOf(startPosition ?: StartPositionConstants.MIN_POSITION) }
-    // Stores the position we sent to the server so we can detect a conflict-resolution response
-    var sentPosition by remember { mutableIntStateOf(0) }
 
     // Normal shake detector – triggers the auto-spin (no volume-down needed)
     val shakeDetector = remember(context) { ShakeDetector(context) }
@@ -113,8 +113,6 @@ fun AssignStartPositionScreen(
     }
 
     // Once connected: subscribe and generate position, then WAIT for shake.
-    // Keyed on (gameId, playerId, isConnected) so it only re-runs when these
-    // stable values actually change – not on every unrelated recomposition.
     LaunchedEffect(gameId, playerId, isConnected) {
         if (isConnected && screenState == SpinnerScreenState.CONNECTING) {
             gameViewModel.subscribeToStartPosition(gameId, playerId)
@@ -133,21 +131,6 @@ fun AssignStartPositionScreen(
         }
     }
 
-    // Server confirmed the start position (same) or resolved a conflict (different).
-    // Only relevant while in WAITING_SERVER – activated once the backend implements
-    // the conflict-check response on /topic/game/{gameId}/player/{playerId}/start-position.
-    LaunchedEffect(startPosition) {
-        if (screenState == SpinnerScreenState.WAITING_SERVER && startPosition != null) {
-            if (startPosition == sentPosition) {
-                onPositionConfirmed()
-            } else {
-                // Server resolved a conflict and assigned a new position – re-animate
-                manualPosition = startPosition ?: manualPosition
-                triggerSpin = true
-                screenState = SpinnerScreenState.SPINNER_ANIMATING
-            }
-        }
-    }
 
 
     // Lifecycle-safe: register volume-key listener + both sensors
@@ -194,10 +177,6 @@ fun AssignStartPositionScreen(
                     onSimulateShake = {
                         screenState = SpinnerScreenState.SPINNER_ANIMATING
                         triggerSpin = true
-                    },
-                    onSimulateCheat = {
-                        manualPosition = startPosition ?: StartPositionConstants.MIN_POSITION
-                        gameViewModel.activateCheatMode()
                     }
                 )
 
@@ -211,12 +190,13 @@ fun AssignStartPositionScreen(
                         screenState = SpinnerScreenState.SPINNER_DONE
                         triggerSpin = false
                     },
+                    onDoubleClick = {
+                        manualPosition = startPosition ?: StartPositionConstants.MIN_POSITION
+                        gameViewModel.activateCheatMode()
+                    },
                     onConfirm = {
-                        sentPosition = startPosition ?: StartPositionConstants.MIN_POSITION
                         gameViewModel.confirmStartPosition(gameId, playerId)
                         gameViewModel.clearStartPosition()
-                        // Navigate immediately. Once the backend implements the conflict-check
-                        // response, switch screenState to WAITING_SERVER here instead.
                         onPositionConfirmed()
                     }
                 )
@@ -227,7 +207,6 @@ fun AssignStartPositionScreen(
                     onSelectionChanged = { manualPosition = it },
                     onConfirm = {
                         gameViewModel.setCheatStartPosition(manualPosition)
-                        sentPosition = manualPosition
                         gameViewModel.confirmStartPosition(gameId, playerId)
                         gameViewModel.clearStartPosition()
                         gameViewModel.deactivateCheatMode()
@@ -237,6 +216,7 @@ fun AssignStartPositionScreen(
 
                 SpinnerScreenState.WAITING_SERVER -> WaitingServerState()
             }
+
 
             // Non-blocking error snack
             AnimatedVisibility(
@@ -296,12 +276,11 @@ private fun WaitingServerState() {
 /**
  * Waiting state: wheel is visible but static. Player must shake to start the spin.
  * A button is provided to simulate a shake (useful for emulator testing).
- * A second debug button activates cheat mode (for testing the volume-key combo on emulators).
+ * Double-clicking the wheel after it spins activates cheat mode.
  */
 @Composable
 private fun WaitingToSpinState(
-    onSimulateShake: () -> Unit,
-    onSimulateCheat: () -> Unit = {}
+    onSimulateShake: () -> Unit
 ) {
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
 
@@ -329,7 +308,7 @@ private fun WaitingToSpinState(
                     textAlign = TextAlign.Center
                 )
             }
-            // Right: buttons
+            // Right: shake button only
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -346,14 +325,6 @@ private fun WaitingToSpinState(
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1A4A3A))
                 ) {
                     Text(stringResource(R.string.button_simulate_shaking), fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
-                }
-                Spacer(Modifier.height(10.dp))
-                Button(
-                    onClick = onSimulateCheat,
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A1A00))
-                ) {
-                    Text(stringResource(R.string.button_cheat), fontSize = 13.sp, color = Color(0xFFFF9944))
                 }
             }
         }
@@ -385,14 +356,6 @@ private fun WaitingToSpinState(
             ) {
                 Text(stringResource(R.string.button_simulate_shaking), fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
             }
-            Spacer(Modifier.height(12.dp))
-            Button(
-                onClick = onSimulateCheat,
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2A1A00))
-            ) {
-                Text(stringResource(R.string.button_cheat), fontSize = 13.sp, color = Color(0xFFFF9944))
-            }
         }
     }
 }
@@ -400,6 +363,7 @@ private fun WaitingToSpinState(
 /**
  * Normal auto-spin state: shows the spinning wheel with deceleration animation, then a
  * confirmation button once the wheel has stopped.
+ * Double-clicking the wheel activates cheat mode.
  */
 @Composable
 private fun SpinnerAutoState(
@@ -408,6 +372,7 @@ private fun SpinnerAutoState(
     triggerSpin: Boolean,
     isSpinComplete: Boolean,
     onSpinComplete: () -> Unit,
+    onDoubleClick: () -> Unit,
     onConfirm: () -> Unit
 ) {
     var localTrigger by remember { mutableStateOf(false) }
@@ -439,7 +404,11 @@ private fun SpinnerAutoState(
                     triggerSpin = localTrigger,
                     onSpinComplete = { localTrigger = false; onSpinComplete() },
                     onSelectionChanged = {},
-                    modifier = Modifier.fillMaxWidth(0.85f)
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .pointerInput(Unit) {
+                            detectTapGestures(onDoubleTap = { onDoubleClick() })
+                        }
                 )
             }
             // Right: title, result, button
@@ -516,7 +485,11 @@ private fun SpinnerAutoState(
                     triggerSpin = localTrigger,
                     onSpinComplete = { localTrigger = false; onSpinComplete() },
                     onSelectionChanged = {},
-                    modifier = Modifier.fillMaxWidth(0.55f)
+                    modifier = Modifier
+                        .fillMaxWidth(0.55f)
+                        .pointerInput(Unit) {
+                            detectTapGestures(onDoubleTap = { onDoubleClick() })
+                        }
                 )
                 Spacer(Modifier.height(24.dp))
                 if (isSpinComplete) {
