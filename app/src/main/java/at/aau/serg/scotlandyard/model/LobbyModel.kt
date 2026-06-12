@@ -3,7 +3,7 @@ package at.aau.serg.scotlandyard.model
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
 
-// ── Datenklassen ──────────────────────────────────────────────────────────────
+// Data classes
 
 data class LobbyUserData(
     val id: String,
@@ -28,7 +28,7 @@ data class LobbyResponse(
     val lobby: LobbyData?
 )
 
-// ── Gson Hilfsdatenklassen (intern für Parsing) ───────────────────────────────
+// Internal Gson classes used for JSON parsing
 
 private data class GsonUser(
     @SerializedName("id") val id: String?,
@@ -54,7 +54,7 @@ private data class GsonResponse(
     @SerializedName("lobby") val lobby: GsonLobby?
 )
 
-// ── Parser ────────────────────────────────────────────────────────────────────
+// JSON parser extension
 
 private val gson = Gson()
 

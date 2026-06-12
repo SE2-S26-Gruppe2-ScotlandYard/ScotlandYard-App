@@ -44,7 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
+import at.aau.serg.scotlandyard.ui.theme.*
 import com.example.scotlandyard.R
 
 @Composable
@@ -55,6 +55,7 @@ fun LoginScreen(
     isConnectedToServer: Boolean = false
 ) {
     var nickname by remember { mutableStateOf("") }
+    var touched by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         // Background Image
@@ -149,13 +150,32 @@ fun LoginScreen(
             // Nickname Field
             OutlinedTextField(
                 value = nickname,
-                onValueChange = { nickname = it },
+                onValueChange = { input ->
+                    touched = true
+                    nickname = input.filter { c -> c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9' }.take(8)
+                },
                 label = { Text(stringResource(R.string.description_nickname), color = Color.LightGray) },
+                isError = touched && nickname.isEmpty(),
+                supportingText = {
+                    if (touched && nickname.isEmpty()) {
+                        Text(
+                            text = stringResource(R.string.nickname_error_empty),
+                            color = Color.Red
+                        )
+                    } else {
+                        Text(
+                            text = stringResource(R.string.nickname_hint),
+                            color = Color.LightGray
+                        )
+                    }
+                },
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.White,
                     unfocusedBorderColor = Color.LightGray,
                     focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White
+                    unfocusedTextColor = Color.White,
+                    errorBorderColor = Color.Red,
+                    errorLabelColor = Color.Red
                 ),
                 modifier = Modifier.width(300.dp),
                 singleLine = true
@@ -163,7 +183,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            /// Main Action Button
+            // Main Action Button
             Button(
                 onClick = {
                     if (nickname.isNotBlank() && isConnectedToServer) {
@@ -175,12 +195,12 @@ fun LoginScreen(
                     .height(48.dp)
                     .border(
                         width = 1.dp,
-                        color = Color(0xAAFFFFFF),
+                        color = ButtonBorder,
                         shape = RoundedCornerShape(6.dp)
                     ),
                 shape = RoundedCornerShape(6.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF1A4A3A)
+                    containerColor = AccentTeal
                 ),
                 enabled = nickname.isNotBlank() && isConnectedToServer // <-- Fix here
             ) {

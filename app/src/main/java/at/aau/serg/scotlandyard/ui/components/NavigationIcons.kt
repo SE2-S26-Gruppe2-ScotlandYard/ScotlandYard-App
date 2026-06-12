@@ -4,7 +4,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -23,39 +22,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import at.aau.serg.scotlandyard.ui.theme.AccentTeal
+import at.aau.serg.scotlandyard.ui.theme.ButtonBorder
+import at.aau.serg.scotlandyard.ui.theme.DarkActionButtonBg
 
 private val NavigationIconTint = Color(0xFFE0E0E0)
-private val ActionButtonColor = Color(0xFF1A4A3A)
-private val DarkActionButtonColor = Color(0xFF102920)
 private val ActionButtonShape = RoundedCornerShape(6.dp)
-
-@Composable
-fun AppBackButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    contentDescription: String = "Zurueck"
-) {
-    val isEnabled = remember { mutableStateOf(true) }
-    val scope = rememberCoroutineScope()
-    IconButton(
-        onClick = {
-            if (isEnabled.value) {
-                isEnabled.value = false
-                onClick()
-                scope.launch { delay(500.milliseconds); isEnabled.value = true }
-            }
-        },
-        enabled = isEnabled.value,
-        modifier = modifier.then(Modifier.then(Modifier))
-    ) {
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-            contentDescription = contentDescription,
-            tint = NavigationIconTint,
-            modifier = Modifier
-        )
-    }
-}
 
 @Composable
 fun AppSettingsButton(
@@ -95,7 +67,7 @@ fun AppActionButton(
         text = text,
         onClick = onClick,
         modifier = modifier,
-        containerColor = ActionButtonColor
+        containerColor = AccentTeal
     )
 }
 
@@ -109,7 +81,7 @@ fun AppDarkActionButton(
         text = text,
         onClick = onClick,
         modifier = modifier,
-        containerColor = DarkActionButtonColor
+        containerColor = DarkActionButtonBg
     )
 }
 
@@ -134,7 +106,7 @@ private fun AppStyledActionButton(
             .height(52.dp)
             .border(
                 width = 1.dp,
-                color = Color(0xAAFFFFFF),
+                color = ButtonBorder,
                 shape = ActionButtonShape
             ),
         shape = ActionButtonShape,

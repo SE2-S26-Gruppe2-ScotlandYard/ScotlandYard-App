@@ -2,7 +2,6 @@ package at.aau.serg.scotlandyard.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -82,6 +82,9 @@ fun GameBoardCanvas(
         }
     }
 
+    // Always reflects the latest onNodeClick even though pointerInput(Unit) only launches once.
+    val currentOnNodeClick by rememberUpdatedState(newValue = onNodeClick)
+
     // In MAP mode: stack a background image below the transparent Canvas.
     Box(
         modifier = modifier
@@ -120,7 +123,7 @@ fun GameBoardCanvas(
                                     val dy = tapOffset.y - pos.y
                                     dx * dx + dy * dy <= hitRadius * hitRadius
                                 }
-                                tappedNode?.let { (id, _) -> onNodeClick(id) }
+                                tappedNode?.let { (id, _) -> currentOnNodeClick?.invoke(id) }
                             }
                         }
                     } else Modifier
@@ -225,7 +228,7 @@ private fun DrawScope.drawNodes(
 
             if (isHighlighted) {
                 drawCircle(
-                    color = Color(0xFF22AA80).copy(alpha = 0.4f),
+                    color = AccentGlow.copy(alpha = 0.4f),
                     radius = nodeRadius + highlightOffset,
                     center = pos
                 )
@@ -242,7 +245,7 @@ private fun DrawScope.drawNodes(
 
             if (isHighlighted) {
                 // Highlighted: solid accent fill, skip transport colours
-                drawCircle(color = Color(0xFF22AA80), radius = nodeRadius, center = pos)
+                drawCircle(color = AccentGlow, radius = nodeRadius, center = pos)
             } else {
                 clipPath(circlePath) {
                     drawRect(
@@ -312,9 +315,19 @@ private fun DrawScope.drawPlayers(
     val outerRadius = PLAYER_RADIUS_OUTER_FACTOR * minDimension
     val innerRadius = PLAYER_RADIUS_INNER_FACTOR * minDimension
     val stackSpacing = minDimension * 0.007f
+    val stationCircleRadius = NODE_RADIUS_FACTOR * minDimension * 1.3f
 
     players.entries.forEachIndexed { index, (color, stationId) ->
         val pos = positions[stationId] ?: return@forEachIndexed
+        
+        // Draw colored circle around the station
+        drawCircle(
+            color = color,
+            radius = stationCircleRadius,
+            center = pos,
+            style = Stroke(width = minDimension * 0.0035f)
+        )
+        
         // Stack multiple player slightly offset if on same station
         val stackOffset = Offset(x = index * stackSpacing, y = -index * stackSpacing)
         val tokenPos = pos + stackOffset + Offset(0f, -(nodeRadius + 8f))
@@ -337,7 +350,7 @@ private fun GameBoardCanvasPreview() {
         GameBoardCanvas(
             highlightedNodes = setOf(1, 8, 9, 46, 58),
             playerPositions = mapOf(
-                Color(0xFF22AA80) to 1,   // detective (teal)
+                AccentGlow to 1,   // detective (teal)
                 Color(0xFF333333) to 46   // Mr. X (dark)
             )
         )
