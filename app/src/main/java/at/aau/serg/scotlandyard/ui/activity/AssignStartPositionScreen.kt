@@ -31,7 +31,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+// import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -343,6 +343,7 @@ private fun WaitingServerState() {
 }
 
 @Composable
+@Suppress("UNUSED_PARAMETER")
 private fun WaitingToSpinState(
     onSimulateShake: () -> Unit,
     onSimulateCheat: () -> Unit = {}
@@ -379,13 +380,13 @@ private fun WaitingToSpinState(
                 }
             }
             // Bottom-right: barely visible cheat
-            Box(
-                modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 8.dp).alpha(0.13f)
-            ) {
-                TextButton(onClick = onSimulateCheat) {
-                    Text(stringResource(R.string.button_cheat), fontSize = 11.sp, color = DetectiveBlue)
-                }
-            }
+//            Box(
+//                modifier = Modifier.align(Alignment.BottomEnd).padding(bottom = 8.dp).alpha(0.13f)
+//            ) {
+//                TextButton(onClick = onSimulateCheat) {
+//                    Text(stringResource(R.string.button_cheat), fontSize = 11.sp, color = DetectiveBlue)
+//                }
+//            }
         }
     } else {
         Box(
@@ -433,16 +434,16 @@ private fun WaitingToSpinState(
                 }
             }
             // Bottom-right: barely visible cheat
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(end = 12.dp, bottom = 12.dp)
-                    .alpha(0.13f)
-            ) {
-                TextButton(onClick = onSimulateCheat) {
-                    Text(stringResource(R.string.button_cheat), fontSize = 12.sp, color = DetectiveBlue)
-                }
-            }
+//            Box(
+//                modifier = Modifier
+//                    .align(Alignment.BottomEnd)
+//                    .padding(end = 12.dp, bottom = 12.dp)
+//                    .alpha(0.13f)
+//            ) {
+//                TextButton(onClick = onSimulateCheat) {
+//                    Text(stringResource(R.string.button_cheat), fontSize = 12.sp, color = DetectiveBlue)
+//                }
+//            }
         }
     }
 }

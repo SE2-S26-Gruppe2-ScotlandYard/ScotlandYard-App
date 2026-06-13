@@ -380,8 +380,9 @@ private fun GameBoardRoute(
     // Stored in ViewModel so settings navigation doesn't reset it.
     // MrX never needs this — the phase flip to DETECTIVES already disables their tickets.
     val lastDetectiveMoveRound by gameViewModel.lastDetectiveMoveRound.collectAsState()
+    val allPlayersReady = gameState?.allPlayersReady ?: false
     val movedThisTurn = !isMrX && lastDetectiveMoveRound == (gameState?.currentRound ?: -2)
-    val effectiveIsMyTurn = isMyTurn && !movedThisTurn
+    val effectiveIsMyTurn = isMyTurn && !movedThisTurn && allPlayersReady
 
     val detectiveIdOrder = gameState?.detectivePositions?.keys?.sorted() ?: emptyList()
     val playerPositions  = gameViewModel.buildPlayerPositions(isMrX, detectiveIdOrder)
@@ -403,6 +404,19 @@ private fun GameBoardRoute(
     }
 
     val ticketCounts   = remember(gameState) { gameViewModel.getTicketCounts(playerId, isMrX) }
+
+    // For detectives: gray out tickets that have no reachable destinations from their current position.
+    // Mr. X has unlimited tickets and always has connections, so we skip this for him.
+    val ticketReachable = remember(myPosition) {
+        if (myPosition == null) emptyMap()
+        else mapOf(
+            TicketType.WALKING    to gameViewModel.reachableStations(TicketType.WALKING).isNotEmpty(),
+            TicketType.ESCOOTER   to gameViewModel.reachableStations(TicketType.ESCOOTER).isNotEmpty(),
+            TicketType.CARSHARING to gameViewModel.reachableStations(TicketType.CARSHARING).isNotEmpty(),
+            TicketType.BLACK      to true,
+            TicketType.DOUBLE     to true
+        )
+    }
     val isDoubleActive = gameState?.doubleMoveActive ?: false
     val mrXRevealed    = if (!isMrX) gameState?.mrXRevealedPositions ?: emptyMap() else emptyMap()
     val mrXHistory     = if (!isMrX) gameState?.mrXMoveHistory ?: emptyList() else emptyList()
@@ -429,6 +443,8 @@ private fun GameBoardRoute(
         isDoubleActive       = isDoubleActive,
         selectedTicket       = selectedTicket,
         currentPlayerColor   = currentPlayerColor,
+        ticketReachable      = ticketReachable,
+        allPlayersReady      = allPlayersReady,
         mrXMoveHistory       = mrXHistory,
         revealHistoryIndices = revealHistoryIndices,
         ticketCounts         = ticketCounts.toMutableMap().apply {
