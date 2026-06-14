@@ -117,3 +117,18 @@ fun Context.clearSession() {
         remove(KEY_GAME_ID)
     }
 }
+private const val KEY_PLAYER_ID = "player_id"
+private const val KEY_IS_MRX = "is_mrx"
+
+fun Context.savePlayerInfo(playerId: String, isMrX: Boolean) {
+    getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit {
+        putString(KEY_PLAYER_ID, playerId)
+        putBoolean(KEY_IS_MRX, isMrX)
+    }
+}
+
+fun Context.getPlayerId(): String? =
+    getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getString(KEY_PLAYER_ID, null)
+
+fun Context.getIsMrX(): Boolean =
+    getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).getBoolean(KEY_IS_MRX, false)
