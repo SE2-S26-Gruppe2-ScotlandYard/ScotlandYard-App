@@ -68,6 +68,10 @@ class GameViewModel : ViewModel(), Callbacks {
         _lastDetectiveMoveRound.value = _gameState.value?.currentRound ?: -1
     }
 
+    fun kickPlayer(gameId: String, requesterId: String, targetId: String) {
+        gameStompService.sendKickPlayer(gameId, requesterId, targetId)
+    }
+
     fun activateDoubleMove(gameId: String, playerId: String) {
         gameStompService.sendDoubleMove(gameId, playerId)
     }

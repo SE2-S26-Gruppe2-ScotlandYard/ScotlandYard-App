@@ -478,6 +478,28 @@ private fun GameBoardRoute(
         }
     }
 
+    val hostId = gameState?.hostId
+    val playerNames = gameState?.playerNames ?: emptyMap()
+    val isHost = hostId != null && hostId == playerId
+    var showKickDialog by remember { mutableStateOf(false) }
+
+    if (showKickDialog && playerNames.isNotEmpty()) {
+        KickPlayerDialog(
+            playerNames = playerNames,
+            hostId = hostId ?: "",
+            mrXId = null,
+            onKick = { targetId ->
+                gameViewModel.kickPlayer(gameId, playerId, targetId)
+                showKickDialog = false
+            },
+            onOpenSettings = {
+                showKickDialog = false
+                navController.navigate("settings")
+            },
+            onDismiss = { showKickDialog = false }
+        )
+    }
+
     GameBoardScreen(
         isMrX                = isMrX,
         mrXRevealedPositions = mrXRevealed,
@@ -513,7 +535,13 @@ private fun GameBoardRoute(
                 if (!isMrX) gameViewModel.recordDetectiveMove()
             }
         },
-        onNavigateToSettings = { navController.navigate("settings") }
+        onNavigateToSettings = {
+            if (isHost && playerNames.isNotEmpty()) {
+                showKickDialog = true
+            } else {
+                navController.navigate("settings")
+            }
+        }
     )
 }
 
@@ -588,8 +616,10 @@ private fun GameOverEffect(
     navController: NavHostController,
     gameViewModel: GameViewModel
 ) {
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         gameViewModel.gameOver.collect { result ->
+            context.clearSession()
             when (result) {
                 "DETECTIVES_WIN" -> navController.navigate("detectiveswin/$isMrX") {
                     popUpTo("gameboard/$gameId/$playerId/$isMrX") { inclusive = true }

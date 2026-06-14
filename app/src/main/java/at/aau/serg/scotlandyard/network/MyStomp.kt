@@ -218,6 +218,21 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
+    fun sendKickPlayerInGame(gameId: String, requesterId: String, targetId: String) {
+        val json = JSONObject().apply {
+            put("gameId", gameId)
+            put("requesterId", requesterId)
+            put("targetId", targetId)
+        }
+        scope.launch {
+            try {
+                session?.sendText("/app/game/kickPlayer", json.toString()) ?: callback("Error: Not connected")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "sendKickPlayerInGame failed", e)
+            }
+        }
+    }
+
     /**
      * Subscribe to start position assignments for a specific player
      * Subscribes to: /topic/game/{gameId}/player/{playerId}/start-position
