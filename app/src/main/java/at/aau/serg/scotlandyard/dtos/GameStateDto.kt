@@ -5,6 +5,7 @@ data class GameStateDto(
     val currentRound: Int,
     val hostId: String? = null,
     val playerNames: Map<String, String>? = null,
+    val disconnectedPlayers: Set<String>? = null,
     val currentPhase: String,
     val detectivePositions: Map<String, Int>,
     val mrXPosition: Int?,

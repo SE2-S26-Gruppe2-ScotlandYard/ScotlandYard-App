@@ -19,6 +19,7 @@ fun KickPlayerDialog(
     playerNames: Map<String, String>,
     hostId: String,
     mrXId: String?,
+    disconnectedPlayers: Set<String> = emptySet(),
     onKick: (String) -> Unit,
     onOpenSettings: () -> Unit,
     onDismiss: () -> Unit
@@ -33,6 +34,7 @@ fun KickPlayerDialog(
                 Text("Spieler kicken:", color = TextMuted, fontSize = 13.sp)
                 playerNames.forEach { (playerId, name) ->
                     if (playerId != hostId) {
+                        val isDisconnected = playerId in disconnectedPlayers
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -42,8 +44,10 @@ fun KickPlayerDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = name + if (playerId == mrXId) " (Mr. X)" else "",
-                                color = TextPrimary,
+                                text = name +
+                                        (if (playerId == mrXId) " (Mr. X)" else "") +
+                                        (if (isDisconnected) "  ⚠ Offline" else ""),
+                                color = if (isDisconnected) RoleRed else TextPrimary,
                                 fontSize = 14.sp,
                                 modifier = Modifier.weight(1f)
                             )

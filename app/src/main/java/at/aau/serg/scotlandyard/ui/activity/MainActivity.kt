@@ -220,7 +220,7 @@ private fun AppNavHost(
         ) { backStackEntry ->
             MrXWinScreen(
                 isMrX = backStackEntry.arguments?.getBoolean("isMrX") ?: false,
-                onMainMenu = { navController.navigate("start") { popUpTo(0) { inclusive = true } } }
+                onMainMenu = { context.clearSession(); navController.navigate("start") { popUpTo(0) { inclusive = true } } }
             )
         }
         composable(
@@ -229,7 +229,7 @@ private fun AppNavHost(
         ) { backStackEntry ->
             DetectivesWinScreen(
                 isMrX = backStackEntry.arguments?.getBoolean("isMrX") ?: false,
-                onMainMenu = { navController.navigate("start") { popUpTo(0) { inclusive = true } } }
+                onMainMenu = { context.clearSession(); navController.navigate("start") { popUpTo(0) { inclusive = true } } }
             )
         }
     }
@@ -488,6 +488,7 @@ private fun GameBoardRoute(
             playerNames = playerNames,
             hostId = hostId ?: "",
             mrXId = null,
+            disconnectedPlayers = gameState?.disconnectedPlayers ?: emptySet(),
             onKick = { targetId ->
                 gameViewModel.kickPlayer(gameId, playerId, targetId)
                 showKickDialog = false
