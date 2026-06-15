@@ -34,6 +34,7 @@ import at.aau.serg.scotlandyard.model.TicketType
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import at.aau.serg.scotlandyard.ui.theme.MRX_COLOR
 import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
+import at.aau.serg.scotlandyard.viewmodel.RejoinEvent
 import at.aau.serg.scotlandyard.viewmodel.GameViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import androidx.compose.runtime.collectAsState
@@ -110,6 +111,13 @@ private fun ScotlandYardApp() {
                     navController.navigate("start") { popUpTo(0) }
                 }
             }
+            val rejoinEvent by authViewModel.rejoinEvent.collectAsState()
+            LaunchedEffect(rejoinEvent, currentRoute) {
+                if (currentRoute != null && currentRoute != "lobby" && rejoinEvent != null) {
+                    navController.navigate("lobby") { popUpTo(0) }
+                    authViewModel.clearRejoinEvent()
+                }
+            }
 
             LaunchedEffect(errorMessage) {
                 errorMessage?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
@@ -154,6 +162,18 @@ private fun AppNavHost(
     onSharedLobbyViewModelChange: (LobbyViewModel) -> Unit,
     onLanguageChange: (String) -> Unit
 ) {
+    val context = LocalContext.current
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) {
+            val savedGameId = context.getGameId()
+            val savedPlayerId = context.getPlayerId()
+            if (savedGameId != null && savedPlayerId != null && currentRoute != null && !currentRoute.startsWith("gameboard")) {
+                val isMrX = context.getIsMrX()
+                navController.navigate("gameboard/$savedGameId/$savedPlayerId/$isMrX") { popUpTo(0) }
+            }
+        }
+    }
+
     NavHost(navController = navController, startDestination = "start") {
         composable("start") { StartRoute(navController, currentUser) }
         composable("login") { LoginRoute(navController, currentUser, authViewModel, isConnected) }
@@ -200,7 +220,7 @@ private fun AppNavHost(
         ) { backStackEntry ->
             MrXWinScreen(
                 isMrX = backStackEntry.arguments?.getBoolean("isMrX") ?: false,
-                onMainMenu = { navController.navigate("start") { popUpTo(0) { inclusive = true } } }
+                onMainMenu = { context.clearSession(); navController.navigate("start") { popUpTo(0) { inclusive = true } } }
             )
         }
         composable(
@@ -209,15 +229,29 @@ private fun AppNavHost(
         ) { backStackEntry ->
             DetectivesWinScreen(
                 isMrX = backStackEntry.arguments?.getBoolean("isMrX") ?: false,
-                onMainMenu = { navController.navigate("start") { popUpTo(0) { inclusive = true } } }
+                onMainMenu = { context.clearSession(); navController.navigate("start") { popUpTo(0) { inclusive = true } } }
             )
         }
-
     }
 }
 
 @Composable
 private fun StartRoute(navController: NavHostController, currentUser: User?) {
+    val context = LocalContext.current
+    LaunchedEffect(currentUser) {
+        if (currentUser != null) {
+            val savedGameId = context.getGameId()
+            val savedPlayerId = context.getPlayerId()
+            if (savedGameId != null && savedPlayerId != null) {
+                val isMrX = context.getIsMrX()
+                navController.navigate("gameboard/$savedGameId/$savedPlayerId/$isMrX") {
+                    popUpTo(0)
+                }
+            } else {
+                navController.navigate("lobby") { popUpTo("start") { inclusive = true } }
+            }
+        }
+    }
     val isNavigating = rememberIsNavigating()
     StartScreen(
         onStartGame = {
@@ -239,9 +273,19 @@ private fun LoginRoute(
     isConnected: Boolean
 ) {
     val isNavigating = rememberIsNavigating()
+    val context = LocalContext.current
     LaunchedEffect(currentUser) {
         if (currentUser != null) {
-            navController.navigate("lobby") { popUpTo("login") { inclusive = true } }
+            val savedGameId = context.getGameId()
+            val savedPlayerId = context.getPlayerId()
+            if (savedGameId != null && savedPlayerId != null) {
+                val isMrX = context.getIsMrX()
+                navController.navigate("gameboard/$savedGameId/$savedPlayerId/$isMrX") {
+                    popUpTo(0)
+                }
+            } else {
+                navController.navigate("lobby") { popUpTo("login") { inclusive = true } }
+            }
         }
     }
     LoginScreen(
@@ -276,6 +320,8 @@ private fun LobbyRoute(
 ) {
     val isNavigating = rememberIsNavigating()
     val user = currentUser ?: return
+    val context = LocalContext.current
+
     LobbyScreen(
         authViewModel = authViewModel,
         onBackClick   = {
@@ -326,7 +372,6 @@ private fun AssignStartPositionRoute(
     gameId: String,
     playerId: String
 ) {
-    val isNavigating = rememberIsNavigating()
     AssignStartPositionScreen(
         gameId   = gameId,
         playerId = playerId,
@@ -348,6 +393,12 @@ private fun GameBoardRoute(
     navController: NavHostController
 ) {
     val context = LocalContext.current
+    // Game-ID, playerId, isMrX speichern wenn Spieler im Spiel ist (für Reconnect)
+    LaunchedEffect(gameId) {
+        context.saveGameId(gameId)
+        context.savePlayerInfo(playerId, isMrX)
+        context.saveLobbyId(null)
+    }
     val displayMode = remember { context.getDisplayModePreference() }
     val gameViewModel: GameViewModel = viewModel()
 
@@ -376,9 +427,6 @@ private fun GameBoardRoute(
         } ?: false
     }
 
-    // Detectives only: grey out tickets once they've moved this round, until the round advances.
-    // Stored in ViewModel so settings navigation doesn't reset it.
-    // MrX never needs this — the phase flip to DETECTIVES already disables their tickets.
     val lastDetectiveMoveRound by gameViewModel.lastDetectiveMoveRound.collectAsState()
     val allPlayersReady = gameState?.allPlayersReady ?: false
     val movedThisTurn = !isMrX && lastDetectiveMoveRound == (gameState?.currentRound ?: -2)
@@ -405,8 +453,6 @@ private fun GameBoardRoute(
 
     val ticketCounts   = remember(gameState) { gameViewModel.getTicketCounts(playerId, isMrX) }
 
-    // For detectives: gray out tickets that have no reachable destinations from their current position.
-    // Mr. X has unlimited tickets and always has connections, so we skip this for him.
     val ticketReachable = remember(myPosition) {
         if (myPosition == null) emptyMap()
         else mapOf(
@@ -430,6 +476,29 @@ private fun GameBoardRoute(
         } else {
             null
         }
+    }
+
+    val hostId = gameState?.hostId
+    val playerNames = gameState?.playerNames ?: emptyMap()
+    val isHost = hostId != null && hostId == playerId
+    var showKickDialog by remember { mutableStateOf(false) }
+
+    if (showKickDialog && playerNames.isNotEmpty()) {
+        KickPlayerDialog(
+            playerNames = playerNames,
+            hostId = hostId ?: "",
+            mrXId = null,
+            disconnectedPlayers = gameState?.disconnectedPlayers ?: emptySet(),
+            onKick = { targetId ->
+                gameViewModel.kickPlayer(gameId, playerId, targetId)
+                showKickDialog = false
+            },
+            onOpenSettings = {
+                showKickDialog = false
+                navController.navigate("settings")
+            },
+            onDismiss = { showKickDialog = false }
+        )
     }
 
     GameBoardScreen(
@@ -467,7 +536,13 @@ private fun GameBoardRoute(
                 if (!isMrX) gameViewModel.recordDetectiveMove()
             }
         },
-        onNavigateToSettings = { navController.navigate("settings") }
+        onNavigateToSettings = {
+            if (isHost && playerNames.isNotEmpty()) {
+                showKickDialog = true
+            } else {
+                navController.navigate("settings")
+            }
+        }
     )
 }
 
@@ -477,7 +552,6 @@ private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostCo
     val isConnected by lobbyVm.isConnected.collectAsState()
     val context = LocalContext.current
 
-    // Spiel startet → zur Startpositions-Auswahl
     LaunchedEffect(lobbyVm) {
         lobbyVm.navigateToGame.collect { gameId ->
             val playerId = lobbyVm.userId
@@ -487,7 +561,6 @@ private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostCo
         }
     }
 
-    // Gäste: navigieren zurück wenn Host "Back to Lobby" auslöst.
     LaunchedEffect("backToLobby", lobbyVm) {
         lobbyVm.navigateToLobby.collect {
             if (navController.currentBackStackEntry?.destination?.route == "roleSelection") {
@@ -496,14 +569,12 @@ private fun RoleSelectionRoute(lobbyVm: LobbyViewModel, navController: NavHostCo
         }
     }
 
-    // Server-Fehler als Toast anzeigen (MrX Race Condition, startGame reject, etc.)
     LaunchedEffect(lobbyVm) {
         lobbyVm.errorEvent.collect { msg ->
             Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
         }
     }
 
-    // Lobby wird null → Spieler wurde gekickt oder Lobby gelöscht
     LaunchedEffect(lobbyVm) {
         var hadLobby = false
         lobbyVm.currentLobby.collect { l ->
@@ -546,8 +617,10 @@ private fun GameOverEffect(
     navController: NavHostController,
     gameViewModel: GameViewModel
 ) {
+    val context = LocalContext.current
     LaunchedEffect(Unit) {
         gameViewModel.gameOver.collect { result ->
+            context.clearSession()
             when (result) {
                 "DETECTIVES_WIN" -> navController.navigate("detectiveswin/$isMrX") {
                     popUpTo("gameboard/$gameId/$playerId/$isMrX") { inclusive = true }
@@ -559,5 +632,3 @@ private fun GameOverEffect(
         }
     }
 }
-
-

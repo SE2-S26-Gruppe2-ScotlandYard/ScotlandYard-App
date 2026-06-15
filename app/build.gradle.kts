@@ -81,6 +81,7 @@ tasks.register<JacocoReport>("jacocoTestReport") {
         "**/viewmodel/LobbyViewModel*",
         "**/viewmodel/AuthViewModel*",
         "**/network/MyStomp*",
+        "**/network/RejoinStompService*",
         "**/network/LobbyStompService*"
     )
 
@@ -121,7 +122,7 @@ sonar {
         property("sonar.issue.ignore.multicriteria", "e1")
         property("sonar.issue.ignore.multicriteria.e1.ruleKey", "kotlin:S8569")
         property("sonar.issue.ignore.multicriteria.e1.resourceKey", "**/build.gradle.kts")
-        property("sonar.coverage.exclusions", "**/network/LobbyStompService.kt,**/network/GameStompService.kt,**/network/MyStomp.kt,**/network/ServerConfig.kt,**/viewmodel/LobbyViewModel.kt,**/viewmodel/AuthViewModel.kt,**/viewmodel/GameViewModel.kt,**/ui/activity/**,**/ui/theme/**,**/ui/components/**,**/model/BoardData.kt,**/dtos/MovementResponse.kt")
+        property("sonar.coverage.exclusions", "**/network/LobbyStompService.kt,**/network/RejoinStompService.kt,**/network/GameStompService.kt,**/network/MyStomp.kt,**/network/ServerConfig.kt,**/viewmodel/LobbyViewModel.kt,**/viewmodel/AuthViewModel.kt,**/viewmodel/GameViewModel.kt,**/ui/activity/**,**/ui/theme/**,**/ui/components/**,**/model/BoardData.kt,**/dtos/MovementResponse.kt")
 
     }
 }
