@@ -159,8 +159,11 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
-    fun sendUserConnect(nickname: String) {
-        val json = JSONObject().apply { put("nickName", nickname) }
+    fun sendUserConnect(nickname: String, userId: String? = null) {
+        val json = JSONObject().apply {
+            put("nickName", nickname)
+            if (userId != null) put("userId", userId)
+        }
         scope.launch {
             try {
                 session?.sendText("/app/user/connect", json.toString()) ?: callback("Error: Not connected")

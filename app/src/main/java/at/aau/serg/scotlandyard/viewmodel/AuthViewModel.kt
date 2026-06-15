@@ -8,6 +8,7 @@ import at.aau.serg.scotlandyard.Callbacks
 import at.aau.serg.scotlandyard.data.clearSession
 import at.aau.serg.scotlandyard.data.getGameId
 import at.aau.serg.scotlandyard.data.getLobbyId
+import at.aau.serg.scotlandyard.data.getUserId
 import at.aau.serg.scotlandyard.data.saveUserSession
 import at.aau.serg.scotlandyard.dtos.User
 import at.aau.serg.scotlandyard.dtos.UserConnectResponse
@@ -60,54 +61,52 @@ class AuthViewModel(application: Application) : AndroidViewModel(application), C
         val savedLobbyId = context.getLobbyId()
         val savedGameId = context.getGameId()
         isAttemptingRejoin = savedLobbyId != null || savedGameId != null
-        myStomp.sendUserConnect(nickname)
+        myStomp.sendUserConnect(nickname, if (isAttemptingRejoin) context.getUserId() else null)
     }
 
     override fun onResponse(res: String) {
         Log.d("AuthViewModel", "Server response: $res")
-
         if (!res.startsWith("{")) return
-
         try {
-            val response = gson.fromJson(res, UserConnectResponse::class.java)
-            if (response?.user != null) {
-                if (response.success) {
-                    _currentUser.value = response.user
-                    response.user.let { user ->
-                        myStomp.setCurrentUserId(user.id)
-                        myStomp.enablePrivateTopic(user.id)
-                        context.saveUserSession(user.id, user.nickName ?: "")
+            val response = gson.fromJson(res, UserConnectResponse::class.java) ?: return
 
-                        if (isAttemptingRejoin) {
-                            val session = myStomp.getSession()
-                            Log.d("AuthViewModel", "Rejoin: session=$session gameId=${context.getGameId()} lobbyId=${context.getLobbyId()}")
-                            if (session != null) {
-                                val rejoinService = RejoinStompService(session)
-                                val savedGameId = context.getGameId()
-                                val savedLobbyId = context.getLobbyId()
-                                when {
-                                    savedGameId != null -> {
-                                        rejoinService.rejoinGame(user.id, savedGameId)
-                                        _rejoinEvent.value = RejoinEvent.GAME
-                                        Log.d("AuthViewModel", "RejoinEvent.GAME set")
-                                    }
-                                    savedLobbyId != null -> {
-                                        rejoinService.rejoinLobby(savedLobbyId, user.id, user.nickName ?: "")
-                                        _rejoinEvent.value = RejoinEvent.LOBBY
-                                        Log.d("AuthViewModel", "RejoinEvent.LOBBY set")
-                                    }
-                                }
-                            } else {
-                                Log.e("AuthViewModel", "Session is null, cannot rejoin!")
-                                context.clearSession()
-                            }
-                            isAttemptingRejoin = false
+            if (!response.success) {
+                _errorMessage.value = response.message
+                isAttemptingRejoin = false
+                return
+            }
+
+            val user = response.user ?: return
+
+            _currentUser.value = user
+            myStomp.setCurrentUserId(user.id)
+            myStomp.enablePrivateTopic(user.id)
+            context.saveUserSession(user.id, user.nickName ?: "")
+
+            if (isAttemptingRejoin) {
+                val session = myStomp.getSession()
+                Log.d("AuthViewModel", "Rejoin: session=$session gameId=${context.getGameId()} lobbyId=${context.getLobbyId()}")
+                if (session != null) {
+                    val rejoinService = RejoinStompService(session)
+                    val savedGameId = context.getGameId()
+                    val savedLobbyId = context.getLobbyId()
+                    when {
+                        savedGameId != null -> {
+                            rejoinService.rejoinGame(user.id, savedGameId)
+                            _rejoinEvent.value = RejoinEvent.GAME
+                            Log.d("AuthViewModel", "RejoinEvent.GAME set")
+                        }
+                        savedLobbyId != null -> {
+                            rejoinService.rejoinLobby(savedLobbyId, user.id, user.nickName ?: "")
+                            _rejoinEvent.value = RejoinEvent.LOBBY
+                            Log.d("AuthViewModel", "RejoinEvent.LOBBY set")
                         }
                     }
                 } else {
-                    _errorMessage.value = response.message
-                    isAttemptingRejoin = false
+                    Log.e("AuthViewModel", "Session is null, cannot rejoin!")
+                    context.clearSession()
                 }
+                isAttemptingRejoin = false
             }
         } catch (e: Exception) {
             Log.d("AuthViewModel", "Ignoriere Response: ${e.message}")
