@@ -45,7 +45,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.aau.serg.scotlandyard.ui.theme.*
-import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.R
 
 @Composable
 fun LoginScreen(

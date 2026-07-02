@@ -9,6 +9,7 @@ import at.aau.serg.scotlandyard.data.clearSession
 import at.aau.serg.scotlandyard.data.getGameId
 import at.aau.serg.scotlandyard.data.getLobbyId
 import at.aau.serg.scotlandyard.data.getUserId
+import at.aau.serg.scotlandyard.data.getUserNickname
 import at.aau.serg.scotlandyard.data.saveUserSession
 import at.aau.serg.scotlandyard.dtos.User
 import at.aau.serg.scotlandyard.dtos.UserConnectResponse
@@ -52,6 +53,16 @@ class AuthViewModel(application: Application) : AndroidViewModel(application), C
         }
     }
 
+    fun tryAutoConnect(): Boolean {
+        val savedNickname = context.getUserNickname()
+        val savedUserId = context.getUserId()
+        if (!savedNickname.isNullOrBlank() && savedUserId != null) {
+            connectUser(savedNickname)
+            return true
+        }
+        return false
+    }
+
     fun reconnect() {
         myStomp.connect()
     }
@@ -61,7 +72,13 @@ class AuthViewModel(application: Application) : AndroidViewModel(application), C
         val savedLobbyId = context.getLobbyId()
         val savedGameId = context.getGameId()
         isAttemptingRejoin = savedLobbyId != null || savedGameId != null
-        myStomp.sendUserConnect(nickname, if (isAttemptingRejoin) context.getUserId() else null)
+        myStomp.sendUserConnect(nickname, context.getUserId())
+    }
+
+    fun renameNickname(newNickname: String) {
+        val userId = context.getUserId() ?: currentUser.value?.id ?: return
+        _errorMessage.value = null
+        myStomp.sendRenameUser(userId, newNickname)
     }
 
     override fun onResponse(res: String) {

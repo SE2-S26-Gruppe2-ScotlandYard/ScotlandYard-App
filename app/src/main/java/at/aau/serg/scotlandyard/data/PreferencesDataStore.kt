@@ -115,6 +115,9 @@ fun Context.clearSession() {
         remove(KEY_USER_NICKNAME)
         remove(KEY_LOBBY_ID)
         remove(KEY_GAME_ID)
+
+        remove(KEY_PLAYER_ID)
+        remove(KEY_IS_MRX)
     }
 }
 private const val KEY_PLAYER_ID = "player_id"

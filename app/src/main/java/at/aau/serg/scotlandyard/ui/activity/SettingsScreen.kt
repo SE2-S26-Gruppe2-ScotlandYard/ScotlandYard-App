@@ -22,11 +22,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults.colors
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +51,7 @@ import at.aau.serg.scotlandyard.data.getDisplayModePreference
 import at.aau.serg.scotlandyard.data.getLanguagePreference
 import at.aau.serg.scotlandyard.data.getServerUriCustomPreference
 import at.aau.serg.scotlandyard.data.getServerUriTypePreference
+import at.aau.serg.scotlandyard.data.getUserNickname
 import at.aau.serg.scotlandyard.data.saveDisplayModePreference
 import at.aau.serg.scotlandyard.data.saveLanguagePreference
 import at.aau.serg.scotlandyard.data.saveServerUriCustomPreference
@@ -59,17 +62,19 @@ import at.aau.serg.scotlandyard.ui.components.SectionHeader
 import at.aau.serg.scotlandyard.ui.components.SidebarItem
 import at.aau.serg.scotlandyard.ui.theme.AccentGlow
 import at.aau.serg.scotlandyard.ui.theme.AccentTeal
+import at.aau.serg.scotlandyard.ui.theme.RoleRed
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import at.aau.serg.scotlandyard.ui.theme.SidebarBg
 import at.aau.serg.scotlandyard.ui.theme.SidebarBorder
 import at.aau.serg.scotlandyard.ui.theme.TextMuted
 import at.aau.serg.scotlandyard.ui.theme.TextPrimary
-import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.R
 
 private enum class SettingsCategory(@param:StringRes val labelRes: Int, val icon: ImageVector) {
     GAMEBOARD(R.string.title_gameboard, Icons.Default.Map),
     LANGUAGE(R.string.title_language, Icons.Default.Language),
-    SERVER(R.string.title_server, Icons.Default.Wifi)
+    SERVER(R.string.title_server, Icons.Default.Wifi),
+    ACCOUNT(R.string.title_account, Icons.Default.Person)
 }
 
 private val selectedFactor = 0.86f
@@ -80,7 +85,11 @@ fun SettingsScreen(
     isInGame: Boolean = false,
     onDisplayModeChange: (BoardDisplayMode) -> Unit = {},
     onLanguageChange: (String) -> Unit = {},
-    onServerChange: () -> Unit = {}
+    onServerChange: () -> Unit = {},
+    onNicknameChange: (String) -> Unit = {},
+    currentNickname: String = "",
+    nicknameError: String? = null,
+    onAccountTabSelected: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var selectedCategory by remember { mutableStateOf(SettingsCategory.GAMEBOARD) }
@@ -88,6 +97,12 @@ fun SettingsScreen(
     var selectedLanguage by remember { mutableStateOf(context.getLanguagePreference()) }
     var serverUriType by remember { mutableStateOf(context.getServerUriTypePreference()) }
     var serverUriCustom by remember { mutableStateOf(context.getServerUriCustomPreference()) }
+
+    LaunchedEffect(selectedCategory) {
+        if (selectedCategory == SettingsCategory.ACCOUNT) {
+            onAccountTabSelected()
+        }
+    }
 
     BaseScreen(onBackClick = onBackClick, title = stringResource(R.string.title_settings)) { _ ->
         Row(modifier = Modifier.fillMaxSize()) {
@@ -137,6 +152,12 @@ fun SettingsScreen(
                             context.saveServerUriCustomPreference(uri)
                             if (serverUriType == "DEVICE") ServerConfig.init(context)
                         }
+                    )
+
+                    SettingsCategory.ACCOUNT -> AccountSettingsContent(
+                        currentNickname = currentNickname,
+                        onSave = onNicknameChange,
+                        errorMessage = nicknameError
                     )
                 }
             }
@@ -492,6 +513,78 @@ private fun ServerSettingsContent(
     }
 }
 
+@Composable
+private fun AccountSettingsContent(
+    currentNickname: String,
+    onSave: (String) -> Unit,
+    // FIX ANFANG (9)
+    errorMessage: String?
+    // FIX ENDE (9)
+) {
+    var nicknameInput by remember(currentNickname) { mutableStateOf(currentNickname) }
+    val trimmedInput = nicknameInput.trim()
+    val hasChanges = trimmedInput.isNotEmpty() && trimmedInput != currentNickname
+
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Top) {
+        SectionHeader(
+            icon = Icons.Default.Person,
+            title = stringResource(R.string.title_account),
+            subtitle = stringResource(R.string.settings_account_description),
+            bottomSpacing = 20.dp
+        )
+
+        OutlinedTextField(
+            value = nicknameInput,
+            onValueChange = { input ->
+                nicknameInput =
+                    input.filter { c -> c in 'a'..'z' || c in 'A'..'Z' || c in '0'..'9' }.take(8)
+            },
+            label = { Text(stringResource(R.string.description_nickname), color = TextMuted) },
+            supportingText = {
+                Text(
+                    text = errorMessage ?: stringResource(R.string.nickname_hint),
+                    color = if (errorMessage != null) RoleRed else TextMuted,
+                    fontSize = 11.sp
+                )
+            },
+            isError = errorMessage != null,
+            singleLine = true,
+            colors = colors(
+                focusedTextColor = Color.White,
+                unfocusedTextColor = Color.White,
+                focusedBorderColor = AccentGlow,
+                unfocusedBorderColor = TextMuted,
+                focusedLabelColor = AccentGlow,
+                unfocusedLabelColor = TextMuted,
+                cursorColor = AccentGlow
+            ),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier
+                .clip(RoundedCornerShape(10.dp))
+                .background(if (hasChanges) AccentTeal.copy(alpha = selectedFactor) else SidebarBg)
+                .border(
+                    1.dp,
+                    if (hasChanges) AccentGlow else SidebarBorder,
+                    RoundedCornerShape(10.dp)
+                )
+                .then(if (hasChanges) Modifier.clickable { onSave(trimmedInput) } else Modifier)
+                .padding(horizontal = 24.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = stringResource(R.string.settings_nickname_save),
+                color = if (hasChanges) AccentGlow else TextMuted,
+                fontWeight = FontWeight.SemiBold,
+                fontSize = 14.sp
+            )
+        }
+    }
+}
 
 @Preview(showBackground = true, widthDp = 800, heightDp = 400)
 @Composable

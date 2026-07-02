@@ -42,7 +42,7 @@ import at.aau.serg.scotlandyard.ui.components.AppActionButton
 import at.aau.serg.scotlandyard.ui.components.AppDarkActionButton
 import at.aau.serg.scotlandyard.ui.components.AppSettingsButton
 import at.aau.serg.scotlandyard.ui.theme.*
-import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.R
 
 @Composable
 fun StartScreen(

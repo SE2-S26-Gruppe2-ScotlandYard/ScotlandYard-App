@@ -72,6 +72,10 @@ class GameViewModel : ViewModel(), Callbacks {
         gameStompService.sendKickPlayer(gameId, requesterId, targetId)
     }
 
+    fun deleteGame(gameId: String, requesterId: String) {
+        gameStompService.sendDeleteGame(gameId, requesterId)
+    }
+
     fun activateDoubleMove(gameId: String, playerId: String) {
         gameStompService.sendDoubleMove(gameId, playerId)
     }

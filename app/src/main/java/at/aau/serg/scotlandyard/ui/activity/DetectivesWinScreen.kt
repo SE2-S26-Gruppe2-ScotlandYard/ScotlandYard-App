@@ -23,7 +23,7 @@ import at.aau.serg.scotlandyard.ui.components.WinScreenScaffold
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
 import at.aau.serg.scotlandyard.ui.theme.SirenBlue
 import at.aau.serg.scotlandyard.ui.theme.SirenRed
-import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.R
 
 @Composable
 fun DetectivesWinScreen(isMrX: Boolean, onMainMenu: () -> Unit) {

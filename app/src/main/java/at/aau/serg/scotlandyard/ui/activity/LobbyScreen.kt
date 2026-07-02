@@ -42,7 +42,7 @@ import at.aau.serg.scotlandyard.viewmodel.AuthViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModelFactory
 import at.aau.serg.scotlandyard.data.saveLobbyId
-import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.R
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -459,7 +459,7 @@ private fun InLobbyView(
         }
 
         if (isHost) {
-            val canProceed = lobby.users.size >= 3
+            val canProceed = lobby.users.size >= 1
             LobbyStartButton(
                 text    = if (canProceed) stringResource(R.string.lobby_button_continue_role_selection)
                           else stringResource(R.string.lobby_status_min_players),

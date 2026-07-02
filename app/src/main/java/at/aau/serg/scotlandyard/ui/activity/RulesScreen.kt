@@ -54,7 +54,7 @@ import at.aau.serg.scotlandyard.ui.theme.SidebarBorder
 import at.aau.serg.scotlandyard.ui.theme.TextMuted
 import at.aau.serg.scotlandyard.ui.theme.TextPrimary
 import at.aau.serg.scotlandyard.ui.theme.WalkingColor
-import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.R
 
 private enum class RulesSection(
     val icon: ImageVector,

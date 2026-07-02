@@ -41,7 +41,7 @@ import androidx.compose.runtime.collectAsState
 import android.util.Log
 import at.aau.serg.scotlandyard.data.*
 import at.aau.serg.scotlandyard.network.ServerConfig
-import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.R
 import androidx.activity.compose.BackHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -175,7 +175,7 @@ private fun AppNavHost(
     }
 
     NavHost(navController = navController, startDestination = "start") {
-        composable("start") { StartRoute(navController, currentUser) }
+        composable("start") { StartRoute(navController, currentUser, authViewModel) }
         composable("login") { LoginRoute(navController, currentUser, authViewModel, isConnected) }
         composable("rules") { RulesRoute(navController) }
         composable("lobby") {
@@ -236,10 +236,16 @@ private fun AppNavHost(
 }
 
 @Composable
-private fun StartRoute(navController: NavHostController, currentUser: User?) {
+private fun StartRoute(
+    navController: NavHostController,
+    currentUser: User?,
+    authViewModel: AuthViewModel
+) {
     val context = LocalContext.current
-    LaunchedEffect(currentUser) {
-        if (currentUser != null) {
+    var awaitingAutoConnect by remember { mutableStateOf(false) }
+    LaunchedEffect(currentUser, awaitingAutoConnect) {
+        if (currentUser != null && awaitingAutoConnect) {
+            awaitingAutoConnect = false
             val savedGameId = context.getGameId()
             val savedPlayerId = context.getPlayerId()
             if (savedGameId != null && savedPlayerId != null) {
@@ -248,7 +254,7 @@ private fun StartRoute(navController: NavHostController, currentUser: User?) {
                     popUpTo(0)
                 }
             } else {
-                navController.navigate("lobby") { popUpTo("start") { inclusive = true } }
+                navController.navigate("lobby") { popUpTo("start") }
             }
         }
     }
@@ -256,8 +262,20 @@ private fun StartRoute(navController: NavHostController, currentUser: User?) {
     StartScreen(
         onStartGame = {
             if (!isNavigating.value) {
-                isNavigating.value = true
-                if (currentUser != null) navController.navigate("lobby") else navController.navigate("login")
+                when {
+                    currentUser != null -> {
+                        isNavigating.value = true
+                        navController.navigate("lobby")
+                    }
+                    authViewModel.tryAutoConnect() -> {
+                        isNavigating.value = true
+                        awaitingAutoConnect = true
+                    }
+                    else -> {
+                        isNavigating.value = true
+                        navController.navigate("login")
+                    }
+                }
             }
         },
         onRules     = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("rules") } },
@@ -353,6 +371,9 @@ private fun SettingsRoute(
     val isInGame = remember {
         navController.previousBackStackEntry?.destination?.route?.contains("gameboard") == true
     }
+    val currentUser by authViewModel.currentUser.collectAsState()
+    val errorMessage by authViewModel.errorMessage.collectAsState()
+
     SettingsScreen(
         onBackClick = {
             if (!isNavigating.value && navController.previousBackStackEntry != null) {
@@ -361,7 +382,15 @@ private fun SettingsRoute(
         },
         isInGame = isInGame,
         onLanguageChange = onLanguageChange,
-        onServerChange   = { authViewModel.reconnect() }
+        onServerChange   = { authViewModel.reconnect() },
+        onNicknameChange = { newNickname -> authViewModel.renameNickname(newNickname) },
+        currentNickname = currentUser?.nickName ?: "",
+        nicknameError = errorMessage,
+        onAccountTabSelected = {
+            if (currentUser == null) {
+                authViewModel.tryAutoConnect()
+            }
+        }
     )
 }
 
@@ -393,12 +422,6 @@ private fun GameBoardRoute(
     navController: NavHostController
 ) {
     val context = LocalContext.current
-    // Game-ID, playerId, isMrX speichern wenn Spieler im Spiel ist (für Reconnect)
-    LaunchedEffect(gameId) {
-        context.saveGameId(gameId)
-        context.savePlayerInfo(playerId, isMrX)
-        context.saveLobbyId(null)
-    }
     val displayMode = remember { context.getDisplayModePreference() }
     val gameViewModel: GameViewModel = viewModel()
 
@@ -411,6 +434,18 @@ private fun GameBoardRoute(
         if (gameViewModel.gameState.value == null) {
             Log.d("MainActivity", "GameState still null after 3 s – retrying requestGameState")
             gameViewModel.requestGameState(gameId)
+            delay(2_000.milliseconds)
+        }
+
+        if (gameViewModel.gameState.value == null) {
+            Log.w("MainActivity", "GameState is null. Game '$gameId' does not exist. Returning to Lobby.")
+            context.clearSession()
+            Toast.makeText(context, R.string.toast_game_not_found, Toast.LENGTH_LONG).show()
+            navController.navigate("start") { popUpTo(0) }
+        } else {
+            context.saveGameId(gameId)
+            context.savePlayerInfo(playerId, isMrX)
+            context.saveLobbyId(null)
         }
     }
 
@@ -497,7 +532,11 @@ private fun GameBoardRoute(
                 showKickDialog = false
                 navController.navigate("settings")
             },
-            onDismiss = { showKickDialog = false }
+            onDismiss = { showKickDialog = false },
+            onDeleteGame = {
+                gameViewModel.deleteGame(gameId, playerId)
+                showKickDialog = false
+            }
         )
     }
 
@@ -627,6 +666,14 @@ private fun GameOverEffect(
                 }
                 "MRX_WINS" -> navController.navigate("mrxwin/$isMrX") {
                     popUpTo("gameboard/$gameId/$playerId/$isMrX") { inclusive = true }
+                }
+                "GAME_DELETED" -> {
+                    Toast.makeText(
+                        context,
+                        R.string.toast_game_deleted_by_host,
+                        Toast.LENGTH_LONG
+                    ).show()
+                    navController.navigate("start") { popUpTo(0) }
                 }
             }
         }

@@ -33,7 +33,7 @@ import at.aau.serg.scotlandyard.model.LobbyData
 import at.aau.serg.scotlandyard.model.LobbyUserData
 import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.viewmodel.LobbyViewModel
-import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.R
 
 private val MrXPink = Color(0xFFEF9A9A)
 

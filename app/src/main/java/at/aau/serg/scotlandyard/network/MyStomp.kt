@@ -173,6 +173,20 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
+    fun sendRenameUser(userId: String, newNickname: String) {
+        val json = JSONObject().apply {
+            put("userId", userId)
+            put("newNickName", newNickname)
+        }
+        scope.launch {
+            try {
+                session?.sendText("/app/user/rename", json.toString()) ?: callback("Error: Not connected")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "sendRenameUser failed", e)
+            }
+        }
+    }
+
     fun connectToGame(gameId: String) {
         currentGameId = gameId
         scope.launch {
@@ -232,6 +246,20 @@ class MyStomp(val callbacks: Callbacks) {
                 session?.sendText("/app/game/kickPlayer", json.toString()) ?: callback("Error: Not connected")
             } catch (e: Exception) {
                 Log.e("MyStomp", "sendKickPlayerInGame failed", e)
+            }
+        }
+    }
+
+    fun sendDeleteGame(gameId: String, requesterId: String) {
+        val json = JSONObject().apply {
+            put("gameId", gameId)
+            put("requesterId", requesterId)
+        }
+        scope.launch {
+            try {
+                session?.sendText("/app/game/delete", json.toString()) ?: callback("Error: Not connected")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "sendDeleteGame failed", e)
             }
         }
     }
