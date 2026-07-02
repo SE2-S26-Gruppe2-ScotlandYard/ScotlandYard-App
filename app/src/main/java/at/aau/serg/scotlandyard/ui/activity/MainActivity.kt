@@ -414,6 +414,7 @@ private fun AssignStartPositionRoute(
     )
 }
 
+@SuppressLint("LocalContextGetResourceValueCall")
 @Composable
 private fun GameBoardRoute(
     gameId: String,
