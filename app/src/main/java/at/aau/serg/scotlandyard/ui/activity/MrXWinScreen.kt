@@ -18,7 +18,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import at.aau.serg.scotlandyard.ui.components.WinScreenScaffold
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
-import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.R
 
 @Composable
 fun MrXWinScreen(isMrX: Boolean, onMainMenu: () -> Unit) {

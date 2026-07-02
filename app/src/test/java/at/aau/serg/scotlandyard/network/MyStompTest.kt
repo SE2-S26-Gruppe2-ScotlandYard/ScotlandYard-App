@@ -88,5 +88,33 @@ class MyStompTest {
             "isConnected StateFlow must be exposed"
         )
     }
+
+    @Test
+    fun sendUserConnect_method_has_correct_signature() {
+        assertTrue(MyStomp::class.java.declaredMethods.any {
+            it.name == "sendUserConnect" && it.parameterCount == 2
+        }, "sendUserConnect(nickname, userId) must exist")
+    }
+
+    @Test
+    fun sendRenameUser_method_has_correct_signature() {
+        assertTrue(MyStomp::class.java.declaredMethods.any {
+            it.name == "sendRenameUser" && it.parameterCount == 2
+        }, "sendRenameUser(userId, newNickname) must exist")
+    }
+
+    @Test
+    fun sendKickPlayerInGame_method_has_correct_signature() {
+        assertTrue(MyStomp::class.java.declaredMethods.any {
+            it.name == "sendKickPlayerInGame" && it.parameterCount == 3
+        }, "sendKickPlayerInGame(gameId, requesterId, targetId) must exist")
+    }
+
+    @Test
+    fun sendDeleteGame_method_has_correct_signature() {
+        assertTrue(MyStomp::class.java.declaredMethods.any {
+            it.name == "sendDeleteGame" && it.parameterCount == 2
+        }, "sendDeleteGame(gameId, requesterId) must exist")
+    }
 }
 

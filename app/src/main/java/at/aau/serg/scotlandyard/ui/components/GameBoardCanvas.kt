@@ -35,7 +35,7 @@ import at.aau.serg.scotlandyard.model.BoardDisplayMode
 import at.aau.serg.scotlandyard.model.TicketType
 import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
-import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.R
 
 // Board width:height has been tested in 5:4 aspect ratio
 const val BOARD_WIDTH_DP = 900f

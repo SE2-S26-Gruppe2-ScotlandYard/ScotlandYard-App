@@ -61,7 +61,7 @@ import at.aau.serg.scotlandyard.model.StartPositionConstants
 import at.aau.serg.scotlandyard.ui.components.SpinnerWheelPicker
 import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.viewmodel.GameViewModel
-import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.R
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 

@@ -68,7 +68,7 @@ import at.aau.serg.scotlandyard.ui.theme.SidebarBg
 import at.aau.serg.scotlandyard.ui.theme.SidebarBorder
 import at.aau.serg.scotlandyard.ui.theme.TextMuted
 import at.aau.serg.scotlandyard.ui.theme.TextPrimary
-import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.R
 
 private enum class SettingsCategory(@param:StringRes val labelRes: Int, val icon: ImageVector) {
     GAMEBOARD(R.string.title_gameboard, Icons.Default.Map),

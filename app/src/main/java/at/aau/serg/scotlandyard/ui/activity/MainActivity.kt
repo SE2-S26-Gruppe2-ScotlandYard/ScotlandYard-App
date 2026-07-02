@@ -41,7 +41,7 @@ import androidx.compose.runtime.collectAsState
 import android.util.Log
 import at.aau.serg.scotlandyard.data.*
 import at.aau.serg.scotlandyard.network.ServerConfig
-import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.R
 import androidx.activity.compose.BackHandler
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first

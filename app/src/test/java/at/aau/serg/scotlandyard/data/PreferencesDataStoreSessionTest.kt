@@ -126,4 +126,11 @@ class PreferencesDataStoreSessionTest {
         verify(mockEditor).remove("lobby_id")
         verify(mockEditor).remove("game_id")
     }
+
+    @Test
+    fun `clearSession also removes player_id and is_mrx`() {
+        mockContext.clearSession()
+        verify(mockEditor).remove("player_id")
+        verify(mockEditor).remove("is_mrx")
+    }
 }

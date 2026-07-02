@@ -78,7 +78,7 @@ import at.aau.serg.scotlandyard.model.TicketStyleProvider
 import at.aau.serg.scotlandyard.ui.components.GameBoardCanvas
 import at.aau.serg.scotlandyard.ui.theme.*
 import at.aau.serg.scotlandyard.ui.theme.ScotlandYardTheme
-import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.R
 import kotlin.math.abs
 
 /**

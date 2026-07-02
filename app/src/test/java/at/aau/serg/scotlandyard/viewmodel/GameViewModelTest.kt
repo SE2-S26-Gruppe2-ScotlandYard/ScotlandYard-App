@@ -128,12 +128,30 @@ class GameViewModelTest {
             it.name == "buildPlayerPositions" && it.parameterCount == 2
         }, "buildPlayerPositions(isMrX, detectiveIdOrder) must exist")
     }
+
+    @Test
+    fun kickPlayer_method_has_correct_signature() {
+        val methods = GameViewModel::class.java.declaredMethods
+        assertTrue(methods.any {
+            it.name == "kickPlayer" && it.parameterCount == 3
+        }, "kickPlayer(gameId, requesterId, targetId) must exist")
+    }
+
+    @Test
+    fun deleteGame_method_has_correct_signature() {
+        val methods = GameViewModel::class.java.declaredMethods
+        assertTrue(methods.any {
+            it.name == "deleteGame" && it.parameterCount == 2
+        }, "deleteGame(gameId, requesterId) must exist so the host can delete the game + lobby")
+    }
+
+    @Test
+    fun gameOver_sharedflow_is_exposed() {
+        val methods = GameViewModel::class.java.methods
+        assertTrue(
+            methods.any { it.name == "getGameOver" },
+            "gameOver SharedFlow must be exposed so GameOverEffect can react to " +
+                    "DETECTIVES_WIN / MRX_WINS / GAME_DELETED"
+        )
+    }
 }
-
-
-
-
-
-
-
-

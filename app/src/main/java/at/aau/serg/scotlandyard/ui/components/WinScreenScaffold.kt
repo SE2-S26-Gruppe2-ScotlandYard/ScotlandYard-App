@@ -27,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import at.aau.serg.scotlandyard.ui.theme.LoseRed
 import at.aau.serg.scotlandyard.ui.theme.WinGreen
-import com.example.scotlandyard.R
+import at.aau.serg.scotlandyard.R
 
 @Composable
 fun WinScreenScaffold(
