@@ -414,7 +414,6 @@ private fun AssignStartPositionRoute(
     )
 }
 
-@SuppressLint("LocalContextGetResourceValueCall")
 @Composable
 private fun GameBoardRoute(
     gameId: String,
@@ -441,7 +440,7 @@ private fun GameBoardRoute(
         if (gameViewModel.gameState.value == null) {
             Log.w("MainActivity", "GameState is null. Game '$gameId' does not exist. Returning to Lobby.")
             context.clearSession()
-            Toast.makeText(context, context.getString(R.string.toast_game_not_found), Toast.LENGTH_LONG).show()
+            Toast.makeText(context, R.string.toast_game_not_found, Toast.LENGTH_LONG).show()
             navController.navigate("start") { popUpTo(0) }
         } else {
             context.saveGameId(gameId)
@@ -671,7 +670,7 @@ private fun GameOverEffect(
                 "GAME_DELETED" -> {
                     Toast.makeText(
                         context,
-                        context.getString(R.string.toast_game_deleted_by_host),
+                        R.string.toast_game_deleted_by_host,
                         Toast.LENGTH_LONG
                     ).show()
                     navController.navigate("start") { popUpTo(0) }
