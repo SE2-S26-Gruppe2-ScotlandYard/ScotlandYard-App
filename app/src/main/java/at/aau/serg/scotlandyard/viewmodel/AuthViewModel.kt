@@ -48,15 +48,19 @@ class AuthViewModel(application: Application) : AndroidViewModel(application), C
             myStomp.isConnected.collect { connected ->
                 if (!connected) {
                     _currentUser.value = null
-                } else {
-                    val savedNickname = context.getUserNickname()
-                    val savedUserId = context.getUserId()
-                    if (_currentUser.value == null && savedNickname != null && !savedNickname.isBlank() && savedUserId != null) {
-                        connectUser(savedNickname)
-                    }
                 }
             }
         }
+    }
+
+    fun tryAutoConnect(): Boolean {
+        val savedNickname = context.getUserNickname()
+        val savedUserId = context.getUserId()
+        if (!savedNickname.isNullOrBlank() && savedUserId != null) {
+            connectUser(savedNickname)
+            return true
+        }
+        return false
     }
 
     fun reconnect() {

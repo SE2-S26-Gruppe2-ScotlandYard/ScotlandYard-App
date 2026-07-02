@@ -175,7 +175,7 @@ private fun AppNavHost(
     }
 
     NavHost(navController = navController, startDestination = "start") {
-        composable("start") { StartRoute(navController, currentUser) }
+        composable("start") { StartRoute(navController, currentUser, authViewModel) }
         composable("login") { LoginRoute(navController, currentUser, authViewModel, isConnected) }
         composable("rules") { RulesRoute(navController) }
         composable("lobby") {
@@ -236,7 +236,11 @@ private fun AppNavHost(
 }
 
 @Composable
-private fun StartRoute(navController: NavHostController, currentUser: User?) {
+private fun StartRoute(
+    navController: NavHostController,
+    currentUser: User?,
+    authViewModel: AuthViewModel
+) {
     val context = LocalContext.current
     LaunchedEffect(currentUser) {
         if (currentUser != null) {
@@ -256,8 +260,19 @@ private fun StartRoute(navController: NavHostController, currentUser: User?) {
     StartScreen(
         onStartGame = {
             if (!isNavigating.value) {
-                isNavigating.value = true
-                if (currentUser != null) navController.navigate("lobby") else navController.navigate("login")
+                when {
+                    currentUser != null -> {
+                        isNavigating.value = true
+                        navController.navigate("lobby")
+                    }
+                    authViewModel.tryAutoConnect() -> {
+                        isNavigating.value = true
+                    }
+                    else -> {
+                        isNavigating.value = true
+                        navController.navigate("login")
+                    }
+                }
             }
         },
         onRules     = { if (!isNavigating.value) { isNavigating.value = true; navController.navigate("rules") } },
