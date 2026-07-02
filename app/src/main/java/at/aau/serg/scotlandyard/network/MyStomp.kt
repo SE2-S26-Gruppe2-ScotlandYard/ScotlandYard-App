@@ -173,6 +173,20 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
+    fun sendRenameUser(userId: String, newNickname: String) {
+        val json = JSONObject().apply {
+            put("userId", userId)
+            put("newNickName", newNickname)
+        }
+        scope.launch {
+            try {
+                session?.sendText("/app/user/rename", json.toString()) ?: callback("Error: Not connected")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "sendRenameUser failed", e)
+            }
+        }
+    }
+
     fun connectToGame(gameId: String) {
         currentGameId = gameId
         scope.launch {

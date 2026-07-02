@@ -75,6 +75,12 @@ class AuthViewModel(application: Application) : AndroidViewModel(application), C
         myStomp.sendUserConnect(nickname, context.getUserId())
     }
 
+    fun renameNickname(newNickname: String) {
+        val userId = context.getUserId() ?: currentUser.value?.id ?: return
+        _errorMessage.value = null
+        myStomp.sendRenameUser(userId, newNickname)
+    }
+
     override fun onResponse(res: String) {
         Log.d("AuthViewModel", "Server response: $res")
         if (!res.startsWith("{")) return

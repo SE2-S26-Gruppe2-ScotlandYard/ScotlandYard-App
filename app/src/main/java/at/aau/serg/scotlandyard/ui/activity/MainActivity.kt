@@ -371,6 +371,9 @@ private fun SettingsRoute(
     val isInGame = remember {
         navController.previousBackStackEntry?.destination?.route?.contains("gameboard") == true
     }
+    val currentUser by authViewModel.currentUser.collectAsState()
+    val errorMessage by authViewModel.errorMessage.collectAsState()
+
     SettingsScreen(
         onBackClick = {
             if (!isNavigating.value && navController.previousBackStackEntry != null) {
@@ -379,7 +382,15 @@ private fun SettingsRoute(
         },
         isInGame = isInGame,
         onLanguageChange = onLanguageChange,
-        onServerChange   = { authViewModel.reconnect() }
+        onServerChange   = { authViewModel.reconnect() },
+        onNicknameChange = { newNickname -> authViewModel.renameNickname(newNickname) },
+        currentNickname = currentUser?.nickName ?: "",
+        nicknameError = errorMessage,
+        onAccountTabSelected = {
+            if (currentUser == null) {
+                authViewModel.tryAutoConnect()
+            }
+        }
     )
 }
 
