@@ -503,7 +503,11 @@ private fun GameBoardRoute(
                 showKickDialog = false
                 navController.navigate("settings")
             },
-            onDismiss = { showKickDialog = false }
+            onDismiss = { showKickDialog = false },
+            onDeleteGame = {
+                gameViewModel.deleteGame(gameId, playerId)
+                showKickDialog = false
+            }
         )
     }
 
@@ -633,6 +637,14 @@ private fun GameOverEffect(
                 }
                 "MRX_WINS" -> navController.navigate("mrxwin/$isMrX") {
                     popUpTo("gameboard/$gameId/$playerId/$isMrX") { inclusive = true }
+                }
+                "GAME_DELETED" -> {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.toast_game_deleted_by_host),
+                        Toast.LENGTH_LONG
+                    ).show()
+                    navController.navigate("start") { popUpTo(0) }
                 }
             }
         }

@@ -3,9 +3,15 @@ package at.aau.serg.scotlandyard.ui.activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,15 +30,55 @@ fun KickPlayerDialog(
     disconnectedPlayers: Set<String> = emptySet(),
     onKick: (String) -> Unit,
     onOpenSettings: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onDeleteGame: () -> Unit = {}
 ) {
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            containerColor = SidebarBg,
+            shape = RoundedCornerShape(16.dp),
+            title = { Text(stringResource(R.string.title_delete_game), color = TextPrimary, fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    stringResource(R.string.description_delete_game),
+                    color = TextMuted,
+                    fontSize = 13.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showDeleteConfirmation = false
+                        onDeleteGame()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = RoleRed)
+                ) {
+                    Text(stringResource(R.string.button_confirm), color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteConfirmation = false }) {
+                    Text(stringResource(R.string.button_cancel), color = TextMuted)
+                }
+            }
+        )
+    }
+
     AlertDialog(
         onDismissRequest = onDismiss,
         containerColor = SidebarBg,
         shape = RoundedCornerShape(16.dp),
         title = { Text(stringResource(R.string.title_menu), color = TextPrimary, fontWeight = FontWeight.Bold) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
                 Text(stringResource(R.string.kick_player_confirm), color = TextMuted, fontSize = 13.sp)
                 playerNames.forEach { (playerId, name) ->
                     if (playerId != hostId) {
@@ -74,6 +120,14 @@ fun KickPlayerDialog(
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(stringResource(R.string.title_settings), color = Color.White)
+                }
+                Button(
+                    onClick = { showDeleteConfirmation = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = RoleRed),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(stringResource(R.string.title_delete_game), color = Color.White)
                 }
             }
         },

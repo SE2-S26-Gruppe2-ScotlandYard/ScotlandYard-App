@@ -152,4 +152,7 @@
     <string name="toast_connection_lost">Connection lost!</string>
     <string name="toast_game_not_found">Game session no longer exists. Returning to main menu.</string>
     <string name="status_mrx">(Mr. X)</string>
+    <string name="title_delete_game">Delete Game</string>
+    <string name="description_delete_game">The game will be deleted for all players.</string>
+    <string name="toast_game_deleted_by_host">Game has been deleted by the host.</string>
 </resources>

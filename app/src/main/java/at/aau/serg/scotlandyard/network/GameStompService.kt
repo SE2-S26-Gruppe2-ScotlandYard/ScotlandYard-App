@@ -76,6 +76,10 @@ class GameStompService(private val myStomp: MyStomp) {
         myStomp.sendKickPlayerInGame(gameId, requesterId, targetId)
     }
 
+    fun sendDeleteGame(gameId: String, requesterId: String) {
+        myStomp.sendDeleteGame(gameId, requesterId)
+    }
+
     fun sendDoubleMove(gameId: String, playerId: String) {
         myStomp.sendMove(gameId, playerId, "DOUBLE", 0)
     }

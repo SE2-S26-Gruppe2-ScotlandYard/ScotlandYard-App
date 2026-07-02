@@ -236,6 +236,20 @@ class MyStomp(val callbacks: Callbacks) {
         }
     }
 
+    fun sendDeleteGame(gameId: String, requesterId: String) {
+        val json = JSONObject().apply {
+            put("gameId", gameId)
+            put("requesterId", requesterId)
+        }
+        scope.launch {
+            try {
+                session?.sendText("/app/game/delete", json.toString()) ?: callback("Error: Not connected")
+            } catch (e: Exception) {
+                Log.e("MyStomp", "sendDeleteGame failed", e)
+            }
+        }
+    }
+
     /**
      * Subscribe to start position assignments for a specific player
      * Subscribes to: /topic/game/{gameId}/player/{playerId}/start-position

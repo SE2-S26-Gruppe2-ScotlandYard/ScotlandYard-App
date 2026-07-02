@@ -141,4 +141,7 @@
     <string name="settings_server_custom">Individuell</string>
     <string name="toast_game_not_found">pielsitzung existiert nicht mehr. Zurück zum Hauptmenü.</string>
     <string name="status_mrx">(Mr. X)</string>
+    <string name="title_delete_game">Spiel löschen</string>
+    <string name="description_delete_game">Das Spiel wird für alle Spieler unwiderruflich gelöscht.</string>
+    <string name="toast_game_deleted_by_host">Das Spiel wurde gelöscht.</string>
 </resources>
