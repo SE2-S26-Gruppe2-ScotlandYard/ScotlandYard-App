@@ -242,8 +242,10 @@ private fun StartRoute(
     authViewModel: AuthViewModel
 ) {
     val context = LocalContext.current
-    LaunchedEffect(currentUser) {
-        if (currentUser != null) {
+    var awaitingAutoConnect by remember { mutableStateOf(false) }
+    LaunchedEffect(currentUser, awaitingAutoConnect) {
+        if (currentUser != null && awaitingAutoConnect) {
+            awaitingAutoConnect = false
             val savedGameId = context.getGameId()
             val savedPlayerId = context.getPlayerId()
             if (savedGameId != null && savedPlayerId != null) {
@@ -252,7 +254,7 @@ private fun StartRoute(
                     popUpTo(0)
                 }
             } else {
-                navController.navigate("lobby") { popUpTo("start") { inclusive = true } }
+                navController.navigate("lobby") { popUpTo("start") }
             }
         }
     }
@@ -267,6 +269,7 @@ private fun StartRoute(
                     }
                     authViewModel.tryAutoConnect() -> {
                         isNavigating.value = true
+                        awaitingAutoConnect = true
                     }
                     else -> {
                         isNavigating.value = true
