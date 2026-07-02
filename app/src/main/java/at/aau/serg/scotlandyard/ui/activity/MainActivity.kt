@@ -393,12 +393,6 @@ private fun GameBoardRoute(
     navController: NavHostController
 ) {
     val context = LocalContext.current
-    // Game-ID, playerId, isMrX speichern wenn Spieler im Spiel ist (für Reconnect)
-    LaunchedEffect(gameId) {
-        context.saveGameId(gameId)
-        context.savePlayerInfo(playerId, isMrX)
-        context.saveLobbyId(null)
-    }
     val displayMode = remember { context.getDisplayModePreference() }
     val gameViewModel: GameViewModel = viewModel()
 
@@ -411,6 +405,18 @@ private fun GameBoardRoute(
         if (gameViewModel.gameState.value == null) {
             Log.d("MainActivity", "GameState still null after 3 s – retrying requestGameState")
             gameViewModel.requestGameState(gameId)
+            delay(2_000.milliseconds)
+        }
+
+        if (gameViewModel.gameState.value == null) {
+            Log.w("MainActivity", "GameState is null. Game '$gameId' does not exist. Returning to Lobby.")
+            context.clearSession()
+            Toast.makeText(context, context.getString(R.string.toast_game_not_found), Toast.LENGTH_LONG).show()
+            navController.navigate("start") { popUpTo(0) }
+        } else {
+            context.saveGameId(gameId)
+            context.savePlayerInfo(playerId, isMrX)
+            context.saveLobbyId(null)
         }
     }
 
