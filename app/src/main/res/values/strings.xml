@@ -155,4 +155,7 @@
     <string name="title_delete_game">Delete Game</string>
     <string name="description_delete_game">The game will be deleted for all players.</string>
     <string name="toast_game_deleted_by_host">Game has been deleted by the host.</string>
+    <string name="title_account">Account</string>
+    <string name="settings_account_description">Change your display nickname.</string>
+    <string name="settings_nickname_save">Save nickname</string>
 </resources>

@@ -144,4 +144,7 @@
     <string name="title_delete_game">Spiel löschen</string>
     <string name="description_delete_game">Das Spiel wird für alle Spieler unwiderruflich gelöscht.</string>
     <string name="toast_game_deleted_by_host">Das Spiel wurde gelöscht.</string>
+    <string name="title_account">Account</string>
+    <string name="settings_account_description">Ändere deinen Anzeigenamen.</string>
+    <string name="settings_nickname_save">Anzeigenamen speichern</string>
 </resources>
